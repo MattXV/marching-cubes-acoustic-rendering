@@ -2,3 +2,6 @@
 [submodule "unda/externals/glfw"]
 	path = unda/externals/glfw
 	url = https://github.com/glfw/glfw
+[submodule "unda/externals/assimp"]
+	path = unda/externals/assimp
+	url = https://github.com/assimp/assimp

@@ -3,6 +3,11 @@
 
 void Input::onKeyDown(uint32_t keyCode, bool isRepeat)
 {
+	if (isRepeat) {
+		std::cout << "key repeat! " << std::endl;
+		return;
+	}
+	std::cout << "pressed a key! " << std::endl;
 
 }
 
@@ -13,7 +18,7 @@ void Input::onKeyUp(uint32_t keyCode, bool isRepeat)
 
 
 GLFWApplication::GLFWApplication()
-	: input(new Input())
+	: input()
 	, window(nullptr)
 {
 	// Initialise window and create OpenGL Context
@@ -28,22 +33,25 @@ GLFWApplication::GLFWApplication()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwMakeContextCurrent(window);
+
 	glfwSwapInterval(Settings::vSync);
+
+	glfwSetWindowUserPointer(window, &input);
+	glfwSetKeyCallback(window, keyCallBack);
+
 	glfwSetErrorCallback(errorCallback);
 	gladLoadGL();
-	glfwSetKeyCallback(window, keyCallBack);
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 	running = true;
-	utils::logGlError();
+
 }
 
 GLFWApplication::~GLFWApplication() {
 	glfwDestroyWindow(window);
 	glfwTerminate();
-	delete input;
 }
 
 void GLFWApplication::processEvents()

@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <assert.h>
+#include <functional>
 
 
 class Input : public IEventHandler {
@@ -29,17 +30,31 @@ public:
 
 private:
 	bool running = false;
-	Input* input;
+	Input input;
 	GLFWwindow* window;
+
 
 };
 
-
-inline static void errorCallback(int error, const char* description) {
+inline void errorCallback(int error, const char* description) {
 	std::cerr << "[GLFW Error]: " << error << std::endl;
 }
 
-inline static void keyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods) {
+inline void keyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	Input* input = static_cast<Input*>(glfwGetWindowUserPointer(window));
+
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	else
+		switch (action) {
+			case GLFW_PRESS:
+				input->onKeyDown(key, false);
+				break;
+			case GLFW_RELEASE:
+				input->onKeyUp(key, false);
+				break;
+			case GLFW_REPEAT:
+				input->onKeyDown(key, true);
+				break;
+		}
 }
