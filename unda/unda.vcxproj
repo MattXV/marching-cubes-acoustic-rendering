@@ -128,7 +128,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_DEBUG=1;_DEBUG=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -143,7 +143,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_DEBUG=0;_DEBUG=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -156,7 +156,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="externals\glad\src\glad.c" />
+    <ClCompile Include="src\acoustics\ImageSource.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="src\core\Engine.cpp" />
+    <ClCompile Include="src\input\GLFWApplication.cpp" />
     <ClCompile Include="src\input\IEventHandler.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\rendering\MarchingCubes.cpp" />
@@ -165,12 +169,15 @@
     <ClCompile Include="src\utils\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\acoustics\ImageSource.h" />
     <ClInclude Include="src\core\Engine.h" />
+    <ClInclude Include="src\input\GLFWApplication.h" />
     <ClInclude Include="src\input\IEventHandler.h" />
     <ClInclude Include="src\rendering\MarchingCubes.h" />
     <ClInclude Include="src\rendering\ModelRenderer.h" />
     <ClInclude Include="src\rendering\RenderTools.h" />
-    <ClInclude Include="src\Settings.h" />
+    <ClInclude Include="src\utils\Settings.h" />
+    <ClInclude Include="src\unda.h" />
     <ClInclude Include="src\utils\Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

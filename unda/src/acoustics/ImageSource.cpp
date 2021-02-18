@@ -57,11 +57,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ImageSource.h"
 
 #define _USE_MATH_DEFINES
-#include <cmath>
 
-#include <limits>
-#include <cstdlib>
-#include <iostream>
+//#include <cmath.h>
+#include <math.h>
+//#include <limits>
+//#include <cstdlib>
+//#include <iostream>
 
 #define ROUND(x) ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
 
@@ -70,7 +71,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 template<typename T> inline const T sinc(T const& x) {
-	return (x == 0) ? 1 : std::sin(x) / x;
+	return (x == 0) ? 1 : sin(x) / x;
 }
 
 double sim_microphone(double x, double y, double z, double* angle, char mtype) {

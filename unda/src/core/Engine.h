@@ -1,16 +1,13 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+#include "../unda.h"
+
 #include <math.h>
 
 #include <iostream>
 #include <assert.h>
-#include "../Settings.h"
-#include "../utils/Utils.h"
 
-
+class GLFWApplication;
 
 class Engine
 {
@@ -24,7 +21,7 @@ public:
 	void render();
 
 private:
-	GLFWwindow* window;
+	GLFWApplication* application;
 
 	// Program
 	bool init();
