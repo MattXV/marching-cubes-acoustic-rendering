@@ -28,13 +28,13 @@ GLFWApplication::GLFWApplication()
 		std::cerr << "[GLFW Error] Could not initialise! " << message << std::endl;
 		return;
 	}
-	window = glfwCreateWindow(Settings::windowWidth, Settings::windowHeight, "unda", NULL, NULL);
-	assert(window);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+	window = glfwCreateWindow(unda::windowWidth, unda::windowHeight, "unda", NULL, NULL);
+	assert(window);
 	glfwMakeContextCurrent(window);
 
-	glfwSwapInterval(Settings::vSync);
+	glfwSwapInterval(unda::vSync);
 
 	glfwSetWindowUserPointer(window, &input);
 	glfwSetKeyCallback(window, keyCallBack);
@@ -46,6 +46,11 @@ GLFWApplication::GLFWApplication()
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 	running = true;
+
+	int majorVersion, minorVersion, rev;
+
+	glfwGetVersion(&majorVersion, &minorVersion, &rev);
+	std::cout << "OpenGL Version: " << majorVersion << minorVersion << rev << std::endl;
 
 }
 

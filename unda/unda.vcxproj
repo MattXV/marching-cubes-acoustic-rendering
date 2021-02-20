@@ -178,6 +178,7 @@
     <ClInclude Include="src\input\GLFWApplication.h" />
     <ClInclude Include="src\input\IEventHandler.h" />
     <ClInclude Include="src\rendering\MarchingCubes.h" />
+    <ClInclude Include="src\scene\Camera.h" />
     <ClInclude Include="src\scene\Model.h" />
     <ClInclude Include="src\rendering\ModelRenderer.h" />
     <ClInclude Include="src\rendering\RenderTools.h" />

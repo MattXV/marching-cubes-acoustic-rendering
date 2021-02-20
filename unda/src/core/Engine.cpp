@@ -12,13 +12,17 @@ Engine::Engine()
 Engine::Engine(int width, int height)
 	: application(new GLFWApplication())
 {
-	Settings::windowWidth = width;
-	Settings::windowHeight = height;
+	unda::windowWidth = width;
+	unda::windowHeight = height;
 
 	if (!init()) return;
+	camera = nullptr;
+	modelRenderer = new ModelRenderer();
 }
 
 Engine::~Engine() {
+	delete camera;
+	delete modelRenderer;
 	delete application;
 }
 

@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../unda.h"
-
+#include "../input/IEventHandler.h"
+#include "../utils/Settings.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <iostream>
 #include <assert.h>
 #include <functional>

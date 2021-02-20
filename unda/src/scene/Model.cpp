@@ -34,7 +34,7 @@ Model* loadModel(const std::string& modelPath, const std::string& texturePath)
             u = textureCoords.x;
             v = textureCoords.y;
         }
-        vertices.emplace_back(x, y, z, u, v);
+        vertices.emplace_back(x, y, z, u, v, 0.0f, 0.0f, 0.0f);
     }
 
     for (unsigned int i = 0; i < mesh->mNumFaces; i++) {

@@ -10,28 +10,23 @@
 
 class Texture;
 
-class Model {
+class Model : public unda::Transform {
 public:
 	Model() = default;
 	Model(unsigned int vboLocation, unsigned int iboLocation, Texture* t = nullptr) { 
 		vbo = vboLocation;
 		ibo = iboLocation;
 		texture = t;
-		position = glm::vec3(0, 0, 0);
-		rotation = glm::vec3(0, 0, 0);
-		scale = glm::vec3(1, 1, 1);
 	}
 	virtual ~Model() = default;
 
 	unsigned int getVBO() { return vbo; }
 	unsigned int getIBO() { return ibo; }
 	Texture* getTexture() { return texture; }
-	const glm::vec3 getPosition() { return position; }
 
 private:
 	unsigned int vbo, ibo;
 	Texture* texture;
-	glm::vec3 position, rotation, scale;
 };
 
 
