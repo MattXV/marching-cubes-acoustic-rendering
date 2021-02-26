@@ -6,7 +6,7 @@
 #include "../utils/Utils.h"
 #include "../scene/Model.h"
 
-class Model;
+namespace unda { class Model; }
 
 class ModelRenderer
 {
@@ -14,7 +14,7 @@ public:
 	ModelRenderer();
 	~ModelRenderer() = default;
 
-	void drawModel(Model* model);
+	void drawModel(unda::Model* model);
 
 private:
 	unsigned int programId;

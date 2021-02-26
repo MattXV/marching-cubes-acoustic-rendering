@@ -87,7 +87,7 @@ ModelRenderer::ModelRenderer()
 	glDeleteShader(fshader);
 }
 
-void ModelRenderer::drawModel(Model* model)
+void ModelRenderer::drawModel(unda::Model* model)
 {
 	glUseProgram(programId);
 

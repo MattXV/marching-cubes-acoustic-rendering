@@ -1,6 +1,6 @@
 #include "Model.h"
 
-Model* loadModel(const std::string& modelPath, const std::string& texturePath)
+unda::Model* loadModel(const std::string& modelPath, const std::string& texturePath)
 {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(
@@ -50,6 +50,8 @@ Model* loadModel(const std::string& modelPath, const std::string& texturePath)
     Texture* texture = nullptr;
     if (!texturePath.empty())
         texture = new Texture(texturePath);
+    else
+        texture = new Texture(1024, 1024, unda::Colour<unsigned char>(70, 70, 70, 255));
 
-    return new Model(vbo, ibo, texture);
+    return new unda::Model(vbo, ibo, texture);
 }

@@ -36,6 +36,7 @@ bool Engine::keepRunning()
 
 void Engine::update()
 {
+	// TODO: Implement fixed timestep! 
 }
 
 void Engine::render()
