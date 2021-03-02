@@ -130,7 +130,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>UNDA_DEBUG=1;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -146,7 +146,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>UNDA_DEBUG=0;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -166,28 +166,34 @@
     </ClCompile>
     <ClCompile Include="src\core\Engine.cpp" />
     <ClCompile Include="src\input\GLFWApplication.cpp" />
-    <ClCompile Include="src\input\IEventHandler.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\rendering\MarchingCubes.cpp" />
     <ClCompile Include="src\rendering\ModelRenderer.cpp" />
     <ClCompile Include="src\rendering\RenderTools.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
+    <ClCompile Include="src\scene\Camera.cpp" />
     <ClCompile Include="src\scene\Model.cpp" />
+    <ClCompile Include="src\scene\Primitives.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
+    <ClCompile Include="src\core\UndaAPI.cpp" />
     <ClCompile Include="src\utils\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="externals\stb_image\stb_image.h" />
     <ClInclude Include="src\acoustics\ImageSource.h" />
     <ClInclude Include="src\core\Engine.h" />
+    <ClInclude Include="src\core\Time.h" />
+    <ClInclude Include="src\core\UndaAPI.h" />
     <ClInclude Include="src\input\GLFWApplication.h" />
-    <ClInclude Include="src\input\IEventHandler.h" />
+    <ClInclude Include="src\input\Input.h" />
+    <ClInclude Include="src\input\KeyCodes.h" />
     <ClInclude Include="src\rendering\MarchingCubes.h" />
     <ClInclude Include="src\scene\Camera.h" />
     <ClInclude Include="src\scene\Model.h" />
     <ClInclude Include="src\rendering\ModelRenderer.h" />
     <ClInclude Include="src\rendering\RenderTools.h" />
     <ClInclude Include="src\rendering\Texture.h" />
+    <ClInclude Include="src\scene\Primitives.h" />
     <ClInclude Include="src\scene\Scene.h" />
     <ClInclude Include="src\utils\Settings.h" />
     <ClInclude Include="src\unda.h" />

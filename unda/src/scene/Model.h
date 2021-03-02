@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <string>
+#include <filesystem>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -15,19 +16,21 @@ namespace unda {
 	class Model : public unda::Transform {
 	public:
 		Model() = default;
-		Model(unsigned int vboLocation, unsigned int iboLocation, Texture* t = nullptr) { 
+		Model(unsigned int vboLocation, unsigned int iboLocation, unsigned int idxCount, Texture* t = nullptr) { 
 			vbo = vboLocation;
 			ibo = iboLocation;
+            indexCount = idxCount;
 			texture = t;
 		}
 		virtual ~Model() = default;
 
 		unsigned int getVBO() { return vbo; }
-		unsigned int getIBO() { return ibo; }
+        unsigned int getIBO() { return ibo; }
+        unsigned int getIndexCount() { return indexCount; }
 		Texture* getTexture() { return texture; }
 
 	private:
-		unsigned int vbo, ibo;
+		unsigned int vbo, ibo, indexCount = 0;
 		Texture* texture;
 	};
 	static Model* loadModel(const std::string& modelPath, const std::string& texturePath = std::string()) {
@@ -83,7 +86,7 @@ namespace unda {
             else
                 texture = new Texture(1024, 1024, unda::Colour<unsigned char>(70, 70, 70, 255));
 
-            return new unda::Model(vbo, ibo, texture);
+            return new unda::Model(vbo, ibo, (unsigned int)indices.size(), texture);
         }
 
 	}

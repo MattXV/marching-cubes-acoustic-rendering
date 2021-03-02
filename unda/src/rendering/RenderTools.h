@@ -64,4 +64,5 @@ namespace unda {
 	unsigned int createVBO(const std::vector<Vertex>& vertices);
 	unsigned int createIBO(const std::vector<unsigned int>& indices);
 	glm::mat4 createModelMatrix(const glm::vec3& rotation, const glm::vec3& translation, const glm::vec3& scale);
+
 }

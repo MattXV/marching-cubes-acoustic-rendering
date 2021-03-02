@@ -8,7 +8,6 @@
 
 #include "core/Engine.h"
 
-#include "input/IEventHandler.h"
 #include "input/GLFWApplication.h"
 
 #include "rendering/MarchingCubes.h"

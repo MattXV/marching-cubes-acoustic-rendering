@@ -4,9 +4,13 @@
 #include <vector>
 #include <glad/glad.h>
 #include "../utils/Utils.h"
-#include "../scene/Model.h"
+#include <glm/gtc/type_ptr.hpp>
+#include "../scene/Scene.h"
+#include "../scene/Camera.h"
+
 
 namespace unda { class Model; }
+
 
 class ModelRenderer
 {
@@ -14,9 +18,10 @@ public:
 	ModelRenderer();
 	~ModelRenderer() = default;
 
-	void drawModel(unda::Model* model);
+	void drawModel(unda::Scene* scene);
 
 private:
+	unsigned int vertexArrayLocation;
 	unsigned int programId;
 	// Attributes
 	int vertexPositionLocation, uvCoordinatesLocation, vertexNormalLocation;

@@ -1,45 +1,45 @@
 #include "Engine.h"
 
 
-
-
-Engine::Engine() 
-	: application(new GLFWApplication())
+unda::Engine::Engine() 
+	: application(new unda::GLFWApplication())
 {
 	if (!init()) return;
+	scene = new unda::Scene();
+	modelRenderer = new ModelRenderer();
 }
 
-Engine::Engine(int width, int height)
-	: application(new GLFWApplication())
+unda::Engine::Engine(int width, int height)
+	: application(new unda::GLFWApplication())
 {
 	unda::windowWidth = width;
 	unda::windowHeight = height;
 
 	if (!init()) return;
-	camera = nullptr;
+	scene = new unda::Scene();
 	modelRenderer = new ModelRenderer();
 }
 
-Engine::~Engine() {
-	delete camera;
+unda::Engine::~Engine() {
+	delete scene;
 	delete modelRenderer;
 	delete application;
 }
 
-bool Engine::keepRunning()
+bool unda::Engine::keepRunning()
 {
-
 	while (application->isRunning())
 		return true;
 	return false;
 }
 
-void Engine::update()
+void unda::Engine::update(double deltaTime)
 {
 	// TODO: Implement fixed timestep! 
+	scene->update();
 }
 
-void Engine::render()
+void unda::Engine::render()
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -47,12 +47,14 @@ void Engine::render()
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	////glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
+
+	modelRenderer->drawModel(scene);
 
 	application->processEvents();
 }
 
-bool Engine::init()
+bool unda::Engine::init()
 {
 
 	return true;

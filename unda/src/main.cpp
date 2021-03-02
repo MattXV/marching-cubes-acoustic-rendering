@@ -1,14 +1,9 @@
-#include "core/Engine.h"
+#include "core/UndaAPI.h"
+#include <iostream>
 
 
 int main(int argc, char* argv[]) {
-	Engine* engine = new Engine(800, 600);
-
-	while (engine->keepRunning()) {
-		engine->update();
-		engine->render();
-	}
-	
-	delete engine;
-	return 0;
+	unda::UndaAPI* apiApplication = new unda::UndaAPI();
+	apiApplication->run();
+	delete apiApplication;
 }

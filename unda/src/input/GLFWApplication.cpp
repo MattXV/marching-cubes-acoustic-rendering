@@ -1,25 +1,47 @@
 #include "GLFWApplication.h"
 
+unda::Time* unda::Time::singleton = nullptr;
+void* unda::Input::window = nullptr;
+unda::Input* unda::Input::singletonInstance = nullptr;
 
-void Input::onKeyDown(uint32_t keyCode, bool isRepeat)
+bool unda::GLFWInput::isKeyDownImplementation(int keycode)
 {
-	if (isRepeat) {
-		std::cout << "key repeat! " << std::endl;
-		return;
-	}
-	std::cout << "pressed a key! " << std::endl;
-
+	
+	int state = glfwGetKey((GLFWwindow*)window, keycode);
+	return state == GLFW_PRESS || state == GLFW_REPEAT;
 }
 
-void Input::onKeyUp(uint32_t keyCode, bool isRepeat)
+bool unda::GLFWInput::isKeyUpImplementation(int keycode)
 {
-
+	int state = glfwGetKey((GLFWwindow*)window, keycode);
+	return state == GLFW_RELEASE;
 }
 
+bool unda::GLFWInput::isMouseButtonDownImplementation(int button)
+{
+	int state = glfwGetMouseButton((GLFWwindow*)window, button);
+	return state == GLFW_PRESS;
+}
 
-GLFWApplication::GLFWApplication()
-	: input()
-	, window(nullptr)
+bool unda::GLFWInput::isMouseButtonUpImplementation(int button)
+{
+	int state = glfwGetMouseButton((GLFWwindow*)window, button);
+	return state == GLFW_RELEASE;
+}
+
+std::pair<double, double> unda::GLFWInput::getMousePositionImplementation()
+{
+	double x, y;
+	glfwGetCursorPos((GLFWwindow*)window, &x, &y);
+	return std::pair<double, double>(x, y);
+}
+
+// ----------------------------------------------------------------------------
+
+unda::GLFWApplication::GLFWApplication()
+	: window(nullptr)
+	, time(new GLFWTime())
+	, input(new GLFWInput())
 {
 	// Initialise window and create OpenGL Context
 	if (!glfwInit()) {
@@ -28,38 +50,44 @@ GLFWApplication::GLFWApplication()
 		std::cerr << "[GLFW Error] Could not initialise! " << message << std::endl;
 		return;
 	}
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	window = glfwCreateWindow(unda::windowWidth, unda::windowHeight, "unda", NULL, NULL);
 	assert(window);
 	glfwMakeContextCurrent(window);
-
 	glfwSwapInterval(unda::vSync);
-
-	glfwSetWindowUserPointer(window, &input);
 	glfwSetKeyCallback(window, keyCallBack);
+	//glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	//glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	Input::setInstance(input);
+	Input::setWindow(window);
+	Time::setInstance(time);
 
 	glfwSetErrorCallback(errorCallback);
-	gladLoadGL();
-
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+		std::cerr << "[GLAD Error]: Could not initialise GL!" << std::endl;
+	}
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 	running = true;
 
-	int majorVersion, minorVersion, rev;
-
-	glfwGetVersion(&majorVersion, &minorVersion, &rev);
-	std::cout << "OpenGL Version: " << majorVersion << minorVersion << rev << std::endl;
-
+	std::cout << "Loaded GLFW, Version: " << glfwGetVersionString() << std::endl;
+	std::cout << "Loaded OpenGL, Version: " << GLVersion.major << '.' << GLVersion.minor << std::endl;
 }
 
-GLFWApplication::~GLFWApplication() {
+unda::GLFWApplication::~GLFWApplication() {
+	delete time;
+	delete input;
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
 
-void GLFWApplication::processEvents()
+void unda::GLFWApplication::processEvents()
 {
 	if (glfwWindowShouldClose(window))
 		running = false;

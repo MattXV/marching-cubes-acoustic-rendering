@@ -9,7 +9,9 @@ public:
 	Texture(const std::string& fileName);
 	Texture(const int textureHeight, const int textureWidth, unda::Colour<unsigned char> colour);
 
-	
+	unsigned int getTextureId() { return textureId; }
+
+
 private:
 	void setTextureData();
 
