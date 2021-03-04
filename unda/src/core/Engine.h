@@ -8,6 +8,7 @@
 #include "../input/GLFWApplication.h"
 #include <assert.h>
 #include "../scene/Scene.h"
+#include "../rendering/LightRenderer.h"
 
 
 class GLFWApplication;
@@ -30,6 +31,7 @@ namespace unda {
 	private:
 		unda::Scene* scene;
 		ModelRenderer* modelRenderer;
+		LightRenderer* lightRenderer;
 		GLFWApplication* application;
 
 		// Program

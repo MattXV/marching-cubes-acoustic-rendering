@@ -15,27 +15,20 @@ namespace unda {
 
 	class Camera : public Transform {
 	public:
-		Camera(float _fov, float aRatio, float near, float far, const glm::vec3& pos = glm::vec3(0, 0, 0), const glm::vec3& rot = glm::vec3(0, 0, 0), const glm::vec3& upDir = glm::vec3(0, 1, 0), const glm::vec3& lookAt = glm::vec3(0, 1, 0)) {
-			target = lookAt;
-			upDirection = upDir;
+		Camera(float _fov, float aspectRatio, float nearClippingPlane, float farClippingPlane, 
+			const glm::vec3& pos = glm::vec3(0, 0, 0),
+			const glm::vec3& upDirection = glm::vec3(0, 1, 0), const glm::vec3& lookAt = glm::vec3(0, 0, 0)) 
+		{
 			fov = _fov;
-			aspectRatio = aRatio;
-			nearClippingPlane = near;
-			farClippingPlane = far;
-			viewMatrix = glm::mat4(1.0f);
-			projectionMatrix = glm::mat4(1.0f);
-			front = glm::vec3(0.0f, 0.0f, -1.0f);
+			aRatio = aspectRatio;
+			near = nearClippingPlane;
+			far = farClippingPlane;
+			target = lookAt;
+			up = upDirection;
+
 		}
 		Camera() {
-			target = glm::vec3(0.5f, 0.0f, 0.5f);
-			upDirection = glm::vec3(0, 1, 0);
-			fov = 90.0f;
-			aspectRatio = (float)unda::windowHeight / (float)unda::windowWidth;
-			nearClippingPlane = 0.5f;
-			farClippingPlane = 90.0f;
-			viewMatrix = glm::mat4(1.0f);
-			projectionMatrix = glm::mat4(1.0f);
-			front = glm::vec3(0.0f, 0.0f, -1.0f);
+
 		}
 
 		const glm::mat4& getViewMatrix() { return viewMatrix; }
@@ -46,13 +39,16 @@ namespace unda {
 		inline const glm::vec3& getTarget() { return target; }
 
 	protected:
-		glm::vec3 target, upDirection, front;
-		float fov, aspectRatio, nearClippingPlane, farClippingPlane;
-		glm::mat4 viewMatrix, projectionMatrix;
+		float fov = 90.0f, near = 0.1f, far = 100.0f, aRatio = (float)unda::windowWidth / (float)unda::windowHeight;
 
+		glm::mat4 viewMatrix = glm::mat4(1.0f), projectionMatrix = glm::mat4(1.0f);
+
+		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), up = glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
 		virtual void update() {
-			viewMatrix = glm::lookAt(getPosition(), getPosition() + front, upDirection);
-			projectionMatrix = glm::perspective(glm::radians(fov), aspectRatio, nearClippingPlane, farClippingPlane);
+			glm::vec3 position = getPosition();
+			viewMatrix = glm::lookAt(position, position + front, up);
+			projectionMatrix = glm::perspective(glm::radians(fov), aRatio, near, far);
 		}
 	};
 
@@ -61,7 +57,7 @@ namespace unda {
 		FPSCamera(float _fov, float aRatio, float near, float far,
 			const glm::vec3& pos = glm::vec3(0, 0, 0), const glm::vec3& rot = glm::vec3(0, 0, 0),
 			const glm::vec3& upDir = glm::vec3(0, 1, 0), const glm::vec3& lookAt = glm::vec3(0, 1, 0))
-			: Camera(_fov, aRatio, near, far, pos, rot, upDir, lookAt)
+			: Camera(_fov, aRatio, near, far, pos, upDir, lookAt)
 		{
 
 		}

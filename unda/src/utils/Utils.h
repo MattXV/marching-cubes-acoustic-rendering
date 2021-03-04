@@ -1,6 +1,8 @@
 #pragma once
 
+#define GLFW_INCLUDE_NONE
 #include <glfw/glfw3.h>
+#include <glad/glad.h>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -11,7 +13,7 @@
 	#define GLCALL(call) unda::utils::clearGLError();\
 		call;\
 		if (!unda::utils::printGLError(#call, __FILE__, __LINE__))\
-			__debugbreak();
+			__debugbreak()
 #else
 	#define GLCALL(call) call;
 #endif
@@ -49,8 +51,10 @@ namespace unda {
 			}
 			return true;
 		}
+		inline void checkGLError() { printGLError("null", __FILE__, __LINE__); }
 		std::string ReadTextFile(const std::string& shaderPath);
 		std::string StemFileName(const std::string& fileName);
+		void printShaderError(int shaderLocation);
 	}
 }
 

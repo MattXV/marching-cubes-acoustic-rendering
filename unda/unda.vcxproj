@@ -167,6 +167,7 @@
     <ClCompile Include="src\core\Engine.cpp" />
     <ClCompile Include="src\input\GLFWApplication.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\rendering\LightRenderer.cpp" />
     <ClCompile Include="src\rendering\MarchingCubes.cpp" />
     <ClCompile Include="src\rendering\ModelRenderer.cpp" />
     <ClCompile Include="src\rendering\RenderTools.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="src\input\GLFWApplication.h" />
     <ClInclude Include="src\input\Input.h" />
     <ClInclude Include="src\input\KeyCodes.h" />
+    <ClInclude Include="src\rendering\LightRenderer.h" />
     <ClInclude Include="src\rendering\MarchingCubes.h" />
     <ClInclude Include="src\scene\Camera.h" />
     <ClInclude Include="src\scene\Model.h" />

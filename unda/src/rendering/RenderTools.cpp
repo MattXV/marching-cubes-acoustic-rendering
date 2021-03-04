@@ -30,3 +30,4 @@ unsigned int unda::createIBO(const std::vector<unsigned int>& indices)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL);
 	return newBuffer;
 }
+

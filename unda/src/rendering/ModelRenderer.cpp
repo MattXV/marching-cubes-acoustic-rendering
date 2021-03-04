@@ -2,8 +2,8 @@
 
 ModelRenderer::ModelRenderer() 
 {
-	std::string vertexShaderSource = unda::utils::ReadTextFile("resources/shaders/vertex_shader.glsl");
-	std::string fragmentShaderSource = unda::utils::ReadTextFile("resources/shaders/fragment_shader.glsl");
+	std::string vertexShaderSource = unda::utils::ReadTextFile(unda::shaders::vertexShaderSource);
+	std::string fragmentShaderSource = unda::utils::ReadTextFile(unda::shaders::fragmentShaderSource);
 
 	programId = glCreateProgram();
 	// Vertex Shader
@@ -90,52 +90,43 @@ ModelRenderer::ModelRenderer()
 	glDeleteShader(fshader);
 }
 
+ModelRenderer::~ModelRenderer()
+{
+	glDeleteProgram(programId);
+}
+
 void ModelRenderer::drawModel(unda::Scene* scene)
 {
 	GLCALL(glUseProgram(programId));
 
-	// TODO: Implement Vertex Arrays to avoid some of this boiler plate
+	for (unda::Model* model : scene->getModels()) {
 
-	// Vertex Position
-	GLCALL(glBindBuffer(GL_ARRAY_BUFFER, scene->getModel()->getVBO()));
-	GLCALL(glEnableVertexAttribArray(vertexPositionLocation));
-	GLCALL(glVertexAttribPointer(vertexPositionLocation, 3, GL_FLOAT, GL_FALSE, sizeof(unda::Vertex), nullptr));
-	
-	// Vertex UV
-	GLCALL(glEnableVertexAttribArray(uvCoordinatesLocation));
-	GLCALL(glVertexAttribPointer(uvCoordinatesLocation, 2, GL_FLOAT, GL_FALSE, sizeof(unda::Vertex), (void*)offsetof(unda::Vertex, u)));
+		// Vertex shader uniforms
+		glm::mat4 modelMatrix = unda::createModelMatrix(model->getRotation(), model->getPosition(), model->getScale());
+		GLCALL(glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix)));
+		GLCALL(glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getViewMatrix())));
+		GLCALL(glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getProjectionMatrix())));
+		// Fragment shader uniforms
+		GLCALL(glUniform3fv(lightColourLocation, 1, glm::value_ptr(scene->getLights()[0]->getColour())));
+		GLCALL(glUniform3fv(lightPositionLocation, 1, glm::value_ptr(scene->getLights()[0]->getPosition())));
+		GLCALL(glUniform3fv(viewPositionLocation, 1, glm::value_ptr(scene->getCamera()->getPosition())));
+		// Bind texture
+		GLCALL(glActiveTexture(GL_TEXTURE0));
+		GLCALL(glUniform1i(textureSamplerLocation, 0));
+		GLCALL(glBindTexture(GL_TEXTURE_2D, model->getTexture()->getTextureId()));
 
-	// Vertex Normals
-	GLCALL(glEnableVertexAttribArray(vertexNormalLocation));
-	GLCALL(glVertexAttribPointer(vertexNormalLocation, 3, GL_FLOAT, GL_FALSE, sizeof(unda::Vertex), (void*)offsetof(unda::Vertex, nx)));
+		//GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->getModel()->getIBO()));
+		GLCALL(glEnableVertexAttribArray(vertexNormalLayout));
+		GLCALL(glEnableVertexAttribArray(uvCoordinatesLayout));
+		GLCALL(glEnableVertexAttribArray(vertexNormalLayout));
 
-	// Vertex shader uniforms
-	glm::mat4 modelMatrix = unda::createModelMatrix(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), glm::vec3(1, 1, 1));
-	GLCALL(glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix)));
-	GLCALL(glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getViewMatrix())));
-	GLCALL(glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getProjectionMatrix())));
+		GLCALL(glBindVertexArray(model->getVAO()));
+		GLCALL(glDrawElements(GL_TRIANGLES, model->getIndexCount(), GL_UNSIGNED_INT, nullptr));
 
-	// Fragment shader uniforms
-	GLCALL(glUniform3fv(lightColourLocation, 1, glm::value_ptr(scene->getLight()->getColour())));
-	GLCALL(glUniform3fv(lightPositionLocation, 1, glm::value_ptr(scene->getLight()->getPosition())));
-	glUniform3fv(viewPositionLocation, 1, glm::value_ptr(scene->getCamera()->getPosition()));
-
-	// Bind texture
-	GLCALL(glActiveTexture(GL_TEXTURE0));
-	GLCALL(glUniform1i(textureSamplerLocation, 0));
-	GLCALL(glBindTexture(GL_TEXTURE_2D, scene->getModel()->getTexture()->getTextureId()));
-
-	// Index buffer
-	GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->getModel()->getIBO()));
-	GLCALL(glDrawElements(GL_TRIANGLES, scene->getModel()->getIndexCount(), GL_UNSIGNED_INT, nullptr));
-
-
-	glBindBuffer(GL_ARRAY_BUFFER, NULL);
-	glDisableVertexAttribArray(vertexPositionLocation);
-	glDisableVertexAttribArray(uvCoordinatesLocation);
-	glDisableVertexAttribArray(vertexNormalLocation);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL);
-	glBindTexture(GL_TEXTURE_2D, NULL);
+		GLCALL(glBindVertexArray(NULL));
+		glBindTexture(GL_TEXTURE_2D, NULL);
+	}
 
 	GLCALL(glUseProgram(NULL));
 }
+

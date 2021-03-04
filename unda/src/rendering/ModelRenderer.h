@@ -16,7 +16,7 @@ class ModelRenderer
 {
 public:
 	ModelRenderer();
-	~ModelRenderer() = default;
+	~ModelRenderer();
 
 	void drawModel(unda::Scene* scene);
 
@@ -24,6 +24,7 @@ private:
 	unsigned int vertexArrayLocation;
 	unsigned int programId;
 	// Attributes
+	static const int vertexPosition = 0, uvCoordinatesLayout = 1, vertexNormalLayout = 2;
 	int vertexPositionLocation, uvCoordinatesLocation, vertexNormalLocation;
 	// Uniforms
 	int modelMatrixLocation, viewMatrixLocation, projectionMatrixLocation;

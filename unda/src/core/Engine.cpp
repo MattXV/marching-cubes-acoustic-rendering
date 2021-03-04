@@ -7,6 +7,7 @@ unda::Engine::Engine()
 	if (!init()) return;
 	scene = new unda::Scene();
 	modelRenderer = new ModelRenderer();
+	lightRenderer = new LightRenderer();
 }
 
 unda::Engine::Engine(int width, int height)
@@ -23,6 +24,7 @@ unda::Engine::Engine(int width, int height)
 unda::Engine::~Engine() {
 	delete scene;
 	delete modelRenderer;
+	delete lightRenderer;
 	delete application;
 }
 
@@ -48,7 +50,7 @@ void unda::Engine::render()
 	glDepthFunc(GL_LESS);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glEnable(GL_CULL_FACE);
-
+	lightRenderer->drawLights(scene);
 	modelRenderer->drawModel(scene);
 
 	application->processEvents();
