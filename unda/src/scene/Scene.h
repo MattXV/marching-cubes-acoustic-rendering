@@ -9,6 +9,9 @@
 #include "../utils/Utils.h"
 #include "Camera.h"
 #include "../input/Input.h"
+#include "../rendering/MarchingCubes.hpp"
+#include "../../externals/happly/happly.h"
+//#include "../rendering/VectorMarchingCubes.h"
 
 
 namespace unda {

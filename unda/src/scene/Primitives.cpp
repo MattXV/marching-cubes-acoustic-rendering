@@ -1,17 +1,6 @@
 #include "Primitives.h"
 
 namespace unda {
-	unda::Model* unda::primitives::createSphereModel(int resolution, float radius)
-	{
-		auto [vertices, indices] = createSphere(resolution, radius);
-
-		//unsigned int vbo = unda::createVBO(vertices);
-		//unsigned int ibo = unda::createIBO(indices);
-		//unsigned int indexCount = indices.size();
-		Texture* texture = new Texture(1024, 1024, unda::Colour<unsigned char>(70, 70, 70, 255));
-
-		return new unda::Model(vertices, indices, texture);
-	}
 
 	std::pair<std::vector<Vertex>, std::vector<unsigned int>> unda::primitives::createSphere(int resolution, float radius)
 	{
@@ -66,4 +55,5 @@ namespace unda {
 		}
 		return std::pair<std::vector<Vertex>, std::vector<unsigned int>>(vertices, indices);
 	}
+
 }

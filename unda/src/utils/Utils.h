@@ -3,6 +3,8 @@
 #define GLFW_INCLUDE_NONE
 #include <glfw/glfw3.h>
 #include <glad/glad.h>
+#include <vector>
+#include <array>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -52,9 +54,22 @@ namespace unda {
 			return true;
 		}
 		inline void checkGLError() { printGLError("null", __FILE__, __LINE__); }
+		void printShaderError(int shaderLocation);
+
+
 		std::string ReadTextFile(const std::string& shaderPath);
 		std::string StemFileName(const std::string& fileName);
-		void printShaderError(int shaderLocation);
+		class PlyParser {
+		public:
+			PlyParser(const std::string& plyPath);
+			~PlyParser() {};
+
+			std::vector<std::array<float, 3>> parseVertices();
+		private:
+			unsigned int numVertices = 0;
+			std::string path;
+		};
+
 	}
 }
 

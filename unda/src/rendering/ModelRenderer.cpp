@@ -121,8 +121,10 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 		GLCALL(glEnableVertexAttribArray(vertexNormalLayout));
 
 		GLCALL(glBindVertexArray(model->getVAO()));
-		GLCALL(glDrawElements(GL_TRIANGLES, model->getIndexCount(), GL_UNSIGNED_INT, nullptr));
-
+		if (model->hasIndexArray())
+			GLCALL(glDrawElements(GL_TRIANGLES, model->getIndexCount(), GL_UNSIGNED_INT, nullptr));
+		else
+			GLCALL(glDrawArrays(GL_TRIANGLES, 0, model->getVertexCount()));
 		GLCALL(glBindVertexArray(NULL));
 		glBindTexture(GL_TEXTURE_2D, NULL);
 	}

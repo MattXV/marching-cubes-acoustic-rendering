@@ -49,12 +49,49 @@ namespace unda {
 
 		auto [vertices, indices] = unda::primitives::createSphere(16, 0.2f);
 		Light* light = new Light(vertices, indices);
-		light->setPosition(glm::vec3(1.0f, 2.5f, -1.5f));
+		light->setPosition(glm::vec3(10.0f, 2.5f, 10.0f));
 		addLight(light);
 
-		Model* model = unda::loadModel("resources/models/dmt_conference.obj", "resources/models/dmt_conference_texture.png");
-		model->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-		addModel(model);
+		
+		//Model* model = unda::loadModel("resources/models/dmt_conference.obj", "resources/models/dmt_conference_texture.png");
+		//model->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+		//addModel(model);
+
+		// Marching cubes
+		
+		// Parse DMT Room
+		//std::string porcoddio = utils::ReadTextFile("resources/models/dmt_conference.txt");
+		//unda::utils::PlyParser parser = unda::utils::PlyParser("C:/Users/matt/git/unda/unda/resources/models/test.txt");
+
+		// Get data from the object
+		/*
+		happly::PLYData plyIn("resources/models/dmt_conference.txt", true);
+		std::vector<float> verticesX = plyIn.getElement("vertex").getProperty<float>("x");
+		std::vector<float> verticesY = plyIn.getElement("vertex").getProperty<float>("y");
+		std::vector<float> verticesZ = plyIn.getElement("vertex").getProperty<float>("z");
+		undaTesting::LatticeVector3D<float> scalarField{};
+		scalarField.assignFloatVectors(verticesX, verticesY, verticesZ);
+		undaTesting::ScalarFieldVector3D* grid = new undaTesting::ScalarFieldVector3D( gridSpacing, undaTesting::Point3D(0.0f, 0.0f, 0.0f), scalarField );
+		*/
+		
+		const size_t nx = 30, ny = 30, nz = 30;
+		LatticeData3D<float, nx, ny, nz> scalarField{};
+		Point centre(0.0f, 0.0f, 0.0f);
+		assignScalarField(scalarField, centre);
+
+
+		float gridSpacing = 1.0f;
+		CubeLatticeScalarField3D<nx, ny, nz> grid{ gridSpacing, centre, scalarField };
+		double isoLevel = 0.5;
+
+		std::vector<Vertex> vertexData;
+		vertexData = grid.computeVertexData(isoLevel);
+
+		
+		
+		Model* marchingCubes = new Model(vertexData, std::vector<unsigned int>(), new Texture(1024, 1024, Colour<unsigned char>(255, 80, 255, 255)));
+		addModel(marchingCubes);
+		
 	}
 
 	Scene::~Scene()

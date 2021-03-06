@@ -2,6 +2,7 @@
 #include "../rendering/RenderTools.h"
 #include "../rendering/Texture.h"
 #include "../utils/Settings.h"
+#include "Primitives.h"
 #include <glm/glm.hpp>
 #include <vector>
 #include <string>
@@ -32,12 +33,14 @@ namespace unda {
         unsigned int getIndexCount() { return indexCount; }
 		Texture* getTexture() { return texture; }
 
+		bool hasIndexArray() { return hasIndices; }
+		unsigned int getVertexCount() { return vertexCount; }
 	private:
-		unsigned int vao, vbo, ibo, indexCount = 0;
+		unsigned int vao, vbo, ibo, indexCount = 0, vertexCount = 0;
 		bool hasIndices = false;
 		Texture* texture;
 	};
 	Model* loadModel(const std::string& modelPath, const std::string& texturePath = std::string());
-
+	Model* createSphereModel(int resolution, float radius);
 
 }

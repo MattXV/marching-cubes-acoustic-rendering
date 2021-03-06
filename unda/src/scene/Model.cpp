@@ -30,6 +30,7 @@ namespace unda {
         glBindBuffer(GL_ARRAY_BUFFER, NULL);
         if (hasIndices)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL);
+        vertexCount = (unsigned int)vertices.size();
     }
 
     Model::~Model()
@@ -106,4 +107,18 @@ namespace unda {
         return new Model(vertices, indices, texture);
         //return new unda::Model(vbo, ibo, (unsigned int)indices.size(), texture);
     }
+
+
+    Model* unda::createSphereModel(int resolution, float radius)
+    {
+        auto [vertices, indices] = unda::primitives::createSphere(resolution, radius);
+
+        //unsigned int vbo = unda::createVBO(vertices);
+        //unsigned int ibo = unda::createIBO(indices);
+        //unsigned int indexCount = indices.size();
+        Texture* texture = new Texture(1024, 1024, unda::Colour<unsigned char>(70, 70, 70, 255));
+
+        return new unda::Model(vertices, indices, texture);
+    }
+
 }
