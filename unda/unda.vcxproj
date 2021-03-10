@@ -177,6 +177,7 @@
     <ClCompile Include="src\scene\Primitives.cpp" />
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\core\UndaAPI.cpp" />
+    <ClCompile Include="src\scene\Terrain.cpp" />
     <ClCompile Include="src\utils\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -200,6 +201,7 @@
     <ClInclude Include="src\rendering\Texture.h" />
     <ClInclude Include="src\scene\Primitives.h" />
     <ClInclude Include="src\scene\Scene.h" />
+    <ClInclude Include="src\scene\Terrain.h" />
     <ClInclude Include="src\utils\Settings.h" />
     <ClInclude Include="src\unda.h" />
     <ClInclude Include="src\utils\Utils.h" />

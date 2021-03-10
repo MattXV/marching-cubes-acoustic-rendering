@@ -68,7 +68,12 @@ ModelRenderer::ModelRenderer()
 	if (status != GL_TRUE) {
 		std::cerr << "Could not link shaders!" << std::endl;
 	}
-	
+	// Once successfully linked, shaders can be detached and deleted.
+	glDetachShader(programId, vshader);
+	glDetachShader(programId, fshader);
+	glDeleteShader(vshader);
+	glDeleteShader(fshader);
+
 	// Vertex Shader attributes and uniforms
 	vertexPositionLocation = glGetAttribLocation(programId, "vertexPosition");
 	uvCoordinatesLocation = glGetAttribLocation(programId, "uvCoordinates");
@@ -85,9 +90,6 @@ ModelRenderer::ModelRenderer()
 
 	glGenVertexArrays(1, &vertexArrayLocation);
 	glBindVertexArray(vertexArrayLocation);
-
-	glDeleteShader(vshader);
-	glDeleteShader(fshader);
 }
 
 ModelRenderer::~ModelRenderer()
@@ -100,33 +102,41 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 	GLCALL(glUseProgram(programId));
 
 	for (unda::Model* model : scene->getModels()) {
+			glm::mat4 modelMatrix = unda::createModelMatrix(model->getRotation(), model->getPosition(), model->getScale());
+			GLCALL(glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix)));
+			GLCALL(glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getViewMatrix())));
+			GLCALL(glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getProjectionMatrix())));
+			// Fragment shader uniforms
+			GLCALL(glUniform3fv(lightColourLocation, 1, glm::value_ptr(scene->getLights()[0]->getColour())));
+			GLCALL(glUniform3fv(lightPositionLocation, 1, glm::value_ptr(scene->getLights()[0]->getPosition())));
+			GLCALL(glUniform3fv(viewPositionLocation, 1, glm::value_ptr(scene->getCamera()->getPosition())));
+			// Bind texture
+			GLCALL(glUniform1i(textureSamplerLocation, 0));
 
 		// Vertex shader uniforms
-		glm::mat4 modelMatrix = unda::createModelMatrix(model->getRotation(), model->getPosition(), model->getScale());
-		GLCALL(glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix)));
-		GLCALL(glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getViewMatrix())));
-		GLCALL(glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getProjectionMatrix())));
-		// Fragment shader uniforms
-		GLCALL(glUniform3fv(lightColourLocation, 1, glm::value_ptr(scene->getLights()[0]->getColour())));
-		GLCALL(glUniform3fv(lightPositionLocation, 1, glm::value_ptr(scene->getLights()[0]->getPosition())));
-		GLCALL(glUniform3fv(viewPositionLocation, 1, glm::value_ptr(scene->getCamera()->getPosition())));
-		// Bind texture
-		GLCALL(glActiveTexture(GL_TEXTURE0));
-		GLCALL(glUniform1i(textureSamplerLocation, 0));
-		GLCALL(glBindTexture(GL_TEXTURE_2D, model->getTexture()->getTextureId()));
+		for (unda::Mesh& mesh : model->getMeshes()) {
 
-		//GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->getModel()->getIBO()));
-		GLCALL(glEnableVertexAttribArray(vertexNormalLayout));
-		GLCALL(glEnableVertexAttribArray(uvCoordinatesLayout));
-		GLCALL(glEnableVertexAttribArray(vertexNormalLayout));
+			GLCALL(glBindVertexArray(mesh.vao));
+			GLCALL(glActiveTexture(GL_TEXTURE0));
 
-		GLCALL(glBindVertexArray(model->getVAO()));
-		if (model->hasIndexArray())
-			GLCALL(glDrawElements(GL_TRIANGLES, model->getIndexCount(), GL_UNSIGNED_INT, nullptr));
-		else
-			GLCALL(glDrawArrays(GL_TRIANGLES, 0, model->getVertexCount()));
-		GLCALL(glBindVertexArray(NULL));
-		glBindTexture(GL_TEXTURE_2D, NULL);
+			GLCALL(glBindTexture(GL_TEXTURE_2D, mesh.texture->getTextureId()));
+
+			//GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->getModel()->getIBO()));
+			//GLCALL(glEnableVertexAttribArray(unda::shaders::vertexPositionLocation));
+			//GLCALL(glEnableVertexAttribArray(unda::shaders::uvCoordinatesLocation));
+			//GLCALL(glEnableVertexAttribArray(unda::shaders::vertexNormalLocation));
+
+			if (mesh.indexCount > 0) {
+
+				GLCALL(glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr));
+			}
+			else {
+				GLCALL(glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount));
+			}
+			glBindTexture(GL_TEXTURE_2D, NULL);
+			GLCALL(glBindVertexArray(NULL));
+		}
+
 	}
 
 	GLCALL(glUseProgram(NULL));

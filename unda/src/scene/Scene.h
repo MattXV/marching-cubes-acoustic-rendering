@@ -11,6 +11,7 @@
 #include "../input/Input.h"
 #include "../rendering/MarchingCubes.hpp"
 #include "../../externals/happly/happly.h"
+#include "Terrain.h"
 //#include "../rendering/VectorMarchingCubes.h"
 
 

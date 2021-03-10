@@ -4,6 +4,7 @@
 #include <vector>
 #include <glad/glad.h>
 #include "../utils/Utils.h"
+#include "../utils/Settings.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "../scene/Scene.h"
 #include "../scene/Camera.h"

@@ -53,9 +53,6 @@ namespace unda {
 		addLight(light);
 
 		
-		//Model* model = unda::loadModel("resources/models/dmt_conference.obj", "resources/models/dmt_conference_texture.png");
-		//model->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-		//addModel(model);
 
 		// Marching cubes
 		
@@ -74,23 +71,29 @@ namespace unda {
 		undaTesting::ScalarFieldVector3D* grid = new undaTesting::ScalarFieldVector3D( gridSpacing, undaTesting::Point3D(0.0f, 0.0f, 0.0f), scalarField );
 		*/
 		
+		
 		const size_t nx = 30, ny = 30, nz = 30;
-		LatticeData3D<float, nx, ny, nz> scalarField{};
+		
+		//LatticeData3D<float, nx, ny, nz> scalarField{unda::heightMapTerrain("resources/models/terrain-heightmap.png")};
 		Point centre(0.0f, 0.0f, 0.0f);
-		assignScalarField(scalarField, centre);
+		//assignScalarField(scalarField, centre);
 
 
 		float gridSpacing = 1.0f;
-		CubeLatticeScalarField3D<nx, ny, nz> grid{ gridSpacing, centre, scalarField };
-		double isoLevel = 0.5;
+		//CubeLatticeScalarField3D<nx, ny, nz> grid{ gridSpacing, centre, scalarField };
+		double isoLevel = 1.0f;
 
 		std::vector<Vertex> vertexData;
-		vertexData = grid.computeVertexData(isoLevel);
+		//vertexData = grid.computeVertexData(isoLevel);
 
 		
-		
-		Model* marchingCubes = new Model(vertexData, std::vector<unsigned int>(), new Texture(1024, 1024, Colour<unsigned char>(255, 80, 255, 255)));
-		addModel(marchingCubes);
+		//Texture* mTexture = new Texture("resources/models/terrain-texture.png");
+		//Model* marchingCubes = new Model(vertexData, std::vector<unsigned int>(), mTexture);
+		//marchingCubes->setRotation(glm::vec3(0, 0, 0));
+		//addModel(marchingCubes);
+		Model* model = unda::loadModel("resources/models/dmt_conference.obj", "resources/models/dmt_conference_texture.png");
+		//model->setPosition(glm::vec3(10.0f, 0.0f, 10.0f));
+		addModel(model);
 		
 	}
 

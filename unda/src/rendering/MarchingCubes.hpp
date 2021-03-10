@@ -181,13 +181,15 @@ namespace unda {
 
 		//first, polygonise the field
 		//iterate over cells, not over points
-		float x, y, z, u = 0.5f, v = 0.5f, nx, ny, nz;
+		float x, y, z, u, v, nx, ny, nz;
 		for (auto i = 0; i < sizeX - 1; ++i)
 		{
+			u = (float)i / (float)(sizeX - 1);
 			for (auto j = 0; j < sizeY - 1; ++j)
 			{
 				for (auto k = 0; k < sizeZ - 1; ++k)
 				{
+					v = (float)k / (float)(sizeZ - 1);
 					auto numTris = polygoniseCell(i, j, k, isoLevel, trianglesAfterPolygonisation);
 					for (decltype(numTris) c = 0; c < numTris; ++c)
 					{

@@ -14,31 +14,35 @@
 //class Texture;
 
 namespace unda {
+	struct Mesh {
+		Mesh(const unsigned int& _vao, const unsigned int& _vbo, const unsigned int& _ibo,
+			const long unsigned int& _vertexCount, const long unsigned int& _indexCount, Texture* t) 
+			: texture(t)
+		{
+			vao = _vao;
+			vbo = _vbo;
+			ibo = _ibo;
+			vertexCount = _vertexCount;
+			indexCount = _indexCount;
+		}
+		unsigned int vao, vbo, ibo;
+		long unsigned int vertexCount = 0, indexCount = 0;
+		std::unique_ptr<Texture> texture;
+	};
+
 
 	class Model : public unda::Transform {
 	public:
 		Model() = default;
-		Model(unsigned int vboLocation, unsigned int iboLocation, unsigned int idxCount, Texture* t = nullptr) { 
-			vbo = vboLocation;
-			ibo = iboLocation;
-            indexCount = idxCount;
-			texture = t;
-		}
-		Model(const std::vector<Vertex>& vertices, const std::vector<unsigned int> indices = std::vector<unsigned int>(), Texture* texture = nullptr);
+		Model(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices, Texture* texture = nullptr);
 		virtual ~Model();
 
-		unsigned int getVBO() { return vbo; }
-        unsigned int getIBO() { return ibo; }
-		unsigned int getVAO() { return vao; }
-        unsigned int getIndexCount() { return indexCount; }
-		Texture* getTexture() { return texture; }
-
-		bool hasIndexArray() { return hasIndices; }
-		unsigned int getVertexCount() { return vertexCount; }
+		std::vector<Mesh>& getMeshes() { return meshes; }
+		const std::vector<Mesh>& getMeshes() const { return meshes; }
 	private:
-		unsigned int vao, vbo, ibo, indexCount = 0, vertexCount = 0;
-		bool hasIndices = false;
-		Texture* texture;
+		void addMesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices, Texture* texture);
+		std::vector<Mesh> meshes;
+
 	};
 	Model* loadModel(const std::string& modelPath, const std::string& texturePath = std::string());
 	Model* createSphereModel(int resolution, float radius);

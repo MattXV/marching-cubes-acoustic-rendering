@@ -8,7 +8,7 @@ class Texture {
 public:
 	Texture(const std::string& fileName);
 	Texture(const int textureHeight, const int textureWidth, unda::Colour<unsigned char> colour);
-
+	~Texture();
 	unsigned int getTextureId() { return textureId; }
 
 

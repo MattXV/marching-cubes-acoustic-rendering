@@ -20,6 +20,11 @@ Texture::Texture(const std::string& f)
 	stbi_image_free(textureData);
 }
 
+Texture::~Texture()
+{
+	GLCALL(glDeleteTextures(1, &textureId));
+}
+
 Texture::Texture(const int textureHeight, const int textureWidth, unda::Colour<unsigned char> colour)
 {
 	const int newHeight = textureHeight;
@@ -31,7 +36,7 @@ Texture::Texture(const int textureHeight, const int textureWidth, unda::Colour<u
 	imageFormat = GL_RGBA8;
 	glImageFormat = GL_RGBA;
 	// Create an array of pixel data.
-	unsigned char* textureArray = new unsigned char[newWidth * newHeight * newChannels];
+	unsigned char* textureArray = new unsigned char[(size_t)newWidth * (size_t)newHeight * (size_t)newChannels];
 	for (int i = 0; i < newWidth * newHeight; i++) {
 		textureArray[i * channels] = colour.r;       // Red
 		textureArray[i * channels + 1] = colour.g;   // Green
