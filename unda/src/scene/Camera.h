@@ -66,6 +66,6 @@ namespace unda {
 	private:
 		float cameraSpeed = 3.0f, sensitivity = 0.05f;
 		float pitch = 0.0f, yaw = 0.0f, lastX = (float)unda::windowWidth / 2.0f, lastY = (float)unda::windowHeight / 2.0f;
-		bool firstInput = true;
+		bool firstInput = true, movementEnabled = false;
 	};
 }

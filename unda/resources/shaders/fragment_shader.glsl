@@ -24,7 +24,7 @@ void main() {
 	vec3 diffuse = diff * lightColour;
 
 	// Specular Lighting
-	float specularStrength = 1.0f;
+	float specularStrength = 0.1f;
 	vec3 viewDir = normalize(viewPosition - fragPosition);
 	vec3 reflectDirection = reflect(-lightDirection, normal);
 	float spec = pow(max(dot(viewDir, reflectDirection), 0.0f), 32);

@@ -81,6 +81,7 @@ unda::GLFWApplication::GLFWApplication()
 }
 
 unda::GLFWApplication::~GLFWApplication() {
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	delete time;
 	delete input;
 	glfwDestroyWindow(window);

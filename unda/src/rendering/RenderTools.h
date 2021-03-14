@@ -8,7 +8,8 @@
 #include <assert.h>
 #include <iostream>
 #include <vector>
-
+#include <math.h>
+#include <functional>
 
 namespace unda {
 	class Transform {
@@ -30,7 +31,7 @@ namespace unda {
 
 		virtual void setPosition(const glm::vec3& newPos) { position = newPos; }
 		virtual void setRotation(const glm::vec3& newRot) { rotation = newRot; }
-		virtual void setScale(const glm::vec3& newScale) { position = newScale; }
+		virtual void setScale(const glm::vec3& newScale) { scale = newScale; }
 
 	private:
 		glm::vec3 position, rotation, scale;
@@ -48,6 +49,16 @@ namespace unda {
 	};
 
 	struct Vertex {
+		Vertex() {
+			x  = 0.0f;
+			y  = 0.0f;
+			z  = 0.0f;
+			u  = 0.0f;
+			v  = 0.0f;
+			nx = 0.0f;
+			ny = 0.0f;
+			nz = 0.0f;
+		}
 		Vertex(float xPos, float yPos, float zPos, float uCoord, float vCoord, float xNorm, float yNorm, float zNorm) {
 			x = xPos;
 			y = yPos;
@@ -60,9 +71,47 @@ namespace unda {
 		}
 		float x, y, z, u, v, nx, ny, nz;
 	};
+
+
+
+
+	// ---------------------------------------------------------------------------
+
+
 	static constexpr float pi = glm::pi<float>();
 	unsigned int createVBO(const std::vector<Vertex>& vertices);
 	unsigned int createIBO(const std::vector<unsigned int>& indices);
 	glm::mat4 createModelMatrix(const glm::vec3& rotation, const glm::vec3& translation, const glm::vec3& scale);
+	
+	template<typename T>
+	static inline void normaliseVector(std::vector<T>& _vector) {
+		T max = _vector[0];
+		for (const T& element : _vector) {
+			if (element > max) {
+				max = (T)abs(element);
+			}
+		}
+
+		for (T& element : _vector) {
+			element /= max;
+		}
+	}
+
+	static inline void ModifyVertices(std::vector<Vertex>& vertices, std::function<void(Vertex&)>& f) {
+		for (Vertex& vertex : vertices) {
+			f(vertex);
+		}
+	}
+
+	static inline bool pointMeshCollision(glm::vec3& point, std::pair<glm::vec3, glm::vec3>& two) // AABB - AABB collision
+	{
+		auto [meshMin, meshMax] = two;
+
+		bool collisionMin = point.x >= meshMin.x && point.y >= meshMin.y && point.z >= meshMin.z;
+		bool collisionMax = point.x <= meshMax.z && point.y <= meshMax.y && point.z <= meshMax.z;
+		return collisionMin && collisionMax;
+	}
+
+
 
 }

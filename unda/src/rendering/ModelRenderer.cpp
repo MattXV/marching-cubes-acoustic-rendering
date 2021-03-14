@@ -101,7 +101,8 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 {
 	GLCALL(glUseProgram(programId));
 
-	for (unda::Model* model : scene->getModels()) {
+	for (const std::unique_ptr<unda::Model>& model : scene->getModels()) {
+
 			glm::mat4 modelMatrix = unda::createModelMatrix(model->getRotation(), model->getPosition(), model->getScale());
 			GLCALL(glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix)));
 			GLCALL(glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getViewMatrix())));

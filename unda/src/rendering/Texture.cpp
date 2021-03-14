@@ -4,7 +4,7 @@
 Texture::Texture(const std::string& f)
 	: file(f)
 {
-	stbi_set_flip_vertically_on_load(1);
+	stbi_set_flip_vertically_on_load(0);
 	textureData = stbi_load(file.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
 	if (!textureData) {
@@ -57,7 +57,7 @@ void Texture::setTextureData()
 
 	GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)); // Set how the texture should upscale
 	GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));  // and downscale.
-	GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (void*)textureData));
+	GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (void*)textureData));
 
 	GLCALL(glBindTexture(GL_TEXTURE_2D, 0));
 }

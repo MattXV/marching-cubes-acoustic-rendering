@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="externals\glad\src\glad.c" />
+    <ClCompile Include="externals\glob\glob.cpp" />
     <ClCompile Include="externals\stb_image\stb_image.cpp" />
     <ClCompile Include="src\acoustics\ImageSource.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
@@ -181,6 +182,7 @@
     <ClCompile Include="src\utils\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="externals\glob\glob.h" />
     <ClInclude Include="externals\happly\happly.h" />
     <ClInclude Include="externals\stb_image\stb_image.h" />
     <ClInclude Include="src\acoustics\ImageSource.h" />

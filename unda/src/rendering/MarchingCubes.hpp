@@ -108,8 +108,9 @@ namespace unda {
 	}
 
 
-		
-		
+
+
+
 	// They fill a Lattice data array. temporarily. Just testing marching cubes
 
  
@@ -175,12 +176,14 @@ namespace unda {
 	std::vector<Vertex> computeVertexData(double isoLevel) {
 
 		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
 
 
 		std::array<Triangle, 5> trianglesAfterPolygonisation;
 
 		//first, polygonise the field
 		//iterate over cells, not over points
+		unsigned int i = 0;
 		float x, y, z, u, v, nx, ny, nz;
 		for (auto i = 0; i < sizeX - 1; ++i)
 		{
@@ -190,6 +193,7 @@ namespace unda {
 				for (auto k = 0; k < sizeZ - 1; ++k)
 				{
 					v = (float)k / (float)(sizeZ - 1);
+
 					auto numTris = polygoniseCell(i, j, k, isoLevel, trianglesAfterPolygonisation);
 					for (decltype(numTris) c = 0; c < numTris; ++c)
 					{
@@ -205,18 +209,28 @@ namespace unda {
 						nz = normal.z;
 
 						vertices.emplace_back(x, y, z, u, v, nx, ny, nz);
+						//indices.emplace_back(c + (i * 3));
+						//indices.emplace_back(c + (i * 3) + 1);
+						//indices.emplace_back(c + (i  *3) + 2);
+						//i++;
 
 						x = trianglesAfterPolygonisation[c].b.x;
 						y = trianglesAfterPolygonisation[c].b.y;
 						z = trianglesAfterPolygonisation[c].b.z;
-						
 						vertices.emplace_back(x, y, z, u, v, nx, ny, nz);
+						//indices.emplace_back(c + (i * 3));
+						//indices.emplace_back(c + (i * 3) + 1);
+						//indices.emplace_back(c + (i * 3) + 2);
+						//i++;
 						
 						x = trianglesAfterPolygonisation[c].c.x;
 						y = trianglesAfterPolygonisation[c].c.y;
 						z = trianglesAfterPolygonisation[c].c.z;
-
 						vertices.emplace_back(x, y, z, u, v, nx, ny, nz);
+						//indices.emplace_back(c + (i * 3));
+						//indices.emplace_back(c + (i * 3) + 1);
+						//indices.emplace_back(c + (i * 3) + 2);
+						//i++;
 					}
 				}
 			}
@@ -301,23 +315,21 @@ namespace unda {
 			switch (vertexIndex)
 			{
 			case 0:
-				return { i, j, k + 1 };
+				return { i,     j,     k + 1 };
 			case 1:
-				return { i + 1, j, k + 1 };
+				return { i + 1, j,     k + 1 };
 			case 2:
-				return { i + 1, j, k };
+				return { i + 1, j,     k     };
 			case 3:
-				return { i, j, k };
+				return { i,     j,     k     };
 			case 4:
-				return { i, j + 1, k + 1 };
+				return { i,     j + 1, k + 1 };
 			case 5:
 				return { i + 1, j + 1, k + 1 };
 			case 6:
-				return { i + 1, j + 1, k };
+				return { i + 1, j + 1, k     };
 			case 7:
-				return { i, j + 1, k };
-			default:
-				return {};//shouldn't ever get here, polygonise shouldn't call for vertexIndex outside 0 to 7 - safer to put an assert here...
+				return { i,     j + 1, k     };
 			}
 		}
 		Point interpolateVertex(double isoLevel, const std::array<size_t, 3>& xyzVertexA, const std::array<size_t, 3>& xyzVertexB) {
@@ -345,6 +357,5 @@ namespace unda {
 		}
 		
 	};
-
 
 }

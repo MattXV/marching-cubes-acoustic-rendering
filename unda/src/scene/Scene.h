@@ -44,12 +44,42 @@ namespace unda {
 		void addModel(unda::Model* newModel);
 		void addLight(Light* newLight);
 		const std::vector<Light*>& getLights() { return lights; };
-		const std::vector<Model*>& getModels() { return models; };
+		const std::vector<std::unique_ptr<Model>>& getModels() { return models; };
 		Camera* getCamera() { return camera; };
 
 	private:
-		std::vector<Model*> models;
+		std::vector<std::unique_ptr<Model>> models;
 		std::vector<Light*> lights;
 		FPSCamera* camera;
 	};
+
+	template<typename T, size_t sizeX, size_t sizeY, size_t sizeZ>
+	void computeScalarFieldFromMeshes(LatticeData3D<T, sizeX, sizeY, sizeZ>& data, Model* model)
+	{
+		for (size_t x = 0; x < sizeX; ++x)
+		{
+			for (size_t y = 0; y < sizeY; ++y)
+			{
+				for (size_t z = 0; z < sizeZ; ++z)
+				{
+					glm::vec3 samplePoint = glm::vec3((float(x) / (float)sizeX) * 2.0f - 1.0f,
+													  (float(y) / (float)sizeY) * 2.0f - 1.0f,
+													  (float(z) / (float)sizeZ) * 2.0f - 1.0f);
+
+					float fieldValue = 0.0f;
+					for (Mesh& mesh : model->getMeshes()) {
+						if (pointMeshCollision(samplePoint, mesh.aabb)) {
+							fieldValue = 1.0f;
+							break;
+						}
+
+					}
+					data[std::array<size_t, 3>{x, y, z}] = fieldValue;
+				}
+			}
+		}
+	}
+
+
+
 }

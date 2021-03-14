@@ -3,6 +3,10 @@
 
 void unda::FPSCamera::handleInput()
 {
+    if (Input::isKeyDown(Key::Tab))
+        movementEnabled = !movementEnabled;
+
+    if (!movementEnabled) return;
     glm::vec3 position = getPosition();
     float speed = cameraSpeed * (float)Time::getDeltaTime();
     if (Input::isKeyDown(Key::W)) position += speed * front;
