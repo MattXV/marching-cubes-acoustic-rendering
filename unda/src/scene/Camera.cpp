@@ -1,10 +1,19 @@
 #include "Camera.h"
 
 
+
+unda::FPSCamera::FPSCamera(float _fov, float aRatio, float near, float far,
+    const glm::vec3& pos, const glm::vec3& rot, 
+    const glm::vec3& upDir, const glm::vec3& lookAt)
+    : Camera(_fov, aRatio, near, far, pos, upDir, lookAt)
+{
+    Input::registerKeyCallBack(Key::Tab, [this]() { toggleMovement(); });
+}
+
 void unda::FPSCamera::handleInput()
 {
-    if (Input::isKeyDown(Key::Tab))
-        movementEnabled = !movementEnabled;
+    //if (Input::isKeyDown(Key::Tab))
+    //    movementEnabled = !movementEnabled;
 
     if (!movementEnabled) return;
     glm::vec3 position = getPosition();

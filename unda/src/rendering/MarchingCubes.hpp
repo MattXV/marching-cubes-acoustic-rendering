@@ -173,7 +173,7 @@ namespace unda {
 
 		}
 
-	std::vector<Vertex> computeVertexData(double isoLevel) {
+	 std::vector<Vertex> computeVertexData(double isoLevel) {
 
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
@@ -311,7 +311,6 @@ namespace unda {
 			// 6 - top right   , far face   (x+gridSpacing, y+gridSpacing, z+gridSpacing)
 			// 7 - top left    , far face   (x            , y+gridSpacing, z+gridSpacing)
 
-			assert(vertexIndex <= 7);
 			switch (vertexIndex)
 			{
 			case 0:
@@ -330,8 +329,13 @@ namespace unda {
 				return { i + 1, j + 1, k     };
 			case 7:
 				return { i,     j + 1, k     };
+			default:
+				assert(vertexIndex <= 7);
+				return { 0, 0, 0 };
 			}
+
 		}
+
 		Point interpolateVertex(double isoLevel, const std::array<size_t, 3>& xyzVertexA, const std::array<size_t, 3>& xyzVertexB) {
 			Point& p1 = _cubeLattice[xyzVertexA];
 			Point& p2 = _cubeLattice[xyzVertexB];

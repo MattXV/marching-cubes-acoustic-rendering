@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <assert.h>
+#include <mutex>
 #include <functional>
 #include "../utils/Settings.h"
 #include "Input.h"
@@ -25,7 +26,7 @@ namespace unda {
 	class GLFWInput : public unda::Input {
 	public:
 		GLFWInput() { }
-		~GLFWInput() = default;
+		~GLFWInput();
 
 	protected:
 		bool isKeyDownImplementation(int keycode) override;
@@ -33,9 +34,14 @@ namespace unda {
 		bool isMouseButtonDownImplementation(int button) override;
 		bool isMouseButtonUpImplementation(int button) override;
 		std::pair<double, double> getMousePositionImplementation() override;
+		void keyCallBackImplementation(int keyCode) override;
+		void registerKeyCallBackImplementation(int keyCode, std::function<void()> newCallBack) override;
 	private:
+		std::mutex callbacksMutex;
+		std::unordered_map<int, std::function<void()>> callbacks;
 	};
 
+	// -------------------------------------------------------------------------
 
 	class GLFWApplication {
 	public:
@@ -57,6 +63,7 @@ namespace unda {
 inline void keyCallBack(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	//Input* input = static_cast<Input*>(glfwGetWindowUserPointer(window));
 
+	unda::Input::keyCallBack(key);
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 	else

@@ -1,6 +1,6 @@
 #include "VectorMarchingCubes.h"
 
-namespace undaTesting {
+namespace unda {
 
 	std::vector<unda::Vertex> ScalarFieldVector3D::computeVertexData(double isoLevel)
 	{

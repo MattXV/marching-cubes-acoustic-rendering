@@ -11,19 +11,19 @@ namespace unda {
 		}
 		GLCALL(glBindVertexArray(vao));
 
-		GLCALL(glBindBuffer(GL_ARRAY_BUFFER, vbo));
-		GLCALL(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW));
+			GLCALL(glBindBuffer(GL_ARRAY_BUFFER, vbo));
+			GLCALL(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW));
 		
-		GLCALL(glVertexAttribPointer(unda::shaders::lightVertexPositionLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr));
-		GLCALL(glEnableVertexAttribArray(unda::shaders::lightVertexPositionLocation)); // vertexPosition
+			GLCALL(glVertexAttribPointer(unda::shaders::lightVertexPositionLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr));
+			GLCALL(glEnableVertexAttribArray(unda::shaders::lightVertexPositionLocation)); // vertexPosition
 		
-		GLCALL(glVertexAttribPointer(unda::shaders::lightVertexNormalLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, nx)));
-		GLCALL(glEnableVertexAttribArray(unda::shaders::lightVertexNormalLocation)); // vertexNormal
-		if (hasIndices) {
-			indexCount = indices.size();
-			GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-			GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW));
-		}
+			GLCALL(glVertexAttribPointer(unda::shaders::lightVertexNormalLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, nx)));
+			GLCALL(glEnableVertexAttribArray(unda::shaders::lightVertexNormalLocation)); // vertexNormal
+			if (hasIndices) {
+				indexCount = indices.size();
+				GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+				GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW));
+			}
 
 		glBindVertexArray(NULL);
 		glBindBuffer(GL_ARRAY_BUFFER, NULL);
@@ -60,15 +60,42 @@ namespace unda {
 		// Parse DMT Room
 
 		//std::unique_ptr<Model> model(unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f)));
-		Model* model = unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f ));
+		/*Model* model = unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f ));
 		model->normaliseMeshes();
 		model->calculateAABB();
 		model->setPosition(glm::vec3(2.0f, 0.0f, 0.0f));
-		
+		*/
+
 		Model* conferenceModel = loadMeshDirectory("resources/models/ConferenceRoom/Models", "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true);
 		conferenceModel->normaliseMeshes();
 		conferenceModel->calculateAABB();
 
+		// Vector-based marching cubes
+		const size_t resolution = 100;
+		unda::LatticeVector3D<float> latticeData{resolution, resolution, resolution };
+		computeScalarFieldFromMeshes(latticeData, conferenceModel);
+
+		float gridSpacing = 1.0f;
+		unda::ScalarFieldVector3D grid{ gridSpacing, unda::Point3D(0.0f, 0.0f, 0.0f), latticeData };
+		double isoLevel = 1.0f;
+
+		std::vector<Vertex> vertexData = grid.computeVertexData(isoLevel);
+
+		Texture* mTexture = new Texture(1024, 1024, Colour<unsigned char>(255, 255, 255, 255));
+		Model* marchingCubes = new Model((std::vector<Vertex>&&)vertexData, std::vector<unsigned int>(), mTexture);
+		//marchingCubes->normaliseMeshes();
+		//marchingCubes->normaliseMeshes();
+		marchingCubes->setScale(glm::vec3(0.01f, 0.01f, 0.01f));
+		marchingCubes->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
+		
+		
+		conferenceModel->toVertexArray();
+		marchingCubes->toVertexArray();
+
+		addModel(marchingCubes);
+		addModel(conferenceModel);
+
+		/*
 		const size_t nx = 35, ny = 35, nz = 35;
 		
 		//LatticeData3D<float, nx, ny, nz> scalarField{unda::heightMapTerrain("resources/models/terrain-heightmap.png")};
@@ -80,7 +107,7 @@ namespace unda {
 		float gridSpacing = 1.0f;
 		CubeLatticeScalarField3D<nx, ny, nz> grid{ gridSpacing, centre, scalarField };
 		double isoLevel = 1.0f;
-
+		
 		std::vector<Vertex> vertexData;
 		vertexData = grid.computeVertexData(isoLevel);
 
@@ -92,13 +119,13 @@ namespace unda {
 		marchingCubes->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
 		marchingCubes->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
 
-		model->toVertexArray();
+		//model->toVertexArray();
 		conferenceModel->toVertexArray();
 		marchingCubes->toVertexArray();
 
-		addModel(model);
+		//addModel(model);
 		addModel(marchingCubes);
-		addModel(conferenceModel);
+		addModel(conferenceModel);*/
 	}
 
 	Scene::~Scene()

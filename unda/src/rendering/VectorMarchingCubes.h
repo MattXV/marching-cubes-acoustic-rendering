@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderTools.h"
+#include "../scene/Model.h"
 #include "MarchingCubesTables.h"
 #include <glm/glm.hpp>
 #include <vector>
@@ -8,7 +8,7 @@
 #include <assert.h>
 
 
-namespace undaTesting {
+namespace unda {
 	struct Point3D {
 		Point3D() {}
 		Point3D(float xPos, float yPos, float zPos) {
@@ -50,8 +50,16 @@ namespace undaTesting {
 	//using T = Point3D;
 	class LatticeVector3D {
 	public:
-		LatticeVector3D() : data{} { }
-		LatticeVector3D(const std::vector<T>& latticeData) { data.swap(latticeData); }
+		LatticeVector3D(size_t _sizeX, size_t _sizeY, size_t _sizeZ)
+			: data(_sizeX * _sizeY * _sizeZ, T(), std::allocator<T>())
+			, sizeX(_sizeX)
+			, sizeY(_sizeY)
+			, sizeZ(_sizeZ)
+		{
+			
+		}
+		//LatticeVector3D() : data{} { }
+		LatticeVector3D(std::vector<T>&& latticeData) : data(latticeData) { }
 		
 		T& operator[](size_t linearIndex) { return data[linearIndex]; }
 		const T& operator[](size_t linearIndex) const { return data[linearIndex]; }
@@ -87,10 +95,10 @@ namespace undaTesting {
 
 	class CubeLatticeVector : public LatticeVector3D<Point3D> {
 	public:
-		CubeLatticeVector(float gridSpacing, const Point3D& centre) 
+		CubeLatticeVector(float gridSpacing, const Point3D& centre, size_t _sizeX, size_t _sizeY, size_t _sizeZ)
 			: _gridSpacing(gridSpacing)
 			, _centre(centre),
-			LatticeVector3D<Point3D>()
+			LatticeVector3D<Point3D>(_sizeX, _sizeY, _sizeZ)
 		{
 			computeLatticeVertices();
 		}
@@ -114,7 +122,7 @@ namespace undaTesting {
 			, sizeX(latticeData.sizeX)
 			, sizeY(latticeData.sizeY)
 			, sizeZ(latticeData.sizeZ)
-			, _cubeLattice(gridSpacing, centre)
+			, _cubeLattice(gridSpacing, centre, sizeX, sizeY, sizeZ)
 		{
 			std::cout << _scalarField.sizeX << std::endl;
 		}
@@ -132,4 +140,33 @@ namespace undaTesting {
 		unsigned int polygoniseCell(size_t x, size_t y, size_t z, double isoLevel, std::array<Triangle3D, 5>& triangleResult);
 		Point3D interpolateVertex(double isoLevel, const std::array<size_t, 3>& xyzVertexA, const std::array<size_t, 3>& xyzVertexB);
 	};
+
+
+
+	//template<typename T, size_t sizeX, size_t sizeY, size_t sizeZ>
+	inline static void computeScalarFieldFromMeshes(LatticeVector3D<float>& data, Model* model)
+	{		
+		for (size_t x = 0; x < data.sizeX; ++x)
+		{
+			for (size_t y = 0; y < data.sizeY; ++y)
+			{
+				for (size_t z = 0; z < data.sizeZ; ++z)
+				{
+					glm::vec3 samplePoint = glm::vec3((float(x) / (float)data.sizeX) * 2.0f - 1.0f,
+													  (float(y) / (float)data.sizeY) * 2.0f - 1.0f,
+													  (float(z) / (float)data.sizeZ) * 2.0f - 1.0f);
+
+					float fieldValue = 0.0f;
+					for (Mesh& mesh : model->getMeshes()) {
+						if (pointMeshCollision(samplePoint, mesh.aabb)) {
+							fieldValue = 1.0f;
+							break;
+						}
+
+					}
+					data[std::array<size_t, 3>{x, y, z}] = fieldValue;
+				}
+			}
+		}
+	}
 }

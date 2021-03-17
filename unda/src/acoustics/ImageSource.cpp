@@ -64,7 +64,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //#include <cstdlib>
 //#include <iostream>
 
-#define ROUND(x) ((x)>=0?(long)((x)+0.5):(long)((x)-0.5))
+#define ROUND(x) ((x) >= 0 ? (long)((x) + 0.5) : (long)((x) - 0.5))
 
 #ifndef M_PI 
 #define M_PI 3.14159265358979323846 
@@ -348,7 +348,6 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 			}
 		}
 	}
-
 	delete[] Y;
 	delete[] LPI;
 	delete[] r;

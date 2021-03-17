@@ -84,15 +84,15 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\fast-envelope\build\include;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\fast-envelope\build\include;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

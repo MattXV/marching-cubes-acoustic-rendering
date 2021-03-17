@@ -57,11 +57,10 @@ namespace unda {
 		FPSCamera(float _fov, float aRatio, float near, float far,
 			const glm::vec3& pos = glm::vec3(0, 0, 0), const glm::vec3& rot = glm::vec3(0, 0, 0),
 			const glm::vec3& upDir = glm::vec3(0, 1, 0), const glm::vec3& lookAt = glm::vec3(0, 1, 0))
-			: Camera(_fov, aRatio, near, far, pos, upDir, lookAt)
-		{
+			;
 
-		}
 		void handleInput();
+		void toggleMovement() {if (!Input::isKeyDown(Key::Tab)) movementEnabled = !movementEnabled; }
 
 	private:
 		float cameraSpeed = 3.0f, sensitivity = 0.05f;

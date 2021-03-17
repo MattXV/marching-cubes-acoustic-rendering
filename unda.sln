@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unda", "unda\unda.vcxproj", "{9C0AE553-72FE-4661-AEEB-8EB3EE089D88}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "main", "..\article-marching-cubes\marchingCubes\build\main.vcxproj", "{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -35,18 +33,6 @@ Global
 		{9C0AE553-72FE-4661-AEEB-8EB3EE089D88}.RelWithDebInfo|x64.Build.0 = Release|x64
 		{9C0AE553-72FE-4661-AEEB-8EB3EE089D88}.RelWithDebInfo|x86.ActiveCfg = Release|Win32
 		{9C0AE553-72FE-4661-AEEB-8EB3EE089D88}.RelWithDebInfo|x86.Build.0 = Release|Win32
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.Debug|x64.ActiveCfg = Debug|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.Debug|x64.Build.0 = Debug|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.Debug|x86.ActiveCfg = Debug|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.MinSizeRel|x64.Build.0 = MinSizeRel|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.MinSizeRel|x86.ActiveCfg = MinSizeRel|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.Release|x64.ActiveCfg = Release|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.Release|x64.Build.0 = Release|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.Release|x86.ActiveCfg = Release|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.RelWithDebInfo|x64.Build.0 = RelWithDebInfo|x64
-		{07CDF66F-B373-39BE-BA5C-E0C09AFF5209}.RelWithDebInfo|x86.ActiveCfg = RelWithDebInfo|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

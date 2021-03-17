@@ -10,8 +10,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include <../glob/glob.h>
-
+#include "../glob/glob.h"
 
 //class Texture;
 

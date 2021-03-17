@@ -15,6 +15,9 @@ namespace unda {
 		static void setWindow(void* newWindow) { window = newWindow; }
 		static void setInstance(Input* newInstance) { singletonInstance = newInstance; }
 
+		static void keyCallBack(int keyCode) { singletonInstance->keyCallBackImplementation(keyCode); }
+		static void registerKeyCallBack(int keyCode, std::function<void()> newCallBack) { singletonInstance->registerKeyCallBackImplementation(keyCode, newCallBack); }
+
 	protected:
 		virtual bool isKeyDownImplementation(int keycode) = 0;
 		virtual bool isKeyUpImplementation(int keycode) = 0;
@@ -23,6 +26,9 @@ namespace unda {
 		virtual bool isMouseButtonUpImplementation(int button) = 0;
 
 		virtual std::pair<double, double> getMousePositionImplementation() = 0;
+		virtual void keyCallBackImplementation(int keyCode) = 0;
+		virtual void registerKeyCallBackImplementation(int keyCode, std::function<void()> newCallBack) = 0;
+
 		static void* window;
 	private:
 		static Input* singletonInstance;

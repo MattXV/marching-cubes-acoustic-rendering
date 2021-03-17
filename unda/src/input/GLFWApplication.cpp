@@ -4,6 +4,11 @@ unda::Time* unda::Time::singleton = nullptr;
 void* unda::Input::window = nullptr;
 unda::Input* unda::Input::singletonInstance = nullptr;
 
+unda::GLFWInput::~GLFWInput()
+{
+	callbacks.clear();
+}
+
 bool unda::GLFWInput::isKeyDownImplementation(int keycode)
 {
 	
@@ -36,6 +41,25 @@ std::pair<double, double> unda::GLFWInput::getMousePositionImplementation()
 	return std::pair<double, double>(x, y);
 }
 
+void unda::GLFWInput::keyCallBackImplementation(int keyCode)
+{
+	std::lock_guard<std::mutex> guard(callbacksMutex);
+	if (callbacks.find(keyCode) != callbacks.end()) {
+		callbacks[keyCode]();
+	}
+}
+
+void unda::GLFWInput::registerKeyCallBackImplementation(int keyCode, std::function<void()> newCallBack)
+{
+	std::lock_guard<std::mutex> guard(callbacksMutex);
+	if (auto found = callbacks.find(keyCode) != callbacks.end()) {
+		std::cerr << "Callback already existing brah..." << std::endl;
+		return;
+	} else {
+		callbacks.emplace(std::make_pair(keyCode, newCallBack));
+	}
+}
+
 // ----------------------------------------------------------------------------
 
 unda::GLFWApplication::GLFWApplication()
@@ -56,6 +80,7 @@ unda::GLFWApplication::GLFWApplication()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	window = glfwCreateWindow(unda::windowWidth, unda::windowHeight, "unda", NULL, NULL);
 	assert(window);
+	//glfwSetKeyCallback(window, )
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(unda::vSync);
 	glfwSetKeyCallback(window, keyCallBack);

@@ -128,7 +128,6 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 			//GLCALL(glEnableVertexAttribArray(unda::shaders::vertexNormalLocation));
 
 			if (mesh.indexCount > 0) {
-
 				GLCALL(glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr));
 			}
 			else {
