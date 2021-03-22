@@ -53,7 +53,7 @@ namespace unda {
             mesh.vao = vao;
             mesh.vbo = vbo;
             mesh.ibo = ibo;
-            mesh.vertexCount = mesh.vertices.size();
+            mesh.vertexCount = (unsigned int)mesh.vertices.size();
             mesh.indexCount = indexCount;
             mesh.vertices.clear();
             mesh.indices.clear();
@@ -88,11 +88,11 @@ namespace unda {
                     //max = vertex;
                 }
             }
+            mesh.aabb = AABB(glm::vec3(min.x, min.y, min.z), glm::vec3(max.x, max.y, max.z), getPosition());
 
             //ModifyVertices(mesh.vertices, getAABB);
-            glm::vec3 vMin(glm::vec3(min.x, min.y, min.z)), vMax(glm::vec3(max.x, max.y, max.z));
-            mesh.aabb = { vMin, vMax };
-            mesh.size = vMax - vMin;
+
+
         }
     }
 
@@ -121,33 +121,7 @@ namespace unda {
         delete maxValue;
     }
 
-    void Model::computeEnvelopes()
-    {
-        if (isBuffered) {
-            std::cout << "[Warning]: ignoring computeEnvelope(), model is already buffered!" << std::endl;
-            return;
-        }
 
-        
-        std::function<void(Vertex&)> createCopy = [&vertexData](Vertex& vertex) {
-            vertexData.emplace_back((double)vertex.x, (double)vertex.y, (double)vertex.z);
-        };
-
-        for (Mesh& mesh : meshes) {
-            
-            ModifyVertices(mesh.vertices, createCopy);
-            for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-                int p1 = (int)mesh.indices[i];
-                int p2 = (int)mesh.indices[i + (size_t)1];
-                int p3 = (int)mesh.indices[i + (size_t)2];
-                
-                faces.emplace_back(p1, p2, p3);
-            }
-
-        }
-        
-        
-    }
 
     // -------------------------------------------------------------------------
 
@@ -221,7 +195,6 @@ namespace unda {
         }
 
         model->addMesh(std::move(vertices), std::move(indices), texture, "singleMesh", normalMap);
-
 
         return model;
 

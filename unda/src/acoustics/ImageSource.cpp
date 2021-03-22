@@ -114,7 +114,7 @@ double sim_microphone(double x, double y, double z, double* angle, char mtype) {
 	}
 }
 
-std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vector< std::vector<double> >& rr, 
+std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vector< std::vector<double> >& receivers, 
 	const std::vector<double>& ss, const std::vector<double>& LL, const std::vector<double>& beta_input,
 	const std::vector<double>& orientation, int isHighPassFilter, int nDimension, int nOrder, int nSamples, char microphone_type) {
 	// | Room Impulse Response Generator                                  |\n"
@@ -167,7 +167,7 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 	//                the corresponding reflection coefficient is returned.\n\n");
 
 	// Load parameters
-	int          nMicrophones = rr.size();
+	int          nMicrophones = receivers.size();
 	double       beta[6];
 	double       angle[2];
 	double       reverberation_time;
@@ -250,9 +250,9 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 	// Temporary variables and constants (image-method)
 	const double Fc = 1; // The cut-off frequency equals fs/2 - Fc is the normalized cut-off frequency.
 	const int    Tw = 2 * ROUND(0.004 * fs); // The width of the low-pass FIR equals 8 ms
-	const double cTs = c / fs;
+	const double timeStep = c / fs;
 	double* LPI = new double[Tw];
-	double* r = new double[3];
+	double* receiver = new double[3];
 	double* s = new double[3];
 	double* L = new double[3];
 	double       Rm[3];
@@ -266,15 +266,15 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 	int          mx, my, mz;
 	int          n;
 
-	s[0] = ss[0] / cTs; s[1] = ss[1] / cTs; s[2] = ss[2] / cTs;
-	L[0] = LL[0] / cTs; L[1] = LL[1] / cTs; L[2] = LL[2] / cTs;
+	s[0] = ss[0] / timeStep; s[1] = ss[1] / timeStep; s[2] = ss[2] / timeStep;
+	L[0] = LL[0] / timeStep; L[1] = LL[1] / timeStep; L[2] = LL[2] / timeStep;
 
 	for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
 	{
 		// [x_1 x_2 ... x_N y_1 y_2 ... y_N z_1 z_2 ... z_N]
-		r[0] = rr[idxMicrophone][0] / cTs;
-		r[1] = rr[idxMicrophone][1] / cTs;
-		r[2] = rr[idxMicrophone][2] / cTs;
+		receiver[0] = receivers[idxMicrophone][0] / timeStep;
+		receiver[1] = receivers[idxMicrophone][1] / timeStep;
+		receiver[2] = receivers[idxMicrophone][2] / timeStep;
 
 		n1 = (int)ceil(nSamples / (2 * L[0]));
 		n2 = (int)ceil(nSamples / (2 * L[1]));
@@ -295,17 +295,17 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 
 					for (q = 0; q <= 1; q++)
 					{
-						Rp_plus_Rm[0] = (1 - 2 * q) * s[0] - r[0] + Rm[0];
+						Rp_plus_Rm[0] = (1 - 2 * q) * s[0] - receiver[0] + Rm[0];
 						refl[0] = pow(beta[0], std::abs(mx - q)) * pow(beta[1], std::abs(mx));
 
 						for (j = 0; j <= 1; j++)
 						{
-							Rp_plus_Rm[1] = (1 - 2 * j) * s[1] - r[1] + Rm[1];
+							Rp_plus_Rm[1] = (1 - 2 * j) * s[1] - receiver[1] + Rm[1];
 							refl[1] = pow(beta[2], std::abs(my - j)) * pow(beta[3], std::abs(my));
 
 							for (k = 0; k <= 1; k++)
 							{
-								Rp_plus_Rm[2] = (1 - 2 * k) * s[2] - r[2] + Rm[2];
+								Rp_plus_Rm[2] = (1 - 2 * k) * s[2] - receiver[2] + Rm[2];
 								refl[2] = pow(beta[4], std::abs(mz - k)) * pow(beta[5], std::abs(mz));
 
 								dist = sqrt(pow(Rp_plus_Rm[0], 2) + pow(Rp_plus_Rm[1], 2) + pow(Rp_plus_Rm[2], 2));
@@ -316,7 +316,7 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 									if (fdist < nSamples)
 									{
 										gain = sim_microphone(Rp_plus_Rm[0], Rp_plus_Rm[1], Rp_plus_Rm[2], angle, microphone_type)
-											* refl[0] * refl[1] * refl[2] / (4 * M_PI * dist * cTs);
+											* refl[0] * refl[1] * refl[2] / (4 * M_PI * dist * timeStep);
 
 										for (n = 0; n < Tw; n++)
 											LPI[n] = 0.5 * (1 - cos(2 * M_PI * ((n + 1 - (dist - fdist)) / Tw))) * Fc * sinc(M_PI * Fc * (n + 1 - (dist - fdist) - (Tw / 2)));
@@ -350,7 +350,7 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 	}
 	delete[] Y;
 	delete[] LPI;
-	delete[] r;
+	delete[] receiver;
 	delete[] s;
 	delete[] L;
 

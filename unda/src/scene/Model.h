@@ -14,7 +14,10 @@
 #include <filesystem>
 //class Texture;
 
+
 namespace unda {
+
+
 
 	struct Mesh {
 		Mesh(std::vector<Vertex>&& _vertices, std::vector<unsigned int>&& _indices, Texture* _texture, const std::string& _name = std::string(), Texture* normal = nullptr)
@@ -38,14 +41,13 @@ namespace unda {
 		long unsigned int vertexCount = 0, indexCount = 0;
 		std::unique_ptr<Texture> texture;
 		std::unique_ptr<Texture> normalMap;
-		std::pair<glm::vec3, glm::vec3> aabb;
-		glm::vec3 size = glm::vec3(1.0f, 1.0f, 1.0f);
+		glm::vec3 size = glm::vec3(0, 0, 0);
+		AABB aabb;
 
 		// Temporary CPU allocation
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
 
-		std::unique_ptr<fastEnvelope::FastEnvelope> envelope;
 		// Misc
 		std::string name;
 	};
@@ -63,7 +65,7 @@ namespace unda {
 
 		void calculateAABB();
 		void normaliseMeshes();
-		void computeEnvelopes();
+
 
 	private:
 		bool isBuffered = false;

@@ -6,7 +6,7 @@
 #include <vector>
 #include <array>
 #include <assert.h>
-#include <fastenvelope/FastEnvelope.h>
+#include <mutex>
 
 
 namespace unda {
@@ -156,20 +156,14 @@ namespace unda {
 					glm::vec3 samplePoint = glm::vec3((float(x) / (float)data.sizeX) * 2.0f - 1.0f,
 													  (float(y) / (float)data.sizeY) * 2.0f - 1.0f,
 													  (float(z) / (float)data.sizeZ) * 2.0f - 1.0f);
+					glm::vec3 cubeSize{ 0.2f, 0.2f, 0.2f };
+					AABB sampleCube = AABB(samplePoint - cubeSize, samplePoint + cubeSize, samplePoint);
 
 					float fieldValue = 0.0f;
 					for (Mesh& mesh : model->getMeshes()) {
-						//fastEnvelope::FastEnvelope* envelope = mesh.envelope.get();
-						//fastEnvelope::Vector3 point{ (double)samplePoint.x, (double)samplePoint.y, (double)samplePoint.z };
-						//if (envelope->is_outside(point)) {
-						//	fieldValue = 0.0f;
-						//}
-						//else {
-						//	fieldValue = 1.0f;
-						//}
 					
-						if (pointMeshCollision(samplePoint, mesh.aabb)) {
-							fieldValue = 2.0f;
+						if (CheckCollision(sampleCube, mesh.aabb)) {
+							fieldValue = 1.0f;
 							break;
 						}
 						else {
@@ -177,9 +171,20 @@ namespace unda {
 						}
 					
 					}
-					data[std::array<size_t, 3>{x, z, y}] = fieldValue;
+					data[std::array<size_t, 3>{x, y, z}] = fieldValue;
 				}
 			}
 		}
 	}
 }
+
+
+// Multithreadead Marching Cubes from a multi-mesh Model
+
+class MarchingCubes {
+public:
+	MarchingCubes(int _nThreads = 32) : nThreads(_nThreads) {}
+	~MarchingCubes() = default;
+private:
+	int nThreads;
+};

@@ -14,6 +14,8 @@
 #include "Terrain.h"
 #include "../rendering/VectorMarchingCubes.h"
 #include "../acoustics/ImageSource.h"
+#include <sndfile.h>
+
 
 
 namespace unda {

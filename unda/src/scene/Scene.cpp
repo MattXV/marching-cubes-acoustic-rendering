@@ -60,11 +60,11 @@ namespace unda {
 		// Parse DMT Room
 
 		//std::unique_ptr<Model> model(unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f)));
-		Model* model = unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f ));
+		/*Model* model = unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f ));
 		model->normaliseMeshes();
 		model->calculateAABB();
 		model->setPosition(glm::vec3(2.0f, 0.0f, 0.0f));
-		
+		*/
 
 
 
@@ -74,11 +74,11 @@ namespace unda {
 		conferenceModel->calculateAABB();
 
 		// Vector-based marching cubes
-		const size_t resolution = 200;
+		const size_t resolution = 350;
 		unda::LatticeVector3D<float> latticeData{resolution, resolution, resolution };
 		computeScalarFieldFromMeshes(latticeData, conferenceModel);
 
-		float gridSpacing = 0.01f;
+		float gridSpacing = 0.2f;
 		unda::ScalarFieldVector3D grid{ gridSpacing, unda::Point3D(0.0f, 0.0f, 0.0f), latticeData };
 		double isoLevel = 1.0f;
 
@@ -88,23 +88,42 @@ namespace unda {
 		Model* marchingCubes = new Model((std::vector<Vertex>&&)vertexData, std::vector<unsigned int>(), mTexture);
 		//marchingCubes->normaliseMeshes();
 		//marchingCubes->normaliseMeshes();
-		marchingCubes->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
+		marchingCubes->setScale(glm::vec3(1.5f, 1.5f, 1.5f));
 		marchingCubes->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
-		
+		marchingCubes->normaliseMeshes();
+
 
 		conferenceModel->toVertexArray();
 		marchingCubes->toVertexArray();
-		model->toVertexArray();
+		//model->toVertexArray();
 		
-		addModel(model);
+		//addModel(model);
 		addModel(marchingCubes);
 		addModel(conferenceModel);
 
 		
-		std::vector<std::vector<double>> rr = { { 0, 0, 0 }, {0, 1, 0} };
-		std::vector<double> ss{1.0};
+		//std::vector<std::vector<double>> rr = { { 0, 0, 0 } };
+		//std::vector<double> ss = {1.0, 1.0, 1.0 };
 
-		std::vector<std::vector<double>> rir = gen_rir(343, 44100, rr, ss, { 1.0, 1.0, 1.0 }, { 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, { 0, 0 }, 0, 3);
+		//std::vector<std::vector<double>> rir = gen_rir(
+		//	343, 44100,
+		//	rr, ss, 
+		//	{ 3.0, 3.0, 4.0 }, 
+		//	{ 0.1, 0.1, 0.1, 0.2, 0.3, 0.3 },
+		//	{ 0, 0 },  1, 3, -1, 1 * 44100);
+		//SF_INFO wavInfo = SF_INFO();
+		//wavInfo.frames = rir.size();
+		//wavInfo.samplerate = 44100;
+		//wavInfo.channels = 1;
+		//wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+		////wavInfo.sections = 0;
+		////wavInfo.seekable = 1;
+		//SNDFILE* sndFile = sf_open("./resources/test.wav", SFM_RDWR, &wavInfo);
+		//std::cout << sf_strerror(sndFile) << std::endl;
+		//std::vector<double>& out = rir[0];
+		//sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
+		//std::cout << sf_error(sndFile) << std::endl;
+		//sf_close(sndFile);
 	}
 
 	Scene::~Scene()

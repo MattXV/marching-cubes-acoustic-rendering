@@ -10,7 +10,6 @@
 #include <sstream>
 #include <fstream>
 
-#define UNDA_DEBUG 1
 #if UNDA_DEBUG == 1
 	#define GLCALL(call) unda::utils::clearGLError();\
 		call;\

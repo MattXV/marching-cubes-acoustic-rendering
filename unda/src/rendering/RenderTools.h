@@ -12,6 +12,17 @@
 #include <functional>
 
 namespace unda {
+	struct AABB {
+		AABB() : min(0, 0, 0), max(0, 0, 0), size(0, 0, 0), position(0, 0, 0) {}
+		AABB(const glm::vec3& _min, const glm::vec3& _max, const glm::vec3& _position)
+			: min(_min)
+			, max(_max)
+			, size(_max - _min)
+			, position(_position)
+		{}
+		glm::vec3 min, max, size, position;
+	};
+
 	class Transform {
 	public:
 		Transform() {
@@ -108,10 +119,16 @@ namespace unda {
 		auto [meshMin, meshMax] = two;
 
 		bool collisionMin = point.x >= meshMin.x && point.y >= meshMin.y && point.z >= meshMin.z;
-		bool collisionMax = point.x <= meshMax.z && point.y <= meshMax.y && point.z <= meshMax.z;
+		bool collisionMax = point.x <= meshMax.x && point.y <= meshMax.y && point.z <= meshMax.z;
 		return collisionMin && collisionMax;
 	}
 
+	static inline bool CheckCollision(const AABB& one, const AABB& two) {
+		bool collisionX = (one.min.x < two.max.x) && (one.max.x > two.min.x);
+		bool collisionY = (one.min.y < two.max.y) && (one.max.y > two.min.y);
+		bool collisionZ = (one.min.z < two.max.z) && (one.max.z > two.min.z);
 
+		return collisionX && collisionY && collisionZ;
+	}
 
 }
