@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 #include <assert.h>
+#include <fastenvelope/FastEnvelope.h>
 
 
 namespace unda {
@@ -158,13 +159,25 @@ namespace unda {
 
 					float fieldValue = 0.0f;
 					for (Mesh& mesh : model->getMeshes()) {
+						//fastEnvelope::FastEnvelope* envelope = mesh.envelope.get();
+						//fastEnvelope::Vector3 point{ (double)samplePoint.x, (double)samplePoint.y, (double)samplePoint.z };
+						//if (envelope->is_outside(point)) {
+						//	fieldValue = 0.0f;
+						//}
+						//else {
+						//	fieldValue = 1.0f;
+						//}
+					
 						if (pointMeshCollision(samplePoint, mesh.aabb)) {
-							fieldValue = 1.0f;
+							fieldValue = 2.0f;
 							break;
 						}
-
+						else {
+							fieldValue = 0.0f;
+						}
+					
 					}
-					data[std::array<size_t, 3>{x, y, z}] = fieldValue;
+					data[std::array<size_t, 3>{x, z, y}] = fieldValue;
 				}
 			}
 		}

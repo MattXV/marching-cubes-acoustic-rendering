@@ -43,11 +43,13 @@ void unda::Engine::update(double deltaTime)
 
 void unda::Engine::render()
 {
-	glClearColor(0.33f, 0.33f, 0.33f, 1.0f);
+	//glClearColor(0.33f, 0.33f, 0.33f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	//glEnable(GL_CULL_FACE);
 	lightRenderer->drawLights(scene);
 	modelRenderer->drawModel(scene);

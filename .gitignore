@@ -361,3 +361,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /unda/resources/models
+/unda/assimp-vc142-mt.dll

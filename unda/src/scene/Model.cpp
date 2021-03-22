@@ -61,9 +61,9 @@ namespace unda {
         isBuffered = true;
     }
 
-    void Model::addMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, Texture* texture, const std::string& name)
+    void Model::addMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, Texture* texture, const std::string& name, Texture* normal)
     {
-        meshes.push_back(Mesh(std::forward<std::vector<Vertex>>(vertices), std::forward<std::vector<unsigned int>>(indices), texture, name));
+        meshes.push_back(Mesh(std::forward<std::vector<Vertex>>(vertices), std::forward<std::vector<unsigned int>>(indices), texture, name, normal));
     }
 
     void Model::calculateAABB()
@@ -121,8 +121,111 @@ namespace unda {
         delete maxValue;
     }
 
+    void Model::computeEnvelopes()
+    {
+        if (isBuffered) {
+            std::cout << "[Warning]: ignoring computeEnvelope(), model is already buffered!" << std::endl;
+            return;
+        }
+
+        
+        std::function<void(Vertex&)> createCopy = [&vertexData](Vertex& vertex) {
+            vertexData.emplace_back((double)vertex.x, (double)vertex.y, (double)vertex.z);
+        };
+
+        for (Mesh& mesh : meshes) {
+            
+            ModifyVertices(mesh.vertices, createCopy);
+            for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+                int p1 = (int)mesh.indices[i];
+                int p2 = (int)mesh.indices[i + (size_t)1];
+                int p3 = (int)mesh.indices[i + (size_t)2];
+                
+                faces.emplace_back(p1, p2, p3);
+            }
+
+        }
+        
+        
+    }
+
     // -------------------------------------------------------------------------
 
+
+    Model* loadSingleMesh(const std::string& modelPath, const std::string texturePath, const std::string normalPath)
+    {
+        Assimp::Importer importer;
+        const aiScene* scene = importer.ReadFile(
+            modelPath,
+            aiProcess_CalcTangentSpace |
+            aiProcess_Triangulate |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_SortByPType |
+            aiProcess_FlipUVs);
+        if (!scene) {
+            std::cerr << "[Assimp Error]: Unable to read file... " << modelPath << std::endl;
+            return nullptr;
+        }
+
+
+        Model* model = new Model();
+
+        unsigned int sceneCount = 0;
+        std::vector<unda::Vertex> vertices;
+        std::vector<unsigned int> indices;
+
+        aiMesh* mesh = scene->mMeshes[sceneCount];
+        float x, y, z, u = 0.0f, v = 0.0f, nx = 0.0f, ny = 0.0f, nz = 0.0f;
+        for (int j = 0; j < (int)mesh->mNumVertices; j++) {
+            // Extract vertices from the mesh object.
+            const aiVector3D& pos = mesh->mVertices[j];
+            x = pos.x;
+            y = pos.y;
+            z = pos.z;
+
+            if (mesh->HasTextureCoords(0)) {
+                const aiVector3D& textureCoords = mesh->mTextureCoords[0][j];
+                u = textureCoords.x;
+                v = textureCoords.y;
+            }
+            if (mesh->HasNormals()) {
+                const aiVector3D& normal = mesh->mNormals[j];
+                nx = normal.x;
+                ny = normal.y;
+                nz = normal.z;
+            }
+
+            vertices.emplace_back(x, y, z, u, v, nx, ny, nz);
+        }
+
+        for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+            const aiFace& face = mesh->mFaces[i];
+            if (face.mNumIndices != 3)
+                continue;
+            indices.push_back((unsigned int)face.mIndices[0]);
+            indices.push_back((unsigned int)face.mIndices[1]);
+            indices.push_back((unsigned int)face.mIndices[2]);
+        }
+
+        Texture* texture = nullptr;
+        Texture* normalMap = nullptr;
+        if (!texturePath.empty()) {
+            texture = new Texture(texturePath);
+        }
+        else {
+            texture = new Texture(1024, 1024,
+                unda::Colour<unsigned char>(255, 255, 255, 255));
+        }
+        if (normalPath.size() > 0) {
+            normalMap = new Texture(normalPath);
+        }
+
+        model->addMesh(std::move(vertices), std::move(indices), texture, "singleMesh", normalMap);
+
+
+        return model;
+
+    }
 
     Model* loadModel(const std::string& modelPath, Colour<float> baseColour, bool verbose)
     {
@@ -201,7 +304,7 @@ namespace unda {
                 indices.push_back((unsigned int)face.mIndices[2]);
             }
             
-            std::string texturePath;
+            std::string texturePath, normalPath;
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
             for (auto iterator = textures.begin(); iterator < textures.end(); iterator++) {
                 std::filesystem::path& path = *iterator;
@@ -225,8 +328,34 @@ namespace unda {
                     //}
                 }
             }
+            // Normals
+            for (auto iterator = textures.begin(); iterator < textures.end(); iterator++) {
+                std::filesystem::path& path = *iterator;
+
+                if (path.string().find(material->GetName().C_Str()) != std::string::npos) {
+                    if (verbose) {
+                        std::cout << "Found aiStandardSurface!" << std::endl;
+                    }
+
+                    if (path.string().find("Normal" + mesh->mMaterialIndex) != std::string::npos) {
+                        if (verbose) {
+                            std::cout << "Found colour texture!" << std::endl;
+                            normalPath = path.string();
+                        }
+                        //textures.erase(iterator);
+                        break;
+                    }
+                }
+                else {
+                    //if (path.string().find(modelFileName) != std::string::npos) {
+                    //    texturePath = path.string();
+                    //}
+                }
+            }
+
 
             Texture* texture = nullptr;
+            Texture* normalMap = nullptr;
             if (!texturePath.empty()) {
                 texture = new Texture(texturePath);
             }
@@ -237,6 +366,10 @@ namespace unda {
                                                 (unsigned int)(baseColour.b * 255.0f),
                                                 (unsigned int)(baseColour.a * 255.0f)));
             }
+            if (normalPath.size() > 0) {
+                normalMap = new Texture(normalPath);
+            }
+
             model->addMesh(std::move(vertices), std::move(indices), texture);
 
         }

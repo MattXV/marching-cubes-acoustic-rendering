@@ -30,4 +30,5 @@ private:
 	// Uniforms
 	int modelMatrixLocation, viewMatrixLocation, projectionMatrixLocation;
 	int textureSamplerLocation, lightColourLocation, lightPositionLocation, viewPositionLocation;
+	int normalSamplerLocation;
 };

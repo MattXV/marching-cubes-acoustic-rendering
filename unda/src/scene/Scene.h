@@ -13,6 +13,7 @@
 #include "../../externals/happly/happly.h"
 #include "Terrain.h"
 #include "../rendering/VectorMarchingCubes.h"
+#include "../acoustics/ImageSource.h"
 
 
 namespace unda {
@@ -28,7 +29,7 @@ namespace unda {
 	private:
 		unsigned int vao, vbo, ibo, indexCount;
 		bool hasIndices = false;
-		glm::vec3 colour = glm::vec3(0.8f, 0.8f, 0.8f);
+		glm::vec3 colour = glm::vec3(1.0f, 1.0f, 1.0f);
 	};
 
 

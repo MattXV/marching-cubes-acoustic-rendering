@@ -5,3 +5,6 @@
 [submodule "unda/externals/assimp"]
 	path = unda/externals/assimp
 	url = https://github.com/assimp/assimp
+[submodule "unda/externals/libsndfile"]
+	path = unda/externals/libsndfile
+	url = https://github.com/libsndfile/libsndfile

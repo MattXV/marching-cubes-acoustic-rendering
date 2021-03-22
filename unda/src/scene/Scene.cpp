@@ -20,7 +20,7 @@ namespace unda {
 			GLCALL(glVertexAttribPointer(unda::shaders::lightVertexNormalLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, nx)));
 			GLCALL(glEnableVertexAttribArray(unda::shaders::lightVertexNormalLocation)); // vertexNormal
 			if (hasIndices) {
-				indexCount = indices.size();
+				indexCount = (unsigned int)indices.size();
 				GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
 				GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW));
 			}
@@ -49,7 +49,7 @@ namespace unda {
 
 		auto [vertices, indices] = unda::primitives::createSphere(16, 0.2f);
 		Light* light = new Light(vertices, indices);
-		light->setPosition(glm::vec3(5.0f, 2.5f, 5.0f));
+		light->setPosition(glm::vec3(2.0f, 2.5f, 7.0f));
 		addLight(light);
 
 		camera->setPosition(glm::vec3(1.0f, 0.0f, 1.0f));
@@ -60,22 +60,25 @@ namespace unda {
 		// Parse DMT Room
 
 		//std::unique_ptr<Model> model(unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f)));
-		/*Model* model = unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f ));
+		Model* model = unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f ));
 		model->normaliseMeshes();
 		model->calculateAABB();
 		model->setPosition(glm::vec3(2.0f, 0.0f, 0.0f));
-		*/
+		
+
+
 
 		Model* conferenceModel = loadMeshDirectory("resources/models/ConferenceRoom/Models", "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true);
 		conferenceModel->normaliseMeshes();
+		//conferenceModel->computeEnvelopes();
 		conferenceModel->calculateAABB();
 
 		// Vector-based marching cubes
-		const size_t resolution = 100;
+		const size_t resolution = 200;
 		unda::LatticeVector3D<float> latticeData{resolution, resolution, resolution };
 		computeScalarFieldFromMeshes(latticeData, conferenceModel);
 
-		float gridSpacing = 1.0f;
+		float gridSpacing = 0.01f;
 		unda::ScalarFieldVector3D grid{ gridSpacing, unda::Point3D(0.0f, 0.0f, 0.0f), latticeData };
 		double isoLevel = 1.0f;
 
@@ -85,47 +88,23 @@ namespace unda {
 		Model* marchingCubes = new Model((std::vector<Vertex>&&)vertexData, std::vector<unsigned int>(), mTexture);
 		//marchingCubes->normaliseMeshes();
 		//marchingCubes->normaliseMeshes();
-		marchingCubes->setScale(glm::vec3(0.01f, 0.01f, 0.01f));
+		marchingCubes->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
 		marchingCubes->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
 		
-		
+
 		conferenceModel->toVertexArray();
 		marchingCubes->toVertexArray();
-
+		model->toVertexArray();
+		
+		addModel(model);
 		addModel(marchingCubes);
 		addModel(conferenceModel);
 
-		/*
-		const size_t nx = 35, ny = 35, nz = 35;
 		
-		//LatticeData3D<float, nx, ny, nz> scalarField{unda::heightMapTerrain("resources/models/terrain-heightmap.png")};
-		LatticeData3D<float, nx, ny, nz> scalarField{};
-		Point centre(0.0f, 0.0f, 0.0f);
-		computeScalarFieldFromMeshes(scalarField, conferenceModel);
-		//assignScalarField(scalarField, centre);
+		std::vector<std::vector<double>> rr = { { 0, 0, 0 }, {0, 1, 0} };
+		std::vector<double> ss{1.0};
 
-		float gridSpacing = 1.0f;
-		CubeLatticeScalarField3D<nx, ny, nz> grid{ gridSpacing, centre, scalarField };
-		double isoLevel = 1.0f;
-		
-		std::vector<Vertex> vertexData;
-		vertexData = grid.computeVertexData(isoLevel);
-
-		
-		Texture* mTexture = new Texture(1024, 1024, Colour<unsigned char>(255, 255, 255, 255));
-		Model* marchingCubes = new Model((std::vector<Vertex>&&)vertexData, std::vector<unsigned int>(), mTexture);
-		//marchingCubes->normaliseMeshes();
-		marchingCubes->normaliseMeshes();
-		marchingCubes->setScale(glm::vec3(1.0f, 1.0f, 1.0f));
-		marchingCubes->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
-
-		//model->toVertexArray();
-		conferenceModel->toVertexArray();
-		marchingCubes->toVertexArray();
-
-		//addModel(model);
-		addModel(marchingCubes);
-		addModel(conferenceModel);*/
+		std::vector<std::vector<double>> rir = gen_rir(343, 44100, rr, ss, { 1.0, 1.0, 1.0 }, { 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, { 0, 0 }, 0, 3);
 	}
 
 	Scene::~Scene()

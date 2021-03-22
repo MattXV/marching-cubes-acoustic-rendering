@@ -84,6 +84,7 @@ ModelRenderer::ModelRenderer()
 	projectionMatrixLocation = glGetUniformLocation(programId, "projectionMatrix");
 	// Fragment Shader attributes and uniforms
 	textureSamplerLocation = glGetUniformLocation(programId, "textureSampler");
+	normalSamplerLocation = glGetUniformLocation(programId, "normal_map");
 	lightColourLocation = glGetUniformLocation(programId, "lightColour");
 	lightPositionLocation = glGetUniformLocation(programId, "lightPosition");
 	viewPositionLocation = glGetUniformLocation(programId, "viewPosition");
@@ -112,15 +113,22 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 			GLCALL(glUniform3fv(lightPositionLocation, 1, glm::value_ptr(scene->getLights()[0]->getPosition())));
 			GLCALL(glUniform3fv(viewPositionLocation, 1, glm::value_ptr(scene->getCamera()->getPosition())));
 			// Bind texture
-			GLCALL(glUniform1i(textureSamplerLocation, 0));
 
 		// Vertex shader uniforms
 		for (unda::Mesh& mesh : model->getMeshes()) {
 
 			GLCALL(glBindVertexArray(mesh.vao));
-			GLCALL(glActiveTexture(GL_TEXTURE0));
 
+			GLCALL(glActiveTexture(GL_TEXTURE0));
+			GLCALL(glUniform1i(textureSamplerLocation, 0));
 			GLCALL(glBindTexture(GL_TEXTURE_2D, mesh.texture->getTextureId()));
+
+			Texture* normalMap = mesh.normalMap.get();
+			if (normalMap) {
+				GLCALL(glActiveTexture(GL_TEXTURE0 + 2));
+				GLCALL(glUniform1i(normalSamplerLocation, 2));
+				GLCALL(glBindTexture(GL_TEXTURE_2D, normalMap->getTextureId()));
+			}
 
 			//GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->getModel()->getIBO()));
 			//GLCALL(glEnableVertexAttribArray(unda::shaders::vertexPositionLocation));
@@ -134,6 +142,8 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 				GLCALL(glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount));
 			}
 			glBindTexture(GL_TEXTURE_2D, NULL);
+
+
 			GLCALL(glBindVertexArray(NULL));
 		}
 
