@@ -67,63 +67,67 @@ namespace unda {
 		*/
 
 
-
-		Model* conferenceModel = loadMeshDirectory("resources/models/ConferenceRoom/Models", "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true);
+		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory("resources/models/ConferenceRoom/Models", "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
 		conferenceModel->normaliseMeshes();
 		//conferenceModel->computeEnvelopes();
 		conferenceModel->calculateAABB();
 
-		// Vector-based marching cubes
-		const size_t resolution = 350;
-		unda::LatticeVector3D<float> latticeData{resolution, resolution, resolution };
-		computeScalarFieldFromMeshes(latticeData, conferenceModel);
+		
+		MarchingCubes* marchingCubes = new MarchingCubes(350, 32, 1.0f, Point3D(0, 0, 0));
+		marchingCubes->computeScalarField(conferenceModel);
+		marchingCubes->computeMarchingCubes(1.0);
 
-		float gridSpacing = 0.2f;
-		unda::ScalarFieldVector3D grid{ gridSpacing, unda::Point3D(0.0f, 0.0f, 0.0f), latticeData };
-		double isoLevel = 1.0f;
+		Model* marchingCubesModel = marchingCubes->createModel();
+		marchingCubesModel->normaliseMeshes();
+		marchingCubesModel->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
 
-		std::vector<Vertex> vertexData = grid.computeVertexData(isoLevel);
 
+		marchingCubesModel->toVertexArray();
+		conferenceModel->toVertexArray();
+		addModel(conferenceModel);
+		addModel(marchingCubesModel);
+		/*
+		std::shared_ptr<Model> sharedModel = std::shared_ptr<Model>(conferenceModel);
+		MarchingCubes* multiThreadMC = new MarchingCubes(250, 32, 1.0f, Point3D(0, 0, 0));
+		multiThreadMC->computeScalarField(sharedModel);
+		
+		unda::ScalarFieldVector3D grid{ 0.01f, unda::Point3D(0.0f, 0.0f, 0.0f), multiThreadMC->getScalarField() };
+		std::vector<Vertex> vertexData = grid.computeVertexData(1.0);
 		Texture* mTexture = new Texture(1024, 1024, Colour<unsigned char>(255, 255, 255, 255));
 		Model* marchingCubes = new Model((std::vector<Vertex>&&)vertexData, std::vector<unsigned int>(), mTexture);
-		//marchingCubes->normaliseMeshes();
-		//marchingCubes->normaliseMeshes();
+
+
 		marchingCubes->setScale(glm::vec3(1.5f, 1.5f, 1.5f));
 		marchingCubes->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
 		marchingCubes->normaliseMeshes();
-
-
-		conferenceModel->toVertexArray();
 		marchingCubes->toVertexArray();
-		//model->toVertexArray();
-		
-		//addModel(model);
+
 		addModel(marchingCubes);
-		addModel(conferenceModel);
 
-		
-		//std::vector<std::vector<double>> rr = { { 0, 0, 0 } };
-		//std::vector<double> ss = {1.0, 1.0, 1.0 };
 
-		//std::vector<std::vector<double>> rir = gen_rir(
-		//	343, 44100,
-		//	rr, ss, 
-		//	{ 3.0, 3.0, 4.0 }, 
-		//	{ 0.1, 0.1, 0.1, 0.2, 0.3, 0.3 },
-		//	{ 0, 0 },  1, 3, -1, 1 * 44100);
-		//SF_INFO wavInfo = SF_INFO();
-		//wavInfo.frames = rir.size();
-		//wavInfo.samplerate = 44100;
-		//wavInfo.channels = 1;
-		//wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-		////wavInfo.sections = 0;
-		////wavInfo.seekable = 1;
-		//SNDFILE* sndFile = sf_open("./resources/test.wav", SFM_RDWR, &wavInfo);
-		//std::cout << sf_strerror(sndFile) << std::endl;
-		//std::vector<double>& out = rir[0];
-		//sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
-		//std::cout << sf_error(sndFile) << std::endl;
-		//sf_close(sndFile);
+		std::vector<std::vector<double>> rr = { { 0, 0, 0 } };
+		std::vector<double> ss = {1.0, 1.0, 1.0 };
+
+		std::vector<std::vector<double>> rir = gen_rir(
+			343, 48000,
+			rr, ss, 
+			{ 3.5, 3.5, 2.8 }, 
+			{ 0.1, 0.1, 0.1, 0.2, 0.3, 0.3 },
+			{ 0, 0 },  1, 3, -1, 0.5 * 48000);
+
+		SF_INFO wavInfo = SF_INFO();
+		wavInfo.frames = rir.size();
+		wavInfo.samplerate = 48000;
+		wavInfo.channels = 1;
+		wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+		//wavInfo.sections = 0;
+		//wavInfo.seekable = 1;
+		SNDFILE* sndFile = sf_open("test.wav", SFM_WRITE, &wavInfo);
+		std::cout << sf_strerror(sndFile) << std::endl;
+		std::vector<double>& out = rir[0];
+		sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
+		std::cout << sf_error(sndFile) << std::endl;
+		sf_close(sndFile);*/
 	}
 
 	Scene::~Scene()
@@ -140,8 +144,13 @@ namespace unda {
 
 	void Scene::addModel(unda::Model* newModel)
 	{
-		models.push_back(std::unique_ptr<Model>(newModel));
+		models.push_back(std::shared_ptr<Model>(newModel));
 	}
+	void Scene::addModel(std::shared_ptr<Model>& newModel)
+	{
+		models.push_back(newModel);
+	}
+
 	void Scene::addLight(Light* newLight) {
 		lights.push_back(newLight);
 	}

@@ -88,7 +88,9 @@ namespace unda {
                     //max = vertex;
                 }
             }
-            mesh.aabb = AABB(glm::vec3(min.x, min.y, min.z), glm::vec3(max.x, max.y, max.z), getPosition());
+            glm::vec3 cubeSize{ 0.05f, 0.05f, 0.05f };
+
+            mesh.aabb = AABB(glm::vec3(min.x, min.y, min.z) - cubeSize, glm::vec3(max.x, max.y, max.z) + cubeSize, getPosition());
 
             //ModifyVertices(mesh.vertices, getAABB);
 
@@ -103,9 +105,10 @@ namespace unda {
             float x = fabs(vertex.x);
             float y = fabs(vertex.y);
             float z = fabs(vertex.z);
-            if (x > *maxValue) *maxValue = x;
-            if (y > *maxValue) *maxValue = y;
-            if (z > *maxValue) *maxValue = z;
+            if (x > *maxValue) memcpy(maxValue, &x, sizeof(float));
+            if (y > *maxValue) memcpy(maxValue, &y, sizeof(float));
+            if (z > *maxValue) memcpy(maxValue, &z, sizeof(float));
+
         };
         std::function<void(Vertex&)> normalise = [&maxValue](Vertex& vertex) { 
             vertex.x /= *maxValue;

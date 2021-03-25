@@ -21,6 +21,12 @@
 
 
 namespace unda {
+
+	enum class errorSeverity {
+		WARNING,
+		CRITICAL,
+		FATAL
+	};
 	namespace utils {
 		inline void clearGLError() { while (GLenum error = glGetError()); }
 		inline bool printGLError(const char* call, const char* file, int line) {
@@ -54,6 +60,20 @@ namespace unda {
 		}
 		inline void checkGLError() { printGLError("null", __FILE__, __LINE__); }
 		void printShaderError(int shaderLocation);
+
+		inline void logError(const char error[], errorSeverity severity) {
+			switch (severity) {
+			case errorSeverity::WARNING:
+				std::cout << "[Warning]: " << error << std::endl;
+				break;
+			case errorSeverity::CRITICAL:
+				std::cerr << "[ERROR]: " << error << std::endl;
+				break;
+			case errorSeverity::FATAL:
+				std::cerr << "[FATAL]: " << error << std::endl;
+				break;
+			}
+		}
 
 
 		std::string ReadTextFile(const std::string& shaderPath);

@@ -7,6 +7,7 @@
 #include <array>
 #include <assert.h>
 #include <mutex>
+#include <thread>
 
 
 namespace unda {
@@ -140,6 +141,7 @@ namespace unda {
 		std::array<size_t, 3> cellCornerIndexToIJKIndex(size_t vertexIndex, size_t i, size_t j, size_t k);
 		unsigned int polygoniseCell(size_t x, size_t y, size_t z, double isoLevel, std::array<Triangle3D, 5>& triangleResult);
 		Point3D interpolateVertex(double isoLevel, const std::array<size_t, 3>& xyzVertexA, const std::array<size_t, 3>& xyzVertexB);
+
 	};
 
 
@@ -156,7 +158,7 @@ namespace unda {
 					glm::vec3 samplePoint = glm::vec3((float(x) / (float)data.sizeX) * 2.0f - 1.0f,
 													  (float(y) / (float)data.sizeY) * 2.0f - 1.0f,
 													  (float(z) / (float)data.sizeZ) * 2.0f - 1.0f);
-					glm::vec3 cubeSize{ 0.2f, 0.2f, 0.2f };
+					glm::vec3 cubeSize{ 0.00f, 0.00f, 0.00f };
 					AABB sampleCube = AABB(samplePoint - cubeSize, samplePoint + cubeSize, samplePoint);
 
 					float fieldValue = 0.0f;
@@ -176,15 +178,74 @@ namespace unda {
 			}
 		}
 	}
+
+	///////////////////////////////////////////////////////////////////////////////
+	// Multithreadead Marching Cubes from a multi-mesh Model
+	///////////////////////////////////////////////////////////////////////////////
+
+	class MarchingCubesWorker {
+	public:
+		MarchingCubesWorker(size_t _idxStart, size_t _idxEnd,
+			std::mutex& _scalarFieldMutex, std::mutex& _modelMutex,
+			LatticeVector3D<float>& _scalarField, CubeLatticeVector& _cubeLattice, std::weak_ptr<Model>& _model,
+			int _id = 0)
+			: scalarFieldMutex(_scalarFieldMutex)
+			, modelMutex(_modelMutex)
+			, scalarField(_scalarField)
+			, cubeLattice(_cubeLattice)
+			, indexStart(_idxStart)
+			, indexEnd(_idxEnd)
+			, model(_model)
+			, id(_id)
+		{
+		}
+		void calculateFieldFromMesh();
+	private:
+		size_t indexStart, indexEnd;
+		std::mutex& scalarFieldMutex;
+		std::mutex& modelMutex;
+		LatticeVector3D<float>& scalarField;
+		CubeLatticeVector& cubeLattice;
+		std::weak_ptr<Model> model;
+
+		int id;
+
+		// Marching Cubes Algorithm
+		unsigned int polygoniseCell(size_t x, size_t y, size_t z, double isoLevel, std::array<Triangle3D, 5>& triangleResult);
+		std::array<size_t, 3> cellCornerIndexToIJKIndex(size_t vertexIndex, size_t i, size_t j, size_t k);
+		Point3D interpolateVertex(double isoLevel, const std::array<size_t, 3>& xyzVertexA, const std::array<size_t, 3>& xyzVertexB);
+	};
+
+
+	class MarchingCubes {
+	public:
+		MarchingCubes(int _resolution, int _nThreads, float _gridSpacing, Point3D _centre);
+		~MarchingCubes();
+
+		void computeScalarField(std::weak_ptr<Model> model);
+		void computeMarchingCubes(double isoLevel);
+		LatticeVector3D<float>& getScalarField() { return scalarField; }
+		Model* createModel();
+
+	private:
+		// Multithreading 
+		const int nThreads, resolution;
+		std::vector<MarchingCubesWorker*> workers;
+
+		std::mutex scalarFieldMutex, modelMutex, verticesMutex;
+		LatticeVector3D<float> scalarField;
+		CubeLatticeVector cubeLattice;
+		std::vector<Vertex> vertices;
+
+		// Workers
+		void scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd);
+		void marchingCubesWorker(double isoLevel, size_t indexStart, size_t indexEnd);
+
+		// Algorithm
+		unsigned int polygoniseCell(size_t x, size_t y, size_t z, double isoLevel, std::array<Triangle3D, 5>& triangleResult);
+		std::array<size_t, 3> cellCornerIndexToIJKIndex(size_t vertexIndex, size_t i, size_t j, size_t k);
+		Point3D interpolateVertex(double isoLevel, const std::array<size_t, 3>& xyzVertexA, const std::array<size_t, 3>& xyzVertexB);
+
+	};
+
 }
-
-
-// Multithreadead Marching Cubes from a multi-mesh Model
-
-class MarchingCubes {
-public:
-	MarchingCubes(int _nThreads = 32) : nThreads(_nThreads) {}
-	~MarchingCubes() = default;
-private:
-	int nThreads;
-};

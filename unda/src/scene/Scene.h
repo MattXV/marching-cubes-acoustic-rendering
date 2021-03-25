@@ -45,13 +45,14 @@ namespace unda {
 
 		// All temporary stuff. Sufficient for now.
 		void addModel(unda::Model* newModel);
+		void addModel(std::shared_ptr<Model>& newModel);
 		void addLight(Light* newLight);
 		const std::vector<Light*>& getLights() { return lights; };
-		const std::vector<std::unique_ptr<Model>>& getModels() { return models; };
+		const std::vector<std::shared_ptr<Model>>& getModels() { return models; };
 		Camera* getCamera() { return camera; };
 
 	private:
-		std::vector<std::unique_ptr<Model>> models;
+		std::vector<std::shared_ptr<Model>> models;
 		std::vector<Light*> lights;
 		FPSCamera* camera;
 	};
