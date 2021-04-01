@@ -36,6 +36,7 @@ namespace unda {
 			scale = scl;
 		}
 
+
 		virtual const glm::vec3& getPosition() { return position; }
 		virtual const glm::vec3& getRotation() { return rotation; }
 		virtual const glm::vec3& getScale() { return scale; }
@@ -84,7 +85,14 @@ namespace unda {
 	};
 
 
+	class Listener : public Transform {
+	public:
+		const std::string& getMicrophoneType() const { return microphoneType; }
+		void setMicrophoneType(const std::string& newType) { microphoneType = newType; }
 
+	private:
+		std::string microphoneType = "";
+	};
 
 	// ---------------------------------------------------------------------------
 

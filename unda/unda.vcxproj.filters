@@ -72,6 +72,12 @@
     <ClCompile Include="externals\glob\glob.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\acoustics\AcousticSpace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\acoustics\LateReverb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Engine.h">
@@ -149,5 +155,14 @@
     <ClInclude Include="externals\glob\glob.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\acoustics\AcousticSpace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\acoustics\LateReverb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="scripts\convolve_a_with_b.py" />
   </ItemGroup>
 </Project>

@@ -13,7 +13,7 @@
 
 namespace unda {
 
-	class Camera : public Transform {
+	class Camera : public Listener {
 	public:
 		Camera(float _fov, float aspectRatio, float nearClippingPlane, float farClippingPlane, 
 			const glm::vec3& pos = glm::vec3(0, 0, 0),
@@ -46,7 +46,7 @@ namespace unda {
 		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), up = glm::vec3(0.0f, 1.0f, 0.0f);
 		glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
 		virtual void update() {
-			glm::vec3 position = getPosition();
+			glm::vec3 position = Transform::getPosition();
 			viewMatrix = glm::lookAt(position, position + front, up);
 			projectionMatrix = glm::perspective(glm::radians(fov), aRatio, near, far);
 		}

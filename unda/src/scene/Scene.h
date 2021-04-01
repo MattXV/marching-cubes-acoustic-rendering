@@ -13,7 +13,7 @@
 #include "../../externals/happly/happly.h"
 #include "Terrain.h"
 #include "../rendering/VectorMarchingCubes.h"
-#include "../acoustics/ImageSource.h"
+#include "../acoustics/AcousticSpace.h"
 #include <sndfile.h>
 
 
@@ -52,6 +52,7 @@ namespace unda {
 		Camera* getCamera() { return camera; };
 
 	private:
+		AcousticSpace* acousticSpace;
 		std::vector<std::shared_ptr<Model>> models;
 		std::vector<Light*> lights;
 		FPSCamera* camera;

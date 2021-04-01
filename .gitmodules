@@ -8,3 +8,6 @@
 [submodule "unda/externals/libsndfile"]
 	path = unda/externals/libsndfile
 	url = https://github.com/libsndfile/libsndfile
+[submodule "unda/externals/stk"]
+	path = unda/externals/stk
+	url = https://github.com/thestk/stk.git

@@ -3,6 +3,7 @@
 namespace unda {
 		static int windowWidth = 1280;
 		static int windowHeight = 1024;
+		static double sampleRate = 48000;
 
 	namespace shaders {
 		const static std::string vertexShaderSource = "resources/shaders/vertex_shader.glsl";

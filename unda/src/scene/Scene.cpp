@@ -44,6 +44,7 @@ namespace unda {
 	// ---------------------------------------------------------------------------
 
 	Scene::Scene()
+		: acousticSpace(new AcousticSpace())
 	{
 		camera = new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.1f, 90.0f);
 
@@ -73,7 +74,7 @@ namespace unda {
 		conferenceModel->calculateAABB();
 
 		
-		MarchingCubes* marchingCubes = new MarchingCubes(350, 32, 1.0f, Point3D(0, 0, 0));
+		MarchingCubes* marchingCubes = new MarchingCubes(150, 32, 1.0f, Point3D(0, 0, 0));
 		marchingCubes->computeScalarField(conferenceModel);
 		marchingCubes->computeMarchingCubes(1.0);
 
@@ -86,6 +87,24 @@ namespace unda {
 		conferenceModel->toVertexArray();
 		addModel(conferenceModel);
 		addModel(marchingCubesModel);
+
+		int nSamples = (int)(unda::sampleRate * 0.5);
+		acousticSpace->setSpaceDimensions({ 3.5, 3.5, 2.8 });
+		std::vector<std::vector<double>> rir = acousticSpace->generateRIR({ { 0.2, 0.3, 0.2 } },
+			{ 0.9, 0.3, 0.1 }, nSamples);
+
+		SF_INFO wavInfo = SF_INFO();
+		wavInfo.samplerate = (int)unda::sampleRate;
+		wavInfo.channels = 1;
+		wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+		//wavInfo.sections = 0;
+		//wavInfo.seekable = 1;
+		SNDFILE* sndFile = sf_open("ir.wav", SFM_WRITE, &wavInfo);
+		std::cout << sf_strerror(sndFile) << std::endl;
+		std::vector<double>& out = rir[0];
+		sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
+		std::cout << sf_error(sndFile) << std::endl;
+		sf_close(sndFile);
 		/*
 		std::shared_ptr<Model> sharedModel = std::shared_ptr<Model>(conferenceModel);
 		MarchingCubes* multiThreadMC = new MarchingCubes(250, 32, 1.0f, Point3D(0, 0, 0));
@@ -115,25 +134,14 @@ namespace unda {
 			{ 0.1, 0.1, 0.1, 0.2, 0.3, 0.3 },
 			{ 0, 0 },  1, 3, -1, 0.5 * 48000);
 
-		SF_INFO wavInfo = SF_INFO();
-		wavInfo.frames = rir.size();
-		wavInfo.samplerate = 48000;
-		wavInfo.channels = 1;
-		wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-		//wavInfo.sections = 0;
-		//wavInfo.seekable = 1;
-		SNDFILE* sndFile = sf_open("test.wav", SFM_WRITE, &wavInfo);
-		std::cout << sf_strerror(sndFile) << std::endl;
-		std::vector<double>& out = rir[0];
-		sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
-		std::cout << sf_error(sndFile) << std::endl;
-		sf_close(sndFile);*/
+*/
 	}
 
 	Scene::~Scene()
 	{
 		models.clear();
 		std::for_each(lights.begin(), lights.end(), [](Light* light) { delete light; });
+		delete acousticSpace;
 		delete camera;
 	}
 

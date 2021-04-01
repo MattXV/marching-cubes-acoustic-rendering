@@ -234,7 +234,7 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 	}
 
 	// Create output vector
-	std::vector< std::vector<double> > imp(nMicrophones);
+	std::vector<std::vector<double>> imp(nMicrophones);
 	for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
 		imp[idxMicrophone].resize(nSamples);
 
@@ -245,19 +245,19 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 	const double B2 = -R1 * R1;
 	const double A1 = -(1 + R1);
 	double       X0;
-	double* Y = new double[3];
+	double*		 Y = new double[3];
 
 	// Temporary variables and constants (image-method)
 	const double Fc = 1; // The cut-off frequency equals fs/2 - Fc is the normalized cut-off frequency.
 	const int    Tw = 2 * ROUND(0.004 * fs); // The width of the low-pass FIR equals 8 ms
 	const double timeStep = c / fs;
-	double* LPI = new double[Tw];
-	double* receiver = new double[3];
-	double* s = new double[3];
-	double* L = new double[3];
+	double*      LPI = new double[Tw];
+	double*      receiver = new double[3];
+	double*      s = new double[3];
+	double*      L = new double[3];
 	double       Rm[3];
 	double       Rp_plus_Rm[3];
-	double       refl[3];
+	double       refl[3]; // multidimensional array N x 3; N -> octave bands
 	double       fdist, dist;
 	double       gain;
 	int          startPosition;
@@ -266,8 +266,13 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 	int          mx, my, mz;
 	int          n;
 
-	s[0] = ss[0] / timeStep; s[1] = ss[1] / timeStep; s[2] = ss[2] / timeStep;
-	L[0] = LL[0] / timeStep; L[1] = LL[1] / timeStep; L[2] = LL[2] / timeStep;
+	s[0] = ss[0] / timeStep; 
+	s[1] = ss[1] / timeStep;
+	s[2] = ss[2] / timeStep;
+
+	L[0] = LL[0] / timeStep; 
+	L[1] = LL[1] / timeStep;
+	L[2] = LL[2] / timeStep;
 
 	for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
 	{
@@ -356,3 +361,5 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 
 	return imp;
 }
+
+

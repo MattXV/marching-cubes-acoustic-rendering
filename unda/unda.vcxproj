@@ -84,9 +84,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\fast-envelope\build\include;C:\Users\matt\git\unda\unda\externals\fast-envelope\3rdparty\libigl\external\eigen;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\libsndfile\build\install\lib;$(ProjectDir)externals\fast-envelope\build\Release;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -137,7 +137,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;assimp-vc142-mt.lib;sndfile.lib;FastEnvelope.lib;geogram.lib;IndirectPredicates.lib;tbb_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;assimp-vc142-mt.lib;sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -162,9 +162,11 @@
     <ClCompile Include="externals\glad\src\glad.c" />
     <ClCompile Include="externals\glob\glob.cpp" />
     <ClCompile Include="externals\stb_image\stb_image.cpp" />
+    <ClCompile Include="src\acoustics\AcousticSpace.cpp" />
     <ClCompile Include="src\acoustics\ImageSource.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="src\acoustics\LateReverb.cpp" />
     <ClCompile Include="src\core\Engine.cpp" />
     <ClCompile Include="src\input\GLFWApplication.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -185,7 +187,9 @@
     <ClInclude Include="externals\glob\glob.h" />
     <ClInclude Include="externals\happly\happly.h" />
     <ClInclude Include="externals\stb_image\stb_image.h" />
+    <ClInclude Include="src\acoustics\AcousticSpace.h" />
     <ClInclude Include="src\acoustics\ImageSource.h" />
+    <ClInclude Include="src\acoustics\LateReverb.h" />
     <ClInclude Include="src\core\Engine.h" />
     <ClInclude Include="src\core\Time.h" />
     <ClInclude Include="src\core\UndaAPI.h" />
@@ -207,6 +211,9 @@
     <ClInclude Include="src\utils\Settings.h" />
     <ClInclude Include="src\unda.h" />
     <ClInclude Include="src\utils\Utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="scripts\convolve_a_with_b.py" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
