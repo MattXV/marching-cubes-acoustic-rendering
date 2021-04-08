@@ -172,6 +172,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\rendering\LightRenderer.cpp" />
     <ClCompile Include="src\rendering\ModelRenderer.cpp" />
+    <ClCompile Include="src\rendering\Rendering.cpp" />
     <ClCompile Include="src\rendering\RenderTools.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\VectorMarchingCubes.cpp" />
@@ -197,8 +198,8 @@
     <ClInclude Include="src\input\Input.h" />
     <ClInclude Include="src\input\KeyCodes.h" />
     <ClInclude Include="src\rendering\LightRenderer.h" />
-    <ClInclude Include="src\rendering\MarchingCubes.hpp" />
     <ClInclude Include="src\rendering\MarchingCubesTables.h" />
+    <ClInclude Include="src\rendering\Rendering.h" />
     <ClInclude Include="src\rendering\VectorMarchingCubes.h" />
     <ClInclude Include="src\scene\Camera.h" />
     <ClInclude Include="src\scene\Model.h" />

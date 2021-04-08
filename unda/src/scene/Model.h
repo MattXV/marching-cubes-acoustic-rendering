@@ -3,7 +3,6 @@
 #include "../rendering/RenderTools.h"
 #include "../rendering/Texture.h"
 #include "../utils/Settings.h"
-#include "Primitives.h"
 #include <glm/glm.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -74,6 +73,5 @@ namespace unda {
 	};
 	Model* loadSingleMesh(const std::string& modelPath, const std::string texturePath, const std::string normalPath);
 	Model* loadModel(const std::string& modelPath, Colour<float> baseColour = Colour<float>(0.7f, 0.7f, 0.7f, 1.0f), bool verbose = true);
-	Model* createSphereModel(int resolution, float radius);
 	Model* loadMeshDirectory(const std::string& directoryPath, const std::string& extension = "obj", const Colour<float>& baseColour = Colour<float>(1.0f, 1.0f, 1.0f, 1.0f), bool verbose = false);
 }

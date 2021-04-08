@@ -12,6 +12,41 @@
 #include <functional>
 
 namespace unda {
+	struct Point3D {
+		Point3D() {}
+		Point3D(float xPos, float yPos, float zPos) {
+			x = xPos;
+			y = yPos;
+			z = zPos;
+		}
+		float x = 0.0f, y = 0.0f, z = 0.0f;
+	};
+	struct Triangle3D {
+		Triangle3D() {
+			a = Point3D();
+			b = Point3D();
+			c = Point3D();
+		}
+		Triangle3D(const Point3D& aPoint, const Point3D& bPoint, const Point3D& cPoint)
+		{
+			a = aPoint;
+			b = bPoint;
+			c = cPoint;
+		}
+		Point3D a = Point3D(), b = Point3D(), c = Point3D();
+
+		glm::vec3 computeNormalVector() {
+			//Dir = (B - A) x(C - A)
+			//Norm = Dir / len(Dir)
+			glm::vec3 dir = glm::cross(
+				(glm::vec3{ b.x, b.y, b.z } - glm::vec3{ a.x, a.y, a.z }),
+				(glm::vec3{ c.x, c.y, c.z } - glm::vec3{ a.x, a.y, a.z })
+			);
+			glm::vec3 retNormal = glm::normalize(dir);
+			return retNormal;
+		}
+	};
+
 	struct AABB {
 		AABB() : min(0, 0, 0), max(0, 0, 0), size(0, 0, 0), position(0, 0, 0) {}
 		AABB(const glm::vec3& _min, const glm::vec3& _max, const glm::vec3& _position)

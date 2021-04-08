@@ -15,7 +15,7 @@ uniform vec3 viewPosition;
 
 void main() {
 	// Ambient Light
-	float ambientStrength = 0.5f;
+	float ambientStrength = 1.0f;
 	vec3 ambient = ambientStrength * lightColour;
 
 	// Diffuse Lighting
@@ -23,13 +23,13 @@ void main() {
 	vec3 normal = normalize(sampledNormal * 2.0f - 1.0f);
 
 
-	//normal = normalize(out_normal);
+	normal = normalize(out_normal);
 	vec3 lightDirection = normalize(lightPosition - fragPosition);
 	float diff = max(dot(normal, lightDirection), 0.0f);
 	vec3 diffuse = diff * lightColour;
 
 	// Specular Lighting
-	float specularStrength = 1.0f;
+	float specularStrength = 0.2f;
 	vec3 viewDir = normalize(viewPosition - fragPosition);
 	vec3 reflectDirection = reflect(-lightDirection, normal);
 	float spec = pow(max(dot(viewDir, reflectDirection), 0.0f), 32);

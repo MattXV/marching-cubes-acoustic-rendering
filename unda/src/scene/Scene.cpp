@@ -56,85 +56,51 @@ namespace unda {
 		camera->setPosition(glm::vec3(1.0f, 0.0f, 1.0f));
 
 
-		// Marching cubes
-		
-		// Parse DMT Room
-
-		//std::unique_ptr<Model> model(unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f)));
-		/*Model* model = unda::loadModel("resources/models/ChibiCarlo/ChibiCarlo.obj", Colour<float>(0.973445f, 0.791298f, 0.62396f, 1.0f ));
-		model->normaliseMeshes();
-		model->calculateAABB();
-		model->setPosition(glm::vec3(2.0f, 0.0f, 0.0f));
-		*/
-
-
 		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory("resources/models/ConferenceRoom/Models", "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
 		conferenceModel->normaliseMeshes();
-		//conferenceModel->computeEnvelopes();
 		conferenceModel->calculateAABB();
+		//conferenceModel->computeEnvelopes();
+
+		int unique = 0;
+		for (Mesh& mesh : conferenceModel->getMeshes()) {
+			Model* model = unda::primitives::cubeBoundingBox(mesh.aabb);		
+			boundingBoxesModels.emplace_back(std::unique_ptr<Model>(model));
+			boundingBoxes.insert(std::make_pair(mesh.name + std::to_string(unique++), model));
+			model->setScale(glm::vec3(3.0f, 3.0f, 3.0f));
+			model->toVertexArray();
+		}
 
 		
-		MarchingCubes* marchingCubes = new MarchingCubes(150, 32, 1.0f, Point3D(0, 0, 0));
+		MarchingCubes* marchingCubes = new MarchingCubes(50, 32, 1.0f, Point3D(0, 0, 0));
 		marchingCubes->computeScalarField(conferenceModel);
 		marchingCubes->computeMarchingCubes(1.0);
-
 		Model* marchingCubesModel = marchingCubes->createModel();
 		marchingCubesModel->normaliseMeshes();
 		marchingCubesModel->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
 
-
 		marchingCubesModel->toVertexArray();
 		conferenceModel->toVertexArray();
-		addModel(conferenceModel);
+		//addModel(conferenceModel);
 		addModel(marchingCubesModel);
 
-		int nSamples = (int)(unda::sampleRate * 0.5);
-		acousticSpace->setSpaceDimensions({ 3.5, 3.5, 2.8 });
-		std::vector<std::vector<double>> rir = acousticSpace->generateRIR({ { 0.2, 0.3, 0.2 } },
-			{ 0.9, 0.3, 0.1 }, nSamples);
 
-		SF_INFO wavInfo = SF_INFO();
-		wavInfo.samplerate = (int)unda::sampleRate;
-		wavInfo.channels = 1;
-		wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-		//wavInfo.sections = 0;
-		//wavInfo.seekable = 1;
-		SNDFILE* sndFile = sf_open("ir.wav", SFM_WRITE, &wavInfo);
-		std::cout << sf_strerror(sndFile) << std::endl;
-		std::vector<double>& out = rir[0];
-		sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
-		std::cout << sf_error(sndFile) << std::endl;
-		sf_close(sndFile);
-		/*
-		std::shared_ptr<Model> sharedModel = std::shared_ptr<Model>(conferenceModel);
-		MarchingCubes* multiThreadMC = new MarchingCubes(250, 32, 1.0f, Point3D(0, 0, 0));
-		multiThreadMC->computeScalarField(sharedModel);
+		//int nSamples = (int)(unda::sampleRate * 0.5);
+		//acousticSpace->setSpaceDimensions({ 3.5, 3.5, 2.8 });
+		//std::vector<std::vector<double>> rir = acousticSpace->generateRIR({ { 0.2, 0.3, 0.2 } },
+		//	{ 0.9, 0.3, 0.1 }, nSamples);
+
+		//SF_INFO wavInfo = SF_INFO();
+		//wavInfo.samplerate = (int)unda::sampleRate;
+		//wavInfo.channels = 1;
+		//wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+		//SNDFILE* sndFile = sf_open("ir.wav", SFM_WRITE, &wavInfo);
+		//std::cout << sf_strerror(sndFile) << std::endl;
+		//std::vector<double>& out = rir[0];
+		//sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
+		//std::cout << sf_error(sndFile) << std::endl;
+		//sf_close(sndFile);
+
 		
-		unda::ScalarFieldVector3D grid{ 0.01f, unda::Point3D(0.0f, 0.0f, 0.0f), multiThreadMC->getScalarField() };
-		std::vector<Vertex> vertexData = grid.computeVertexData(1.0);
-		Texture* mTexture = new Texture(1024, 1024, Colour<unsigned char>(255, 255, 255, 255));
-		Model* marchingCubes = new Model((std::vector<Vertex>&&)vertexData, std::vector<unsigned int>(), mTexture);
-
-
-		marchingCubes->setScale(glm::vec3(1.5f, 1.5f, 1.5f));
-		marchingCubes->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
-		marchingCubes->normaliseMeshes();
-		marchingCubes->toVertexArray();
-
-		addModel(marchingCubes);
-
-
-		std::vector<std::vector<double>> rr = { { 0, 0, 0 } };
-		std::vector<double> ss = {1.0, 1.0, 1.0 };
-
-		std::vector<std::vector<double>> rir = gen_rir(
-			343, 48000,
-			rr, ss, 
-			{ 3.5, 3.5, 2.8 }, 
-			{ 0.1, 0.1, 0.1, 0.2, 0.3, 0.3 },
-			{ 0, 0 },  1, 3, -1, 0.5 * 48000);
-
-*/
 	}
 
 	Scene::~Scene()

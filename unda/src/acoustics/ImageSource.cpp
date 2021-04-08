@@ -258,6 +258,9 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 	double       Rm[3];
 	double       Rp_plus_Rm[3];
 	double       refl[3]; // multidimensional array N x 3; N -> octave bands
+	// TODO: implement beta coefficients as a multidimensional array!
+	double		 reflections[3][8];
+
 	double       fdist, dist;
 	double       gain;
 	int          startPosition;
@@ -301,6 +304,7 @@ std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vecto
 					for (q = 0; q <= 1; q++)
 					{
 						Rp_plus_Rm[0] = (1 - 2 * q) * s[0] - receiver[0] + Rm[0];
+
 						refl[0] = pow(beta[0], std::abs(mx - q)) * pow(beta[1], std::abs(mx));
 
 						for (j = 0; j <= 1; j++)

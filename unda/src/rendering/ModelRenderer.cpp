@@ -91,6 +91,7 @@ ModelRenderer::ModelRenderer()
 
 	glGenVertexArrays(1, &vertexArrayLocation);
 	glBindVertexArray(vertexArrayLocation);
+	glUseProgram(NULL);
 }
 
 ModelRenderer::~ModelRenderer()
@@ -130,10 +131,7 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 				GLCALL(glBindTexture(GL_TEXTURE_2D, normalMap->getTextureId()));
 			}
 
-			//GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->getModel()->getIBO()));
-			//GLCALL(glEnableVertexAttribArray(unda::shaders::vertexPositionLocation));
-			//GLCALL(glEnableVertexAttribArray(unda::shaders::uvCoordinatesLocation));
-			//GLCALL(glEnableVertexAttribArray(unda::shaders::vertexNormalLocation));
+				GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
 
 			if (mesh.indexCount > 0) {
 				GLCALL(glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr));
@@ -141,12 +139,67 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 			else {
 				GLCALL(glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount));
 			}
-			glBindTexture(GL_TEXTURE_2D, NULL);
+				GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+
+			GLCALL(glBindTexture(GL_TEXTURE_2D, NULL));
 
 
 			GLCALL(glBindVertexArray(NULL));
 		}
 
+	}
+
+	// Bounding Boxes
+	for (std::pair<std::string, unda::Model*> modelAABB : scene->getBoundingBoxes()) {
+		for (unda::Mesh& mesh : modelAABB.second->getMeshes()) {
+			GLCALL(glBindVertexArray(mesh.vao));
+			
+			//glm::mat4 modelMatrix = unda::createModelMatrix(modelAABB.second->getRotation(), modelAABB.second->getPosition(), modelAABB.second->getScale());
+			glm::mat4 modelMatrix = glm::mat4(1.0f);
+			GLCALL(glUniformMatrix4fv(modelMatrixLocation, 1, GL_FALSE, glm::value_ptr(modelMatrix)));
+			GLCALL(glUniformMatrix4fv(viewMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getViewMatrix())));
+			GLCALL(glUniformMatrix4fv(projectionMatrixLocation, 1, GL_FALSE, glm::value_ptr(scene->getCamera()->getProjectionMatrix())));
+			// Fragment shader uniforms
+			GLCALL(glUniform3fv(lightColourLocation, 1, glm::value_ptr(scene->getLights()[0]->getColour())));
+			GLCALL(glUniform3fv(lightPositionLocation, 1, glm::value_ptr(scene->getLights()[0]->getPosition())));
+			GLCALL(glUniform3fv(viewPositionLocation, 1, glm::value_ptr(scene->getCamera()->getPosition())));
+			// Bind texture
+
+			Texture* texture = mesh.texture.get();
+			if (texture) {
+				GLCALL(glActiveTexture(GL_TEXTURE0));
+				GLCALL(glUniform1i(textureSamplerLocation, 0));
+				GLCALL(glBindTexture(GL_TEXTURE_2D, mesh.texture->getTextureId()));
+
+
+			}
+
+			Texture* normalMap = mesh.normalMap.get();
+			if (normalMap) {
+				GLCALL(glActiveTexture(GL_TEXTURE0 + 2));
+				GLCALL(glUniform1i(normalSamplerLocation, 2));
+				GLCALL(glBindTexture(GL_TEXTURE_2D, normalMap->getTextureId()));
+			}
+
+			//GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, scene->getModel()->getIBO()));
+			//GLCALL(glEnableVertexAttribArray(unda::shaders::vertexPositionLocation));
+			//GLCALL(glEnableVertexAttribArray(unda::shaders::uvCoordinatesLocation));
+			//GLCALL(glEnableVertexAttribArray(unda::shaders::vertexNormalLocation));
+
+			if (mesh.indexCount > 0) {
+				GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+				GLCALL(glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr));
+				GLCALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+			}
+			else {
+				GLCALL(glDrawArrays(GL_TRIANGLES, 0, mesh.vertexCount));
+
+			}
+			glBindTexture(GL_TEXTURE_2D, NULL);
+
+
+			GLCALL(glBindVertexArray(NULL));
+		}
 	}
 
 	GLCALL(glUseProgram(NULL));

@@ -69,33 +69,74 @@ namespace unda {
     void Model::calculateAABB()
     {
         if (isBuffered) {
-            std::cerr << "Too late to do vertex operation brah! Meshes already buffered!" << std::endl;
+            std::cerr << "Too late to do vertex operation! Meshes already buffered!" << std::endl;
             return;
         }
-        Vertex min{};
-        Vertex max{};
+
+        glm::vec3 min, max;
+        float distance = 0.0f;
+        bool first = true;
+
+        std::function<void(Vertex&)> getMinimum = [&min, &first](Vertex& vertex) {
+            if (first) {
+                min.x = vertex.x;
+                min.y = vertex.y;
+                min.z = vertex.z;
+                first = false;
+            }
+            /*if (vertex.x < min.x || vertex.y < min.y || vertex.z < min.z) {
+                min.x = vertex.x;
+                min.y = vertex.y;
+                min.z = vertex.z;
+            }*/
+
+            if (vertex.x < min.x) min.x = vertex.x;
+            if (vertex.y < min.y) min.y = vertex.y;
+            if (vertex.z < min.z) min.z = vertex.z;
+        };
+
+        std::function<void(Vertex&)> getMaximum = [&min, &max, &distance](Vertex& vertex) {
+            glm::vec3 point{ vertex.x, vertex.y, vertex.z };
+            float newDistance = fabs(glm::distance(min, point));
+            if (newDistance > distance) {
+                distance = newDistance;
+                max = point;
+            }
+        };
 
         for (Mesh& mesh : meshes) {
-            memcpy(&min, &mesh.vertices[0], sizeof(Vertex));
-            memcpy(&max, &mesh.vertices[0], sizeof(Vertex));
-            for (Vertex& vertex : mesh.vertices) {
-                if (vertex.x < min.x && vertex.y < min.y && vertex.z < min.z) {
-                    memcpy(&min, &vertex, sizeof(Vertex));
-                    //min = vertex;
-                }
-                if (vertex.x > max.x && vertex.y > max.y && vertex.z > max.z) {
-                    memcpy(&max, &vertex, sizeof(Vertex));
-                    //max = vertex;
-                }
-            }
-            glm::vec3 cubeSize{ 0.05f, 0.05f, 0.05f };
+            distance = 0.0f;
+            first = true;
+            std::for_each(mesh.vertices.begin(), mesh.vertices.end(), getMinimum);
+            std::for_each(mesh.vertices.begin(), mesh.vertices.end(), getMaximum);
 
-            mesh.aabb = AABB(glm::vec3(min.x, min.y, min.z) - cubeSize, glm::vec3(max.x, max.y, max.z) + cubeSize, getPosition());
+            //ModifyVertices(mesh.vertices, getMinimum);
+            //ModifyVertices(mesh.vertices, getMaximum);
+            mesh.aabb = AABB(min, max, Transform::getPosition());
+        }
+
+
+        //for (Mesh& mesh : meshes) {
+        //    memcpy(&min, &mesh.vertices[0], sizeof(Vertex));
+        //    memcpy(&max, &mesh.vertices[0], sizeof(Vertex));
+        //    for (Vertex& vertex : mesh.vertices) {
+        //        if (vertex.x < min.x && vertex.y < min.y && vertex.z < min.z) {
+        //            memcpy(&min, &vertex, sizeof(Vertex));
+        //            //min = vertex;
+        //        }
+        //        if (vertex.x > max.x && vertex.y > max.y && vertex.z > max.z) {
+        //            memcpy(&max, &vertex, sizeof(Vertex));
+        //            //max = vertex;
+        //        }
+        //    }
+        //    glm::vec3 cubeSize{ 0.05f, 0.05f, 0.05f };
+
+            //mesh.aabb = AABB(glm::vec3(min.x, min.y, min.z) - cubeSize, glm::vec3(max.x, max.y, max.z) + cubeSize, getPosition());
 
             //ModifyVertices(mesh.vertices, getAABB);
 
 
-        }
+        
     }
 
     void Model::normaliseMeshes()
@@ -368,17 +409,7 @@ namespace unda {
     }
 
 
-    Model* unda::createSphereModel(int resolution, float radius)
-    {
-        auto [vertices, indices] = unda::primitives::createSphere(resolution, radius);
 
-        //unsigned int vbo = unda::createVBO(vertices);
-        //unsigned int ibo = unda::createIBO(indices);
-        //unsigned int indexCount = indices.size();
-        Texture* texture = new Texture(1024, 1024, unda::Colour<unsigned char>(70, 70, 70, 255));
-
-        return new unda::Model(std::move(vertices), std::move(indices), texture);
-    }
 
     Model* loadMeshDirectory(const std::string& directoryPath, const std::string& extension, const Colour<float>& baseColour, bool verbose)
     {

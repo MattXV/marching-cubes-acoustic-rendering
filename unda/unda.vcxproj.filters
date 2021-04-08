@@ -78,6 +78,9 @@
     <ClCompile Include="src\acoustics\LateReverb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\rendering\Rendering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\Engine.h">
@@ -140,9 +143,6 @@
     <ClInclude Include="src\rendering\MarchingCubesTables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\MarchingCubes.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="externals\happly\happly.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -159,6 +159,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\acoustics\LateReverb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rendering\Rendering.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

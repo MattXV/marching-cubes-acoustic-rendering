@@ -231,7 +231,12 @@ namespace unda {
 		}
 	}
 
-
+	/// <summary>
+	/// Takes a Model with multiple meshes to create a scalar field representation based on the current resolution parameter.
+	/// </summary>
+	/// <param name="model">
+	/// Just a weak pointer or shared pointer object.
+	/// </param>
 	void MarchingCubes::computeScalarField(std::weak_ptr<Model> model)
 	{
 		std::vector<std::thread> threads;
@@ -319,21 +324,19 @@ namespace unda {
 			{
 				for (size_t z = 0; z < resolution; z++)
 				{
-					glm::vec3 samplePoint = glm::vec3((float(x) / (float)resolution) * 2.0f - 1.0f,
+					glm::vec3 samplePoint = glm::vec3(
+						(float(x) / (float)resolution) * 2.0f - 1.0f,
 						(float(y) / (float)resolution) * 2.0f - 1.0f,
 						(float(z) / (float)resolution) * 2.0f - 1.0f);
 
 					glm::vec3 cubeSize{ 0.0f, 0.0f, 0.0f };
-					AABB sampleCube = AABB(samplePoint - cubeSize, samplePoint + cubeSize, samplePoint);
+					AABB sampleCube = AABB(samplePoint - 0.01f, samplePoint + .01f, samplePoint);
 
 					float fieldValue = 0.0f;
 					for (int i = 0; i < nMeshes; i++) {
 						if (CheckCollision(sampleCube, aabbs[i])) {
 							fieldValue = 1.0f;
 							break;
-						}
-						else {
-							fieldValue = 0.0f;
 						}
 					}
 					scalarField[std::array<size_t, 3>{x, y, z}] = fieldValue;
