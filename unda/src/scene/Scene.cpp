@@ -44,7 +44,7 @@ namespace unda {
 	// ---------------------------------------------------------------------------
 
 	Scene::Scene()
-		: acousticSpace(new AcousticSpace())
+		: acousticSpace(new unda::acoustics::AcousticSpace())
 	{
 		camera = new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.1f, 90.0f);
 
@@ -71,7 +71,7 @@ namespace unda {
 		}
 
 		
-		MarchingCubes* marchingCubes = new MarchingCubes(50, 32, 1.0f, Point3D(0, 0, 0));
+		MarchingCubes* marchingCubes = new MarchingCubes(35, 32, 1.0f, Point3D(0, 0, 0));
 		marchingCubes->computeScalarField(conferenceModel);
 		marchingCubes->computeMarchingCubes(1.0);
 		Model* marchingCubesModel = marchingCubes->createModel();
@@ -84,21 +84,21 @@ namespace unda {
 		addModel(marchingCubesModel);
 
 
-		//int nSamples = (int)(unda::sampleRate * 0.5);
-		//acousticSpace->setSpaceDimensions({ 3.5, 3.5, 2.8 });
-		//std::vector<std::vector<double>> rir = acousticSpace->generateRIR({ { 0.2, 0.3, 0.2 } },
-		//	{ 0.9, 0.3, 0.1 }, nSamples);
+		int nSamples = (int)(unda::sampleRate * 0.5);
+		acousticSpace->setSpaceDimensions({ 3.5, 3.5, 2.8 });
+		std::vector<std::vector<double>> rir = acousticSpace->generateRIR({ { 0.2, 0.3, 0.2 } },
+			{ 0.9, 0.3, 0.1 }, nSamples);
 
-		//SF_INFO wavInfo = SF_INFO();
-		//wavInfo.samplerate = (int)unda::sampleRate;
-		//wavInfo.channels = 1;
-		//wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-		//SNDFILE* sndFile = sf_open("ir.wav", SFM_WRITE, &wavInfo);
-		//std::cout << sf_strerror(sndFile) << std::endl;
-		//std::vector<double>& out = rir[0];
-		//sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
-		//std::cout << sf_error(sndFile) << std::endl;
-		//sf_close(sndFile);
+		SF_INFO wavInfo = SF_INFO();
+		wavInfo.samplerate = (int)unda::sampleRate;
+		wavInfo.channels = 1;
+		wavInfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+		SNDFILE* sndFile = sf_open("ir.wav", SFM_WRITE, &wavInfo);
+		std::cout << sf_strerror(sndFile) << std::endl;
+		std::vector<double>& out = rir[0];
+		sf_count_t written = sf_writef_double(sndFile, &out[0], (sf_count_t)out.size());
+		std::cout << sf_error(sndFile) << std::endl;
+		sf_close(sndFile);
 
 		
 	}

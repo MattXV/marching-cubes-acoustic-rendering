@@ -330,7 +330,7 @@ namespace unda {
 						(float(z) / (float)resolution) * 2.0f - 1.0f);
 
 					glm::vec3 cubeSize{ 0.0f, 0.0f, 0.0f };
-					AABB sampleCube = AABB(samplePoint - 0.01f, samplePoint + .01f, samplePoint);
+					AABB sampleCube = AABB(samplePoint - 0.02f, samplePoint + .02f, samplePoint);
 
 					float fieldValue = 0.0f;
 					for (int i = 0; i < nMeshes; i++) {

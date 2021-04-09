@@ -56,7 +56,7 @@ namespace unda {
 		std::unordered_map<std::string, Model*> boundingBoxes;
 		std::vector<std::unique_ptr<Model>> boundingBoxesModels;
 
-		AcousticSpace* acousticSpace;
+		unda::acoustics::AcousticSpace* acousticSpace;
 		std::vector<std::shared_ptr<Model>> models;
 		std::vector<Light*> lights;
 		FPSCamera* camera;

@@ -56,314 +56,338 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "ImageSource.h"
 
-#define _USE_MATH_DEFINES
 
-//#include <cmath.h>
-#include <math.h>
-//#include <limits>
-//#include <cstdlib>
-//#include <iostream>
+namespace unda {
+	namespace acoustics {
 
-#define ROUND(x) ((x) >= 0 ? (long)((x) + 0.5) : (long)((x) - 0.5))
 
-#ifndef M_PI 
-#define M_PI 3.14159265358979323846 
-#endif
+		double sim_microphone(double x, double y, double z, double* angle, char mtype) {
+			if (mtype == 'b' || mtype == 'c' || mtype == 's' || mtype == 'h') {
+				double gain, vartheta, varphi, rho;
 
-template<typename T> inline const T sinc(T const& x) {
-	return (x == 0) ? 1 : sin(x) / x;
-}
+				// Polar Pattern         rho
+				// ---------------------------
+				// Bidirectional         0
+				// Hypercardioid         0.25    
+				// Cardioid              0.5
+				// Subcardioid           0.75
+				// Omnidirectional       1
 
-double sim_microphone(double x, double y, double z, double* angle, char mtype) {
-	if (mtype == 'b' || mtype == 'c' || mtype == 's' || mtype == 'h') {
-		double gain, vartheta, varphi, rho;
+				switch (mtype) {
+				case 'b':
+					rho = 0;
+					break;
+				case 'h':
+					rho = 0.25;
+					break;
+				case 'c':
+					rho = 0.5;
+					break;
+				case 's':
+					rho = 0.75;
+					break;
+				};
 
-		// Polar Pattern         rho
-		// ---------------------------
-		// Bidirectional         0
-		// Hypercardioid         0.25    
-		// Cardioid              0.5
-		// Subcardioid           0.75
-		// Omnidirectional       1
+				vartheta = acos(z / sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)));
+				varphi = atan2(y, x);
 
-		switch (mtype) {
-		case 'b':
-			rho = 0;
-			break;
-		case 'h':
-			rho = 0.25;
-			break;
-		case 'c':
-			rho = 0.5;
-			break;
-		case 's':
-			rho = 0.75;
-			break;
-		};
+				gain = sin(M_PI / 2 - angle[1]) * sin(vartheta) * cos(angle[0] - varphi) + cos(M_PI / 2 - angle[1]) * cos(vartheta);
+				gain = rho + (1 - rho) * gain;
 
-		vartheta = acos(z / sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2)));
-		varphi = atan2(y, x);
-
-		gain = sin(M_PI / 2 - angle[1]) * sin(vartheta) * cos(angle[0] - varphi) + cos(M_PI / 2 - angle[1]) * cos(vartheta);
-		gain = rho + (1 - rho) * gain;
-
-		return gain;
-	}
-	else {
-		return 1;
-	}
-}
-
-std::vector< std::vector<double> > gen_rir(double c, double fs, const std::vector< std::vector<double> >& receivers, 
-	const std::vector<double>& ss, const std::vector<double>& LL, const std::vector<double>& beta_input,
-	const std::vector<double>& orientation, int isHighPassFilter, int nDimension, int nOrder, int nSamples, char microphone_type) {
-	// | Room Impulse Response Generator                                  |\n"
-	// |                                                                  |\n"
-	// | Computes the response of an acoustic source to one or more       |\n"
-	// | microphones in a reverberant room using the image method [1,2].  |\n"
-	// |                                                                  |\n"
-	// | Author    : dr.ir. Emanuel Habets (ehabets@dereverberation.org)  |\n"
-	// |                                                                  |\n"
-	// | Version   : 2.1.20141124                                         |\n"
-	// |                                                                  |\n"
-	// | Copyright (C) 2003-2014 E.A.P. Habets, The Netherlands.          |\n"
-	// |                                                                  |\n"
-	// | [1] J.B. Allen and D.A. Berkley,                                 |\n"
-	// |     Image method for efficiently simulating small-room acoustics,|\n"
-	// |     Journal Acoustic Society of America,                         |\n"
-	// |     65(4), April 1979, p 943.                                    |\n"
-	// |                                                                  |\n"
-	// | [2] P.M. Peterson,                                               |\n"
-	// |     Simulating the response of multiple microphones to a single  |\n"
-	// |     acoustic source in a reverberant room, Journal Acoustic      |\n"
-	// |     Society of America, 80(5), November 1986.                    |\n"
-	// --------------------------------------------------------------------\n\n"
-	// function [h, beta_hat] = rir_generator(c, fs, r, s, L, beta, nsample,\n"
-	//  mtype, order, dim, orientation, hp_filter);\n\n"
-	// Input parameters:\n"
-	//  c           : sound velocity in m/s.\n"
-	//  fs          : sampling frequency in Hz.\n"
-	//  r           : M x 3 array specifying the (x,y,z) coordinates of the\n"
-	//                receiver(s) in m.\n"
-	//  s           : 1 x 3 vector specifying the (x,y,z) coordinates of the\n"
-	//                source in m.\n"
-	//  L           : 1 x 3 vector specifying the room dimensions (x,y,z) in m.\n"
-	//  beta        : 1 x 6 vector specifying the reflection coefficients\n"
-	//                [beta_x1 beta_x2 beta_y1 beta_y2 beta_z1 beta_z2] or\n"
-	//                beta = reverberation time (T_60) in seconds.\n"
-	//  nsample     : number of samples to calculate, default is T_60*fs.\n"
-	//  mtype       : [omnidirectional, subcardioid, cardioid, hypercardioid,\n"
-	//                bidirectional], default is omnidirectional.\n"
-	//  order       : reflection order, default is -1, i.e. maximum order.\n"
-	//  dim         : room dimension (2 or 3), default is 3.\n"
-	//  orientation : direction in which the microphones are pointed, specified using\n"
-	//                azimuth and elevation angles (in radians), default is [0 0].\n"
-	//  hp_filter   : use 'false' to disable high-pass filter, the high-pass filter\n"
-	//                is enabled by default.\n\n"
-	// Output parameters:\n"
-	//  h           : M x nsample matrix containing the calculated room impulse\n"
-	//                response(s).\n"
-	//  beta_hat    : In case a reverberation time is specified as an input parameter\n"
-	//                the corresponding reflection coefficient is returned.\n\n");
-
-	// Load parameters
-	int          nMicrophones = receivers.size();
-	double       beta[6];
-	double       angle[2];
-	double       reverberation_time;
-
-	if (beta_input.size() == 1) {
-		double V = LL[0] * LL[1] * LL[2];
-		double S = 2 * (LL[0] * LL[2] + LL[1] * LL[2] + LL[0] * LL[1]);
-		reverberation_time = beta_input[0];
-		if (reverberation_time != 0) {
-			double alfa = 24 * V * log(10.0) / (c * S * reverberation_time);
-			// if (alfa > 1)
-			// 	mexErrMsgTxt("Error: The reflection coefficients cannot be calculated using the current "
-			// 	             "room parameters, i.e. room size and reverberation time.\n           Please "
-			// 	             "specify the reflection coefficients or change the room parameters.");
-			for (int i = 0; i < 6; i++)
-				beta[i] = sqrt(1 - alfa);
+				return gain;
+			}
+			else {
+				return 1;
+			}
 		}
-		else {
-			for (int i = 0; i < 6; i++)
-				beta[i] = 0;
-		}
-	}
-	else {
-		for (int i = 0; i < 6; i++)
-			beta[i] = beta_input[i];
-	}
 
-	// 3D Microphone orientation (optional)
-	if (orientation.size()) {
-		angle[0] = orientation[0];
-		angle[1] = orientation[1];
-	}
-	else {
-		angle[0] = 0;
-		angle[1] = 0;
-	}
+		std::vector<std::vector<double>> GenerateRIR(double c, double fs, const std::vector< std::vector<double> >& receivers,
+			const std::vector<double>& ss, const std::vector<double>& LL, std::vector<std::array<double, 6>>& beta_input,
+			const std::vector<double>& orientation, int isHighPassFilter, int nDimension, int nOrder, int nSamples, char microphone_type) {
+			// | Room Impulse Response Generator                                  |\n"
+			// |                                                                  |\n"
+			// | Computes the response of an acoustic source to one or more       |\n"
+			// | microphones in a reverberant room using the image method [1,2].  |\n"
+			// |                                                                  |\n"
+			// | Author    : dr.ir. Emanuel Habets (ehabets@dereverberation.org)  |\n"
+			// |                                                                  |\n"
+			// | Version   : 2.1.20141124                                         |\n"
+			// |                                                                  |\n"
+			// | Copyright (C) 2003-2014 E.A.P. Habets, The Netherlands.          |\n"
+			// |                                                                  |\n"
+			// | [1] J.B. Allen and D.A. Berkley,                                 |\n"
+			// |     Image method for efficiently simulating small-room acoustics,|\n"
+			// |     Journal Acoustic Society of America,                         |\n"
+			// |     65(4), April 1979, p 943.                                    |\n"
+			// |                                                                  |\n"
+			// | [2] P.M. Peterson,                                               |\n"
+			// |     Simulating the response of multiple microphones to a single  |\n"
+			// |     acoustic source in a reverberant room, Journal Acoustic      |\n"
+			// |     Society of America, 80(5), November 1986.                    |\n"
+			// --------------------------------------------------------------------\n\n"
+			// function [h, beta_hat] = rir_generator(c, fs, r, s, L, beta, nsample,\n"
+			//  mtype, order, dim, orientation, hp_filter);\n\n"
+			// Input parameters:\n"
+			//  c           : sound velocity in m/s.\n"
+			//  fs          : sampling frequency in Hz.\n"
+			//  r           : M x 3 array specifying the (x,y,z) coordinates of the\n"
+			//                receiver(s) in m.\n"
+			//  s           : 1 x 3 vector specifying the (x,y,z) coordinates of the\n"
+			//                source in m.\n"
+			//  L           : 1 x 3 vector specifying the room dimensions (x,y,z) in m.\n"
+			// 
+			// 	FEATURE ADDED: Frequency-dependent beta coefficients
+			//  beta        : N_f x 6 vector specifying the reflection coefficients\n"
+			//                [beta_x1 beta_x2 beta_y1 beta_y2 beta_z1 beta_z2] or\n"
+			//                beta = reverberation time (T_60) in seconds.\n"
+			//				  where N_f is the number of frequency bins.\n"
+			// 
+			//  nsample     : number of samples to calculate, default is T_60*fs.\n"
+			//  mtype       : [omnidirectional, subcardioid, cardioid, hypercardioid,\n"
+			//                bidirectional], default is omnidirectional.\n"
+			//  order       : reflection order, default is -1, i.e. maximum order.\n"
+			//  dim         : room dimension (2 or 3), default is 3.\n"
+			//  orientation : direction in which the microphones are pointed, specified using\n"
+			//                azimuth and elevation angles (in radians), default is [0 0].\n"
+			//  hp_filter   : use 'false' to disable high-pass filter, the high-pass filter\n"
+			//                is enabled by default.\n\n"
+			// Output parameters:\n"
+			//  h           : M x nsample matrix containing the calculated room impulse\n"
+			//                response(s).\n"
+			//  beta_hat    : In case a reverberation time is specified as an input parameter\n"
+			//                the corresponding reflection coefficient is returned.\n\n");
 
-	// Room Dimension (optional)
-	// if (nDimension != 2 && nDimension != 3)
-	//     mexErrMsgTxt("Invalid input arguments! (9)");
-	if (nDimension == 2) {
-		beta[4] = 0;
-		beta[5] = 0;
-	}
+			// Load parameters
+			int          nMicrophones = (int)receivers.size();
+			double       beta[6][6];
+			double       angle[2];
+			double       reverberation_time;
 
-	// Reflection order (optional)
-	if (nOrder < -1)
-	{
-		// mexErrMsgTxt("Invalid input arguments! (8)");
-	}
+			if (beta_input.size() == 1) {
+				throw std::invalid_argument("Invalid beta input!");
 
-	// Number of samples (optional)
-	if (nSamples == -1) {
-		if (beta_input.size() > 1) {
-			double V = LL[0] * LL[1] * LL[2];
-			double alpha = ((1 - pow(beta[0], 2)) + (1 - pow(beta[1], 2))) * LL[1] * LL[2] +
-				((1 - pow(beta[2], 2)) + (1 - pow(beta[3], 2))) * LL[0] * LL[2] +
-				((1 - pow(beta[4], 2)) + (1 - pow(beta[5], 2))) * LL[0] * LL[1];
-			reverberation_time = 24 * log(10.0) * V / (c * alpha);
-			if (reverberation_time < 0.128)
-				reverberation_time = 0.128;
-		}
-		nSamples = (int)(reverberation_time * fs);
-	}
+				double V = LL[0] * LL[1] * LL[2];
+				double S = 2 * (LL[0] * LL[2] + LL[1] * LL[2] + LL[0] * LL[1]);
 
-	// Create output vector
-	std::vector<std::vector<double>> imp(nMicrophones);
-	for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
-		imp[idxMicrophone].resize(nSamples);
+				double average_reverberation = 0.0;
 
-	// Temporary variables and constants (high-pass filter)
-	const double W = 2 * M_PI * 100 / fs; // The cut-off frequency equals 100 Hz
-	const double R1 = exp(-W);
-	const double B1 = 2 * R1 * cos(W);
-	const double B2 = -R1 * R1;
-	const double A1 = -(1 + R1);
-	double       X0;
-	double*		 Y = new double[3];
+				//reverberation_time = beta_input[0];
+				//if (reverberation_time != 0) {
+				//	double alfa = 24 * V * log(10.0) / (c * S * reverberation_time); // I believe this is the Sabine equation
+				//	// if (alfa > 1)
+				//	// 	mexErrMsgTxt("Error: The reflection coefficients cannot be calculated using the current "
+				//	// 	             "room parameters, i.e. room size and reverberation time.\n           Please "
+				//	// 	             "specify the reflection coefficients or change the room parameters.");
+				//	for (int i = 0; i < 6; i++)
+				//		beta[i] = sqrt(1 - alfa);
+				//}
+				//else {
+				//	for (int i = 0; i < 6; i++)
+				//		beta[i] = 0;
+				//}
+			}
+			else {
+				for (int i = 0; i < 6; i++) {
+					for (int bin = 0; bin < 6; bin++) {
+						std::array<double, 6>& coefficients = beta_input[i];
+						beta[i][bin] = coefficients[bin];
+					}
+				}
+			}
 
-	// Temporary variables and constants (image-method)
-	const double Fc = 1; // The cut-off frequency equals fs/2 - Fc is the normalized cut-off frequency.
-	const int    Tw = 2 * ROUND(0.004 * fs); // The width of the low-pass FIR equals 8 ms
-	const double timeStep = c / fs;
-	double*      LPI = new double[Tw];
-	double*      receiver = new double[3];
-	double*      s = new double[3];
-	double*      L = new double[3];
-	double       Rm[3];
-	double       Rp_plus_Rm[3];
-	double       refl[3]; // multidimensional array N x 3; N -> octave bands
-	// TODO: implement beta coefficients as a multidimensional array!
-	double		 reflections[3][8];
+			// 3D Microphone orientation (optional)
+			if (orientation.size()) {
+				angle[0] = orientation[0];
+				angle[1] = orientation[1];
+			}
+			else {
+				angle[0] = 0;
+				angle[1] = 0;
+			}
 
-	double       fdist, dist;
-	double       gain;
-	int          startPosition;
-	int          n1, n2, n3;
-	int          q, j, k;
-	int          mx, my, mz;
-	int          n;
+			// Room Dimension (optional)
+			// if (nDimension != 2 && nDimension != 3)
+			//     mexErrMsgTxt("Invalid input arguments! (9)");
+			if (nDimension == 2) {
+				throw std::invalid_argument("invalid number of dimensions! Two-dimensional spaces are not supported.");
+				//beta[4] = 0;
+				//beta[5] = 0;
+			}
 
-	s[0] = ss[0] / timeStep; 
-	s[1] = ss[1] / timeStep;
-	s[2] = ss[2] / timeStep;
-
-	L[0] = LL[0] / timeStep; 
-	L[1] = LL[1] / timeStep;
-	L[2] = LL[2] / timeStep;
-
-	for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
-	{
-		// [x_1 x_2 ... x_N y_1 y_2 ... y_N z_1 z_2 ... z_N]
-		receiver[0] = receivers[idxMicrophone][0] / timeStep;
-		receiver[1] = receivers[idxMicrophone][1] / timeStep;
-		receiver[2] = receivers[idxMicrophone][2] / timeStep;
-
-		n1 = (int)ceil(nSamples / (2 * L[0]));
-		n2 = (int)ceil(nSamples / (2 * L[1]));
-		n3 = (int)ceil(nSamples / (2 * L[2]));
-
-		// Generate room impulse response
-		for (mx = -n1; mx <= n1; mx++)
-		{
-			Rm[0] = 2 * mx * L[0];
-
-			for (my = -n2; my <= n2; my++)
+			// Reflection order (optional)
+			if (nOrder < -1)
 			{
-				Rm[1] = 2 * my * L[1];
+				throw std::invalid_argument("invalid nOrder parameter!");
+				// mexErrMsgTxt("Invalid input arguments! (8)");
+			}
 
-				for (mz = -n3; mz <= n3; mz++)
+			// Number of samples (optional)
+			if (nSamples == -1) {
+				if (beta_input.size() > 1) {
+					double V = LL[0] * LL[1] * LL[2];
+
+					double average_alpha = 0.0;
+					for (int bin = 0; bin < 6; bin++) {
+						double alpha = ((1 - pow(beta[0][bin], 2)) + (1 - pow(beta[1][bin], 2))) * LL[1] * LL[2] +
+							((1 - pow(beta[2][bin], 2)) + (1 - pow(beta[3][bin], 2))) * LL[0] * LL[2] +
+							((1 - pow(beta[4][bin], 2)) + (1 - pow(beta[5][bin], 2))) * LL[0] * LL[1];
+						average_alpha = (alpha + average_alpha) / 2.0;
+					}
+					reverberation_time = 24 * log(10.0) * V / (c * average_alpha);
+					if (reverberation_time < 0.128)
+						reverberation_time = 0.128;
+				}
+				nSamples = (int)(reverberation_time * fs);
+			}
+
+			// Create output vector
+			std::vector<std::vector<double>> imp(nMicrophones);
+			for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
+				imp[idxMicrophone].resize(nSamples);
+
+			// Temporary variables and constants (high-pass filter)
+			const double W = 2 * M_PI * 100 / fs; // The cut-off frequency equals 100 Hz
+			const double R1 = exp(-W);
+			const double B1 = 2 * R1 * cos(W);
+			const double B2 = -R1 * R1;
+			const double A1 = -(1 + R1);
+			double       X0;
+			double* Y = new double[3];
+
+			// Temporary variables and constants (image-method)
+			const double Fc = 1; // The cut-off frequency equals fs/2 - Fc is the normalized cut-off frequency.
+			const int    Tw = 2 * ROUND(0.004 * fs); // The width of the low-pass FIR equals 8 ms
+			const double timeStep = c / fs;
+			double* LPI = new double[Tw];
+			double* receiver = new double[3];
+			double* s = new double[3];
+			double* L = new double[3];
+			double       Rm[3];
+			double       Rp_plus_Rm[3];
+			//double       refl[3];
+			double		 reflections[3][8];  // multidimensional array N x 3; N -> octave bands
+
+			double       fdist, dist;
+			double       gain;
+			double		 average_gain; // Average gain across frequency bins: maybe not the best way
+									   // to calculate this, but ok for now.
+			int          startPosition;
+			int          n1, n2, n3;
+			int          q, j, k;
+			int          mx, my, mz;
+			int          n;
+
+			s[0] = ss[0] / timeStep;
+			s[1] = ss[1] / timeStep;
+			s[2] = ss[2] / timeStep;
+
+			L[0] = LL[0] / timeStep;
+			L[1] = LL[1] / timeStep;
+			L[2] = LL[2] / timeStep;
+
+			for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
+			{
+				// [x_1 x_2 ... x_N y_1 y_2 ... y_N z_1 z_2 ... z_N]
+				receiver[0] = receivers[idxMicrophone][0] / timeStep;
+				receiver[1] = receivers[idxMicrophone][1] / timeStep;
+				receiver[2] = receivers[idxMicrophone][2] / timeStep;
+
+				n1 = (int)ceil(nSamples / (2 * L[0]));
+				n2 = (int)ceil(nSamples / (2 * L[1]));
+				n3 = (int)ceil(nSamples / (2 * L[2]));
+
+				// Generate room impulse response
+				for (mx = -n1; mx <= n1; mx++)
 				{
-					Rm[2] = 2 * mz * L[2];
+					Rm[0] = 2 * (double)mx * L[0];
 
-					for (q = 0; q <= 1; q++)
+					for (my = -n2; my <= n2; my++)
 					{
-						Rp_plus_Rm[0] = (1 - 2 * q) * s[0] - receiver[0] + Rm[0];
+						Rm[1] = 2 * (double)my * L[1];
 
-						refl[0] = pow(beta[0], std::abs(mx - q)) * pow(beta[1], std::abs(mx));
-
-						for (j = 0; j <= 1; j++)
+						for (mz = -n3; mz <= n3; mz++)
 						{
-							Rp_plus_Rm[1] = (1 - 2 * j) * s[1] - receiver[1] + Rm[1];
-							refl[1] = pow(beta[2], std::abs(my - j)) * pow(beta[3], std::abs(my));
+							Rm[2] = 2 * (double)mz * L[2];
 
-							for (k = 0; k <= 1; k++)
+							for (q = 0; q <= 1; q++)
 							{
-								Rp_plus_Rm[2] = (1 - 2 * k) * s[2] - receiver[2] + Rm[2];
-								refl[2] = pow(beta[4], std::abs(mz - k)) * pow(beta[5], std::abs(mz));
+								Rp_plus_Rm[0] = (1 - 2 * (double)q) * s[0] - receiver[0] + Rm[0];
 
-								dist = sqrt(pow(Rp_plus_Rm[0], 2) + pow(Rp_plus_Rm[1], 2) + pow(Rp_plus_Rm[2], 2));
+								// Frequency-dependent relfection calculation :D
+								for (int bin = 0; bin < 6; bin++) {
+									reflections[0][bin] = pow(beta[0][bin], abs(mx - q)) * pow(beta[1][bin], abs(mx));
+								}
 
-								if (std::abs(2 * mx - q) + std::abs(2 * my - j) + std::abs(2 * mz - k) <= nOrder || nOrder == -1)
+								for (j = 0; j <= 1; j++)
 								{
-									fdist = floor(dist);
-									if (fdist < nSamples)
+									Rp_plus_Rm[1] = (1 - 2 * (double)j) * s[1] - receiver[1] + Rm[1];
+									for (int bin = 0; bin < 6; bin++) {
+										reflections[1][bin] = pow(beta[2][bin], std::abs(my - j)) * pow(beta[3][bin], std::abs(my));
+									}
+
+									for (k = 0; k <= 1; k++)
 									{
-										gain = sim_microphone(Rp_plus_Rm[0], Rp_plus_Rm[1], Rp_plus_Rm[2], angle, microphone_type)
-											* refl[0] * refl[1] * refl[2] / (4 * M_PI * dist * timeStep);
+										Rp_plus_Rm[2] = (1 - 2 * (double)k) * s[2] - receiver[2] + Rm[2];
 
-										for (n = 0; n < Tw; n++)
-											LPI[n] = 0.5 * (1 - cos(2 * M_PI * ((n + 1 - (dist - fdist)) / Tw))) * Fc * sinc(M_PI * Fc * (n + 1 - (dist - fdist) - (Tw / 2)));
+										for (int bin = 0; bin < 6; bin++) {
+											reflections[2][bin] = pow(beta[4][bin], std::abs(mz - k)) * pow(beta[5][bin], std::abs(mz));
+										}
 
-										startPosition = (int)fdist - (Tw / 2) + 1;
-										for (n = 0; n < Tw; n++)
-											if (startPosition + n >= 0 && startPosition + n < nSamples)
-												imp[idxMicrophone][startPosition + n] += gain * LPI[n];
+										dist = sqrt(pow(Rp_plus_Rm[0], 2) + pow(Rp_plus_Rm[1], 2) + pow(Rp_plus_Rm[2], 2));
+
+										if (std::abs(2 * mx - q) + std::abs(2 * my - j) + std::abs(2 * mz - k) <= nOrder || nOrder == -1)
+										{
+											fdist = floor(dist);
+											if (fdist < nSamples)
+											{
+
+												average_gain = 0.0;
+												double microphone = sim_microphone(Rp_plus_Rm[0], Rp_plus_Rm[1], Rp_plus_Rm[2], angle, microphone_type);
+												for (int bin = 0; bin < 6; bin++) {
+													gain = microphone * reflections[0][bin] * reflections[1][bin] * reflections[2][bin] / (4 * M_PI * dist * timeStep);
+													average_gain = (average_gain + gain) / 2.0;
+												}
+
+												for (n = 0; n < Tw; n++)
+													LPI[n] = 0.5 * (1 - cos(2 * M_PI * (((double)n + 1 - (dist - fdist)) / Tw))) * Fc * sinc(M_PI * Fc * ((double)n + 1 - (dist - fdist) - (Tw / 2)));
+
+												startPosition = (int)fdist - (Tw / 2) + 1;
+												for (n = 0; n < Tw; n++)
+													if (startPosition + n >= 0 && startPosition + n < nSamples)
+														imp[idxMicrophone][startPosition + (size_t)n] += average_gain * LPI[n];
+											}
+										}
 									}
 								}
 							}
 						}
 					}
 				}
+
+				// 'Original' high-pass filter as proposed by Allen and Berkley.
+				if (isHighPassFilter == 1)
+				{
+					for (int idx = 0; idx < 3; idx++) { Y[idx] = 0; }
+					for (int idx = 0; idx < nSamples; idx++)
+					{
+						X0 = imp[idxMicrophone][idx];
+						Y[2] = Y[1];
+						Y[1] = Y[0];
+						Y[0] = B1 * Y[1] + B2 * Y[2] + X0;
+						imp[idxMicrophone][idx] = Y[0] + A1 * Y[1] + R1 * Y[2];
+					}
+				}
 			}
+			delete[] Y;
+			delete[] LPI;
+			delete[] receiver;
+			delete[] s;
+			delete[] L;
+
+			return imp;
 		}
 
-		// 'Original' high-pass filter as proposed by Allen and Berkley.
-		if (isHighPassFilter == 1)
-		{
-			for (int idx = 0; idx < 3; idx++) { Y[idx] = 0; }
-			for (int idx = 0; idx < nSamples; idx++)
-			{
-				X0 = imp[idxMicrophone][idx];
-				Y[2] = Y[1];
-				Y[1] = Y[0];
-				Y[0] = B1 * Y[1] + B2 * Y[2] + X0;
-				imp[idxMicrophone][idx] = Y[0] + A1 * Y[1] + R1 * Y[2];
-			}
-		}
+
 	}
-	delete[] Y;
-	delete[] LPI;
-	delete[] receiver;
-	delete[] s;
-	delete[] L;
 
-	return imp;
 }
-
-
