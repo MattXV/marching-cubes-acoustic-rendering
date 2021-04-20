@@ -290,16 +290,6 @@ namespace unda {
 
 
 
-
-
-
-
-
-
-
-
-
-
 	void MarchingCubes::scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd)
 	{
 		int nMeshes;

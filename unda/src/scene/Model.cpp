@@ -84,11 +84,6 @@ namespace unda {
                 min.z = vertex.z;
                 first = false;
             }
-            /*if (vertex.x < min.x || vertex.y < min.y || vertex.z < min.z) {
-                min.x = vertex.x;
-                min.y = vertex.y;
-                min.z = vertex.z;
-            }*/
 
             if (vertex.x < min.x) min.x = vertex.x;
             if (vertex.y < min.y) min.y = vertex.y;
@@ -110,8 +105,6 @@ namespace unda {
             std::for_each(mesh.vertices.begin(), mesh.vertices.end(), getMinimum);
             std::for_each(mesh.vertices.begin(), mesh.vertices.end(), getMaximum);
 
-            //ModifyVertices(mesh.vertices, getMinimum);
-            //ModifyVertices(mesh.vertices, getMaximum);
             mesh.aabb = AABB(min, max, Transform::getPosition());
         }
 
@@ -416,7 +409,8 @@ namespace unda {
 
         std::filesystem::path dirPath(directoryPath);
         dirPath.append("*." + extension);
-        std::vector<std::filesystem::path> modelPaths = glob::glob(dirPath.string());
+        std::vector<std::filesystem::path> modelPaths = glob::rglob(dirPath.string());
+
 
         Model* combined = new Model();
         for (std::filesystem::path& path : modelPaths) {

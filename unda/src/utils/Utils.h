@@ -10,12 +10,17 @@
 #include <sstream>
 #include <fstream>
 
+
+#define DISABLE_COPY_ASSIGN(Class) Class(const Class&) = delete; void operator=(const Class&) = delete; 
+
 #if UNDA_DEBUG == 1
+	#define UNDA_ERROR(Message) std::cerr << Message << std::endl; __debugbreak();  
 	#define GLCALL(call) unda::utils::clearGLError();\
 		call;\
 		if (!unda::utils::printGLError(#call, __FILE__, __LINE__))\
 			__debugbreak()
 #else
+	#define UNDA_ERROR(Message) ;  
 	#define GLCALL(call) call;
 #endif
 

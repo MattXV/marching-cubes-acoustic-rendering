@@ -1,61 +1,4 @@
-/*
-Program     : Room Impulse Response Generator
-
-Description : Computes the response of an acoustic source to one or more
-			  microphones in a reverberant room using the image method [1,2].
-
-			  [1] J.B. Allen and D.A. Berkley,
-			  Image method for efficiently simulating small-room acoustics,
-			  Journal Acoustic Society of America, 65(4), April 1979, p 943.
-
-			  [2] P.M. Peterson,
-			  Simulating the response of multiple microphones to a single
-			  acoustic source in a reverberant room, Journal Acoustic
-			  Society of America, 80(5), November 1986.
-
-Author      : dr.ir. E.A.P. Habets (ehabets@dereverberation.org)
-
-Version     : 2.1.20141124
-
-History     : 1.0.20030606 Initial version
-			  1.1.20040803 + Microphone directivity
-						   + Improved phase accuracy [2]
-			  1.2.20040312 + Reflection order
-			  1.3.20050930 + Reverberation Time
-			  1.4.20051114 + Supports multi-channels
-			  1.5.20051116 + High-pass filter [1]
-						   + Microphone directivity control
-			  1.6.20060327 + Minor improvements
-			  1.7.20060531 + Minor improvements
-			  1.8.20080713 + Minor improvements
-			  1.9.20090822 + 3D microphone directivity control
-			  2.0.20100920 + Calculation of the source-image position
-							 changed in the code and tutorial.
-							 This ensures a proper response to reflections
-							 in case a directional microphone is used.
-			  2.1.20120318 + Avoid the use of unallocated memory
-			  2.1.20140721 + Fixed computation of alpha
-			  2.1.20141124 + The window and sinc are now both centered
-							 around t=0
-
-Copyright (C) 2003-2014 E.A.P. Habets, The Netherlands.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
 #include "ImageSource.h"
-
 
 namespace unda {
 	namespace acoustics {
@@ -101,9 +44,9 @@ namespace unda {
 			}
 		}
 
-		std::vector<std::vector<double>> GenerateRIR(double c, double fs, const std::vector< std::vector<double> >& receivers,
-			const std::vector<double>& ss, const std::vector<double>& LL, std::vector<std::array<double, 6>>& beta_input,
-			const std::vector<double>& orientation, int isHighPassFilter, int nDimension, int nOrder, int nSamples, char microphone_type) {
+		std::array<std::vector<double>, 6> GenerateRIR(double c, double fs, const std::vector<double>& receiver,
+			const std::vector<double>& source, const std::vector<double>& roomDimensions, std::vector<std::array<double, 6>>& beta_input,
+			const std::vector<double>& orientation, int nDimension, int nOrder, int nSamples, char microphone_type) {
 			// | Room Impulse Response Generator                                  |\n"
 			// |                                                                  |\n"
 			// | Computes the response of an acoustic source to one or more       |\n"
@@ -158,7 +101,6 @@ namespace unda {
 			//                the corresponding reflection coefficient is returned.\n\n");
 
 			// Load parameters
-			int          nMicrophones = (int)receivers.size();
 			double       beta[6][6];
 			double       angle[2];
 			double       reverberation_time;
@@ -166,27 +108,13 @@ namespace unda {
 			if (beta_input.size() == 1) {
 				throw std::invalid_argument("Invalid beta input!");
 
-				double V = LL[0] * LL[1] * LL[2];
-				double S = 2 * (LL[0] * LL[2] + LL[1] * LL[2] + LL[0] * LL[1]);
+				double V = roomDimensions[0] * roomDimensions[1] * roomDimensions[2];
+				double S = 2 * (roomDimensions[0] * roomDimensions[2] + 
+						        roomDimensions[1] * roomDimensions[2] +
+								roomDimensions[0] * roomDimensions[1]);
 
 				double average_reverberation = 0.0;
-
-				//reverberation_time = beta_input[0];
-				//if (reverberation_time != 0) {
-				//	double alfa = 24 * V * log(10.0) / (c * S * reverberation_time); // I believe this is the Sabine equation
-				//	// if (alfa > 1)
-				//	// 	mexErrMsgTxt("Error: The reflection coefficients cannot be calculated using the current "
-				//	// 	             "room parameters, i.e. room size and reverberation time.\n           Please "
-				//	// 	             "specify the reflection coefficients or change the room parameters.");
-				//	for (int i = 0; i < 6; i++)
-				//		beta[i] = sqrt(1 - alfa);
-				//}
-				//else {
-				//	for (int i = 0; i < 6; i++)
-				//		beta[i] = 0;
-				//}
-			}
-			else {
+			} else {
 				for (int i = 0; i < 6; i++) {
 					for (int bin = 0; bin < 6; bin++) {
 						std::array<double, 6>& coefficients = beta_input[i];
@@ -204,33 +132,26 @@ namespace unda {
 				angle[0] = 0;
 				angle[1] = 0;
 			}
-
-			// Room Dimension (optional)
-			// if (nDimension != 2 && nDimension != 3)
-			//     mexErrMsgTxt("Invalid input arguments! (9)");
-			if (nDimension == 2) {
-				throw std::invalid_argument("invalid number of dimensions! Two-dimensional spaces are not supported.");
-				//beta[4] = 0;
-				//beta[5] = 0;
+			if (nDimension != 3) {
+				throw std::invalid_argument("Invalid number of dimensions!");
 			}
 
 			// Reflection order (optional)
 			if (nOrder < -1)
 			{
-				throw std::invalid_argument("invalid nOrder parameter!");
-				// mexErrMsgTxt("Invalid input arguments! (8)");
+				throw std::invalid_argument("Invalid nOrder parameter!");
 			}
 
 			// Number of samples (optional)
 			if (nSamples == -1) {
 				if (beta_input.size() > 1) {
-					double V = LL[0] * LL[1] * LL[2];
+					double V = roomDimensions[0] * roomDimensions[1] * roomDimensions[2];
 
 					double average_alpha = 0.0;
 					for (int bin = 0; bin < 6; bin++) {
-						double alpha = ((1 - pow(beta[0][bin], 2)) + (1 - pow(beta[1][bin], 2))) * LL[1] * LL[2] +
-							((1 - pow(beta[2][bin], 2)) + (1 - pow(beta[3][bin], 2))) * LL[0] * LL[2] +
-							((1 - pow(beta[4][bin], 2)) + (1 - pow(beta[5][bin], 2))) * LL[0] * LL[1];
+						double alpha = ((1 - pow(beta[0][bin], 2)) + (1 - pow(beta[1][bin], 2))) * roomDimensions[1] * roomDimensions[2] +
+							((1 - pow(beta[2][bin], 2)) + (1 - pow(beta[3][bin], 2))) * roomDimensions[0] * roomDimensions[2] +
+							((1 - pow(beta[4][bin], 2)) + (1 - pow(beta[5][bin], 2))) * roomDimensions[0] * roomDimensions[1];
 						average_alpha = (alpha + average_alpha) / 2.0;
 					}
 					reverberation_time = 24 * log(10.0) * V / (c * average_alpha);
@@ -241,9 +162,9 @@ namespace unda {
 			}
 
 			// Create output vector
-			std::vector<std::vector<double>> imp(nMicrophones);
-			for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
-				imp[idxMicrophone].resize(nSamples);
+			std::array<std::vector<double>, 6> impulseResponses;
+			for (int bin = 0; bin < 6; bin++)
+				impulseResponses[bin].resize(nSamples);
 
 			// Temporary variables and constants (high-pass filter)
 			const double W = 2 * M_PI * 100 / fs; // The cut-off frequency equals 100 Hz
@@ -252,110 +173,99 @@ namespace unda {
 			const double B2 = -R1 * R1;
 			const double A1 = -(1 + R1);
 			double       X0;
-			double* Y = new double[3];
-
+			double*		 Y = new double[3];
+			
 			// Temporary variables and constants (image-method)
 			const double Fc = 1; // The cut-off frequency equals fs/2 - Fc is the normalized cut-off frequency.
 			const int    Tw = 2 * ROUND(0.004 * fs); // The width of the low-pass FIR equals 8 ms
 			const double timeStep = c / fs;
-			double* LPI = new double[Tw];
-			double* receiver = new double[3];
-			double* s = new double[3];
-			double* L = new double[3];
+			double*		 LPI = new double[Tw];
+
+			double*		 s = new double[3];
+			double*		 L = new double[3];
 			double       Rm[3];
 			double       Rp_plus_Rm[3];
-			//double       refl[3];
-			double		 reflections[3][8];  // multidimensional array N x 3; N -> octave bands
 
+			double		 reflections[3][8];  // multidimensional array N x 3; N -> octave bands
 			double       fdist, dist;
 			double       gain;
-			double		 average_gain; // Average gain across frequency bins: maybe not the best way
-									   // to calculate this, but ok for now.
 			int          startPosition;
-			int          n1, n2, n3;
 			int          q, j, k;
 			int          mx, my, mz;
 			int          n;
 
-			s[0] = ss[0] / timeStep;
-			s[1] = ss[1] / timeStep;
-			s[2] = ss[2] / timeStep;
+			int          x, y, z;
+			s[0] = source[0] / timeStep;
+			s[1] = source[1] / timeStep;
+			s[2] = source[2] / timeStep;
+			L[0] = receiver[0] / timeStep;
+			L[1] = receiver[1] / timeStep;
+			L[2] = receiver[2] / timeStep;
 
-			L[0] = LL[0] / timeStep;
-			L[1] = LL[1] / timeStep;
-			L[2] = LL[2] / timeStep;
+			x = (int)ceil(nSamples / (2 * L[0]));
+			y = (int)ceil(nSamples / (2 * L[1]));
+			z = (int)ceil(nSamples / (2 * L[2]));
 
-			for (int idxMicrophone = 0; idxMicrophone < nMicrophones; idxMicrophone++)
+			// Generate room impulse response
+			for (mx = -x; mx <= x; mx++)
 			{
-				// [x_1 x_2 ... x_N y_1 y_2 ... y_N z_1 z_2 ... z_N]
-				receiver[0] = receivers[idxMicrophone][0] / timeStep;
-				receiver[1] = receivers[idxMicrophone][1] / timeStep;
-				receiver[2] = receivers[idxMicrophone][2] / timeStep;
+				Rm[0] = 2 * (double)mx * L[0];
 
-				n1 = (int)ceil(nSamples / (2 * L[0]));
-				n2 = (int)ceil(nSamples / (2 * L[1]));
-				n3 = (int)ceil(nSamples / (2 * L[2]));
-
-				// Generate room impulse response
-				for (mx = -n1; mx <= n1; mx++)
+				for (my = -y; my <= y; my++)
 				{
-					Rm[0] = 2 * (double)mx * L[0];
+					Rm[1] = 2 * (double)my * L[1];
 
-					for (my = -n2; my <= n2; my++)
+					for (mz = -z; mz <= z; mz++)
 					{
-						Rm[1] = 2 * (double)my * L[1];
+						Rm[2] = 2 * (double)mz * L[2];
 
-						for (mz = -n3; mz <= n3; mz++)
+						for (q = 0; q <= 1; q++)
 						{
-							Rm[2] = 2 * (double)mz * L[2];
+							Rp_plus_Rm[0] = (1 - 2 * (double)q) * s[0] - L[0] + Rm[0];
 
-							for (q = 0; q <= 1; q++)
+							// Frequency-dependent relfection calculation :D
+							for (int bin = 0; bin < 6; bin++) {
+								reflections[0][bin] = pow(beta[0][bin], abs(mx - q)) * pow(beta[1][bin], abs(mx));
+							}
+
+							for (j = 0; j <= 1; j++)
 							{
-								Rp_plus_Rm[0] = (1 - 2 * (double)q) * s[0] - receiver[0] + Rm[0];
-
-								// Frequency-dependent relfection calculation :D
+								Rp_plus_Rm[1] = (1 - 2 * (double)j) * s[1] - L[1] + Rm[1];
 								for (int bin = 0; bin < 6; bin++) {
-									reflections[0][bin] = pow(beta[0][bin], abs(mx - q)) * pow(beta[1][bin], abs(mx));
+									reflections[1][bin] = pow(beta[2][bin], std::abs(my - j)) * pow(beta[3][bin], std::abs(my));
 								}
 
-								for (j = 0; j <= 1; j++)
+								for (k = 0; k <= 1; k++)
 								{
-									Rp_plus_Rm[1] = (1 - 2 * (double)j) * s[1] - receiver[1] + Rm[1];
+									Rp_plus_Rm[2] = (1 - 2 * (double)k) * s[2] - L[2] + Rm[2];
+
 									for (int bin = 0; bin < 6; bin++) {
-										reflections[1][bin] = pow(beta[2][bin], std::abs(my - j)) * pow(beta[3][bin], std::abs(my));
+										reflections[2][bin] = pow(beta[4][bin], std::abs(mz - k)) * pow(beta[5][bin], std::abs(mz));
 									}
 
-									for (k = 0; k <= 1; k++)
+									dist = sqrt(pow(Rp_plus_Rm[0], 2) + pow(Rp_plus_Rm[1], 2) + pow(Rp_plus_Rm[2], 2));
+
+									if (std::abs(2 * mx - q) + std::abs(2 * my - j) + std::abs(2 * mz - k) <= nOrder || nOrder == -1)
 									{
-										Rp_plus_Rm[2] = (1 - 2 * (double)k) * s[2] - receiver[2] + Rm[2];
-
-										for (int bin = 0; bin < 6; bin++) {
-											reflections[2][bin] = pow(beta[4][bin], std::abs(mz - k)) * pow(beta[5][bin], std::abs(mz));
-										}
-
-										dist = sqrt(pow(Rp_plus_Rm[0], 2) + pow(Rp_plus_Rm[1], 2) + pow(Rp_plus_Rm[2], 2));
-
-										if (std::abs(2 * mx - q) + std::abs(2 * my - j) + std::abs(2 * mz - k) <= nOrder || nOrder == -1)
+										fdist = floor(dist);
+										if (fdist < nSamples)
 										{
-											fdist = floor(dist);
-											if (fdist < nSamples)
-											{
+											std::array<double, 6> gains;
 
-												average_gain = 0.0;
-												double microphone = sim_microphone(Rp_plus_Rm[0], Rp_plus_Rm[1], Rp_plus_Rm[2], angle, microphone_type);
-												for (int bin = 0; bin < 6; bin++) {
-													gain = microphone * reflections[0][bin] * reflections[1][bin] * reflections[2][bin] / (4 * M_PI * dist * timeStep);
-													average_gain = (average_gain + gain) / 2.0;
-												}
-
-												for (n = 0; n < Tw; n++)
-													LPI[n] = 0.5 * (1 - cos(2 * M_PI * (((double)n + 1 - (dist - fdist)) / Tw))) * Fc * sinc(M_PI * Fc * ((double)n + 1 - (dist - fdist) - (Tw / 2)));
-
-												startPosition = (int)fdist - (Tw / 2) + 1;
-												for (n = 0; n < Tw; n++)
-													if (startPosition + n >= 0 && startPosition + n < nSamples)
-														imp[idxMicrophone][startPosition + (size_t)n] += average_gain * LPI[n];
+											double microphone = sim_microphone(Rp_plus_Rm[0], Rp_plus_Rm[1], Rp_plus_Rm[2], angle, microphone_type);
+											for (int bin = 0; bin < 6; bin++) {
+												gain = (microphone * reflections[0][bin] * reflections[1][bin] * reflections[2][bin]) / (4 * M_PI * dist * timeStep);
+												gains[bin] = (double)gain;
 											}
+
+											for (n = 0; n < Tw; n++)
+												LPI[n] = 0.5 * (1 - cos(2 * M_PI * (((double)n + 1 - (dist - fdist)) / Tw))) * Fc * sinc(M_PI * Fc * ((double)n + 1 - (dist - fdist) - (Tw / 2)));
+
+											startPosition = (int)fdist - (Tw / 2) + 1;
+											for (n = 0; n < Tw; n++)
+												for (int bin = 0; bin < 6; bin++)
+													if (startPosition + n >= 0 && startPosition + n < nSamples)
+														impulseResponses[bin][startPosition + (size_t)n] += gains[bin] * LPI[n];
 										}
 									}
 								}
@@ -363,30 +273,200 @@ namespace unda {
 						}
 					}
 				}
-
-				// 'Original' high-pass filter as proposed by Allen and Berkley.
-				if (isHighPassFilter == 1)
-				{
-					for (int idx = 0; idx < 3; idx++) { Y[idx] = 0; }
-					for (int idx = 0; idx < nSamples; idx++)
-					{
-						X0 = imp[idxMicrophone][idx];
-						Y[2] = Y[1];
-						Y[1] = Y[0];
-						Y[0] = B1 * Y[1] + B2 * Y[2] + X0;
-						imp[idxMicrophone][idx] = Y[0] + A1 * Y[1] + R1 * Y[2];
-					}
-				}
 			}
+
+	
 			delete[] Y;
 			delete[] LPI;
-			delete[] receiver;
 			delete[] s;
 			delete[] L;
 
-			return imp;
+			return impulseResponses;
 		}
 
+
+		ImageSourceModel::ImageSourceModel(int _nThreads, const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition, const std::array<double, 3>& _receiverPosition, const std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples)
+			: spaceDimensions(_spaceDimensions)
+			, sourcePosition(_sourcePosition)
+			, receiverPosition(_receiverPosition)
+			, surfaceReflection(_surfaceReflection)
+		{
+			if (nThreads > 32) { throw std::invalid_argument("Invalind number of threads!"); return; }
+			nThreads = _nThreads;
+			samplingFrequency = unda::sampleRate;
+			speedOfSound = unda::maths::c;
+			if (_nSamples < 1) {
+				double volume = spaceDimensions[0] * spaceDimensions[1] * spaceDimensions[2];
+				double totalAlpha = 0.0;
+				for (int bin = 0; bin < 6; bin++) {
+					// Using Sabine's equation to determine space reverberation if n_samples is not known.
+					double alpha =
+						spaceDimensions[0] * spaceDimensions[2] * surfaceReflection[0][bin] + // floor
+						spaceDimensions[0] * spaceDimensions[2] * surfaceReflection[1][bin] + // celing
+						spaceDimensions[1] * spaceDimensions[0] * surfaceReflection[2][bin] + // back wall
+						spaceDimensions[1] * spaceDimensions[0] * surfaceReflection[3][bin] + // front wall
+						spaceDimensions[1] * spaceDimensions[2] * surfaceReflection[4][bin] + // left wall
+						spaceDimensions[1] * spaceDimensions[2] * surfaceReflection[5][bin];  // right wall
+					totalAlpha += alpha;
+				}
+				totalAlpha /= 6.0;
+				double t_60 = 0.161 * (volume / totalAlpha);
+				nSamples = (int)round(t_60 * samplingFrequency);
+			}
+			else {
+				nSamples = _nSamples;
+			}
+		}
+
+		ImageSourceModel::~ImageSourceModel()
+		{
+
+		}
+
+		void ImageSourceModel::generateIRs()
+		{
+
+			//computeIRs(16);
+			for (int bin = 0; bin < 6; bin++) {
+				irs[bin].resize(nSamples);
+			}
+			for (int thread = 0; thread < nThreads; thread++) {
+				std::function lambda = [this](int threadId) { computeIRs(threadId);	};
+				workers.push_back(std::thread(lambda, thread));
+			}
+			for (std::thread& thread : workers)
+				thread.join();
+		
+		}
+
+		void ImageSourceModel::computeIRs(int threadId)
+		{
+			// Temporary variables and constants (high-pass filter)
+			//const double W = 2 * M_PI * 100 / samplingFrequency; // The cut-off frequency equals 100 Hz
+			//const double R1 = exp(-W);
+			//const double B1 = 2 * R1 * cos(W);
+			//const double B2 = -R1 * R1;
+			//const double A1 = -(1 + R1);
+			//double       X0;
+			//double*		 Y = new double[3];
+
+			// Temporary variables and constants (image-method)
+
+			double		 s[3];
+			double		 L[3];
+			double       Rm[3];
+			double       Rp_plus_Rm[3];
+
+			double		 reflections[3][8];  // multidimensional array N x 3; N -> octave bands
+			double       fdist, dist;
+			double       gain;
+
+			variablesMutex.lock();
+			const double Fc = 1.0; // The cut-off frequency equals fs/2 - Fc is the normalized cut-off frequency.
+			const int    Tw = 2 * ROUND(0.004 * samplingFrequency); // The width of the low-pass FIR equals 8 ms
+			double*		 LPI = new double[Tw];
+			const double timeStep = speedOfSound / samplingFrequency;
+
+			s[0] = sourcePosition[0] / timeStep;
+			s[1] = sourcePosition[1] / timeStep;
+			s[2] = sourcePosition[2] / timeStep;
+			L[0] = receiverPosition[0] / timeStep;
+			L[1] = receiverPosition[1] / timeStep;
+			L[2] = receiverPosition[2] / timeStep;
+
+
+			// Image Source Model dimensions:
+			// 
+			// number of points computed along the Y axis
+			int points_x = (int)ceil(nSamples / (2.0 * L[0]));
+			int points_y = (int)ceil(nSamples / (2.0 * L[1]));
+			int points_z = (int)ceil(nSamples / (2.0 * L[2]));
+			//
+			// Each thread is assigned with a slice of the cube representing the space
+			// The cubes has as many slices as number of threads.
+			// Each thread still computes the other two dimensions, it just operates at
+			// a different height.
+			// 
+			int startIndex, endIndex;
+			int pointsPerThread = (int)floor((((double)points_y * 2) + 1) / (double)nThreads);
+			startIndex = (threadId * pointsPerThread) - points_y;
+			endIndex = startIndex + pointsPerThread;
+			if (threadId == (nThreads - 1))	endIndex = points_y;
+
+			double* angle = new double[2];
+			angle[0] = microphoneAngle[0];
+			angle[1] = microphoneAngle[1];
+			variablesMutex.unlock();
+
+			// Generate room impulse response
+			for (int mx = -points_x; mx <= points_x; mx++)
+			{
+				Rm[0] = 2 * (double)mx * L[0];
+
+				for (int my = startIndex; my < endIndex; my++)
+				{
+					Rm[1] = 2 * (double)my * L[1];
+
+					for (int mz = -points_z; mz <= points_z; mz++)
+					{
+						Rm[2] = 2 * (double)mz * L[2];
+
+						for (int q = 0; q <= 1; q++)
+						{
+							Rp_plus_Rm[0] = (1 - 2 * (double)q) * s[0] - L[0] + Rm[0];
+
+							// Frequency-dependent relfection calculation :D
+							for (int bin = 0; bin < 6; bin++) {
+								reflections[0][bin] = pow(surfaceReflection[0][bin], abs(mx - q)) * pow(surfaceReflection[1][bin], abs(mx));
+							}
+
+							for (int j = 0; j <= 1; j++)
+							{
+								Rp_plus_Rm[1] = (1 - 2 * (double)j) * s[1] - L[1] + Rm[1];
+								for (int bin = 0; bin < 6; bin++) {
+									reflections[1][bin] = pow(surfaceReflection[2][bin], std::abs(my - j)) * pow(surfaceReflection[3][bin], std::abs(my));
+								}
+
+								for (int k = 0; k <= 1; k++)
+								{
+									Rp_plus_Rm[2] = (1 - 2 * (double)k) * s[2] - L[2] + Rm[2];
+
+									for (int bin = 0; bin < 6; bin++) {
+										reflections[2][bin] = pow(surfaceReflection[4][bin], std::abs(mz - k)) * pow(surfaceReflection[5][bin], std::abs(mz));
+									}
+
+									dist = sqrt(pow(Rp_plus_Rm[0], 2) + pow(Rp_plus_Rm[1], 2) + pow(Rp_plus_Rm[2], 2));
+									fdist = floor(dist);
+
+									if (fdist < nSamples)
+									{
+										std::array<double, 6> gains;
+
+										double microphone = sim_microphone(Rp_plus_Rm[0], Rp_plus_Rm[1], Rp_plus_Rm[2], angle, 'o');
+										for (int bin = 0; bin < 6; bin++) {
+											gain = (microphone * reflections[0][bin] * reflections[1][bin] * reflections[2][bin]) / (4 * M_PI * dist * timeStep);
+											gains[bin] = (double)gain;
+										}
+
+										for (int n = 0; n < Tw; n++)
+											LPI[n] = 0.5 * (1 - cos(2 * M_PI * (((double)n + 1 - (dist - fdist)) / Tw))) * Fc * sinc(M_PI * Fc * ((double)n + 1 - (dist - fdist) - (Tw / 2)));
+
+										int startPosition = (int)fdist - (Tw / 2) + 1;
+										for (int n = 0; n < Tw; n++)
+											for (int bin = 0; bin < 6; bin++)
+												if (startPosition + n >= 0 && startPosition + n < nSamples)
+													irs[bin][startPosition + (size_t)n] += gains[bin] *LPI[n];
+									}
+									
+								}
+							}
+						}
+					}
+				}
+			} // End of RIR computation
+			delete[] LPI;
+
+		}
 
 	}
 

@@ -1,9 +1,12 @@
 #pragma once
+#include <string>
 
 namespace unda {
 		static int windowWidth = 1280;
 		static int windowHeight = 1024;
-		static double sampleRate = 48000;
+		static double sampleRate = 44100;
+		
+		static size_t dspBlockSize = 128;
 
 	namespace shaders {
 		const static std::string vertexShaderSource = "resources/shaders/vertex_shader.glsl";
