@@ -44,7 +44,7 @@ namespace unda {
 	// ---------------------------------------------------------------------------
 
 	Scene::Scene()
-		: acousticSpace(new unda::acoustics::AcousticSpace())
+
 	{
 		camera = new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.1f, 90.0f);
 
@@ -55,7 +55,7 @@ namespace unda {
 
 		camera->setPosition(glm::vec3(1.0f, 0.0f, 1.0f));
 
-		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory("resources/models/Adam/Art**", "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
+		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory("resources/models/ConferenceRoom/Models", "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
 		if (conferenceModel->getMeshes().empty()) { std::cout << "No meshes!" << std::endl; return; }
 		conferenceModel->normaliseMeshes();
 		conferenceModel->calculateAABB();
@@ -71,8 +71,7 @@ namespace unda {
 			model->toVertexArray();
 		}
 
-		
-		MarchingCubes* marchingCubes = new MarchingCubes(25, 32, 1.0f, Point3D(0, 0, 0));
+		MarchingCubes* marchingCubes = new MarchingCubes(75, 32, 1.0f, Point3D(0, 0, 0));
 		marchingCubes->computeScalarField(conferenceModel);
 		marchingCubes->computeMarchingCubes(1.0);
 		Model* marchingCubesModel = marchingCubes->createModel();
@@ -94,87 +93,17 @@ namespace unda {
 		};
 		
 
-
 		int nThreads = 32, ISM_sampleRate = (int)unda::sampleRate, nTaps = 2048; //11025
 		int nSamples = (int)std::round((double)ISM_sampleRate * 0.2);
 		std::array<double, 3> spaceDimensions{ 3.5, 3.5, 2.8 };
 		std::array<double, 3> listener{ 1.05, 1.2, 1.68 };
 		std::array<double, 3> source{ 3.0, 1.2, 0.6 };
-
 		
 		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(nThreads, spaceDimensions, source, listener, betaCoefficients);
 		ism->setSamplingFrequency(ISM_sampleRate);
 		ism->setNSamples(nSamples);
-		ism->generateIRs();
+		//ism->generateIR();
 
-		std::array<std::vector<double>, 6> frequencyBands = ism->getIRs();
-
-		for (int bin = 0; bin < 6; bin++) {
-			//frequencyBands[bin] = NormaliseSamples(frequencyBands[bin]);
-			WriteAudioFile({ frequencyBands[bin] }, std::string("frequency_band_normalised_" + std::to_string(bin) + ".wav"), ISM_sampleRate);
-
-		}
-		
-		std::vector<double> output;
-		{
-			Filter filter = Filter(Filter::BPF, nTaps, ISM_sampleRate, 20, 125);
-
-			filter.convolveToSignal(frequencyBands[0]);
-		}
-		{
-			Filter filter = Filter(Filter::BPF, nTaps, ISM_sampleRate, 125, 250);
-			filter.convolveToSignal(frequencyBands[1]);
-		}
-		{
-			Filter filter = Filter(Filter::BPF, nTaps, ISM_sampleRate, 250, 500);
-			filter.convolveToSignal(frequencyBands[2]);
-		}
-		{
-			Filter filter = Filter(Filter::BPF, nTaps, ISM_sampleRate, 500, 1000);
-			filter.convolveToSignal(frequencyBands[3]);
-		}
-		{
-			Filter filter = Filter(Filter::BPF, nTaps, ISM_sampleRate, 1000, 2000);
-			filter.convolveToSignal(frequencyBands[4]);
-		}
-		{
-			Filter filter = Filter(Filter::BPF, nTaps, ISM_sampleRate, 2000, 20000);
-			filter.convolveToSignal(frequencyBands[5]);
-		}
-
-
-		for (int bin = 0; bin < 6; bin++) {
-			//NormaliseSamplesInPlace(frequencyBands[bin]);
-			WriteAudioFile({ frequencyBands[bin] }, std::string("frequency_band_processed_" + std::to_string(bin) + ".wav"), ISM_sampleRate);
-		}
-
-		for (int value = 0; value < frequencyBands[0].size(); value++) {
-			output.push_back(frequencyBands[0][value] + frequencyBands[1][value] + frequencyBands[2][value] + frequencyBands[3][value] + frequencyBands[4][value] + frequencyBands[5][value]);
-		}
-		//LowPassFilter(output, 999, 15000);
-
-		//output = HighPassFilter(output, 4096, 20);
-		//output = LowPassFilter(output, 4096, 20000);
-		NormaliseSignal(output);
-		WriteAudioFile({ output }, "ir.wav", ISM_sampleRate);
-
-		// Apply Schroeder reverb
-		float delay = 950.9f;
-		float decay = 0.9f;
-		
-		std::vector<double> comb1 = NormaliseSignal(CombFilter(output, delay, decay));
-		std::vector<double> comb2 = NormaliseSignal(CombFilter(output, delay - 11.73f, decay - 0.131f));
-		std::vector<double> comb3 = NormaliseSignal(CombFilter(output, delay + 19.31f, decay - 0.274f));
-		std::vector<double> comb4 = NormaliseSignal(CombFilter(output, delay - 7.97f, decay - 0.31f));
-		output.clear();
-		for (int i = 0; i < comb1.size(); i++) {
-			output.push_back(comb1[i] + comb2[i] + comb3[i] + comb4[i]);
-		}
-		output = AllPassFilter(output);
-		output = AllPassFilter(output);
-		
-		NormaliseSignal(output);
-		WriteAudioFile({ output }, "ir_reverb.wav", ISM_sampleRate);
 		delete ism;	
 	}
 
@@ -182,7 +111,6 @@ namespace unda {
 	{
 		models.clear();
 		std::for_each(lights.begin(), lights.end(), [](Light* light) { delete light; });
-		delete acousticSpace;
 		delete camera;
 	}
 

@@ -60,7 +60,7 @@ namespace unda {
 			;
 
 		void handleInput();
-		void toggleMovement() {if (!Input::isKeyDown(Key::Tab)) movementEnabled = !movementEnabled; }
+		void toggleMovement();
 
 	private:
 		float cameraSpeed = 3.0f, sensitivity = 0.05f;

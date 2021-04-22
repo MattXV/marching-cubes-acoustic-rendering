@@ -13,22 +13,19 @@
 namespace unda {
 	typedef std::vector<double> Signal;
 
-	void NormaliseSignal(std::vector<double>& audioSamples);
-	std::vector<double> NormaliseSignal(const std::vector<double>& audioSamples);
+	void NormaliseSignal(Signal& audioSamples);
+	Signal NormaliseSignal(const Signal& audioSamples);
 	int WriteAudioFile(const std::vector<std::vector<double>>& audioChannels, const std::string& filePath, double samplingFrequency = unda::sampleRate);
 
-	std::vector<double> HighPassFilter(std::vector<double>& audioSamples, int nTaps, double cutoffFrequency);
-	std::vector<double> LowPassFilter(std::vector<double>& audioSamples, int nTaps, double cutoffFrequency);
-	std::vector<double> BandPassFilter(std::vector<double>& audioSamples, int nTaps, double lowerCutoff, double upperCutoff);
-
-	std::vector<double> AllPassFilter(std::vector<double>& audioSamples, float delayMilliseconds = 90.0f, float decay = 0.131f, double sampleRate = unda::sampleRate);
-	std::vector<double> CombFilter(std::vector<double>& audioSamples, float delayMilliseconds = 90.0f, float decay = 0.131f, double sampleRate = unda::sampleRate);
+	Signal AllPassFilter(std::vector<double>& audioSamples, float delayMilliseconds = 90.0f, float decay = 0.131f, double sampleRate = unda::sampleRate);
+	Signal CombFilter(std::vector<double>& audioSamples, float delayMilliseconds = 90.0f, float decay = 0.131f, double sampleRate = unda::sampleRate);
+	Signal SchroederReverb(const Signal& input, float delay, float decay);
 
 
 	template<typename T>
 	std::vector<T>	Convolve(std::vector<T> const& f, std::vector<T> const& g) {
-		int const nf = f.size();
-		int const ng = g.size();
+		int const nf = (int)f.size();
+		int const ng = (int)g.size();
 		int const n = nf + ng - 1;
 		std::vector<T> out(n, T());
 		for (auto i(0); i < n; ++i) {

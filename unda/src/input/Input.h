@@ -10,6 +10,8 @@ namespace unda {
 		inline static bool isMouseButtonDown(int button) { return singletonInstance->isMouseButtonDownImplementation(button); }
 		inline static bool isMouseButtonUp(int button) { return singletonInstance->isMouseButtonUpImplementation(button); }
 		inline static std::pair<double, double> getMousePosition() { return singletonInstance->getMousePositionImplementation(); }
+		inline static void lockCursor(bool locked) { singletonInstance->lockCursorImplementation(locked); }
+
 
 		inline Input* getInstance() { return singletonInstance; }
 		static void setWindow(void* newWindow) { window = newWindow; }
@@ -17,6 +19,7 @@ namespace unda {
 
 		static void keyCallBack(int keyCode) { singletonInstance->keyCallBackImplementation(keyCode); }
 		static void registerKeyCallBack(int keyCode, std::function<void()> newCallBack) { singletonInstance->registerKeyCallBackImplementation(keyCode, newCallBack); }
+		
 
 	protected:
 		virtual bool isKeyDownImplementation(int keycode) = 0;
@@ -24,6 +27,7 @@ namespace unda {
 
 		virtual bool isMouseButtonDownImplementation(int button) = 0;
 		virtual bool isMouseButtonUpImplementation(int button) = 0;
+		virtual void lockCursorImplementation(bool locked) = 0;
 
 		virtual std::pair<double, double> getMousePositionImplementation() = 0;
 		virtual void keyCallBackImplementation(int keyCode) = 0;

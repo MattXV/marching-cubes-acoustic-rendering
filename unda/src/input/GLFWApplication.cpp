@@ -41,6 +41,11 @@ std::pair<double, double> unda::GLFWInput::getMousePositionImplementation()
 	return std::pair<double, double>(x, y);
 }
 
+void unda::GLFWInput::lockCursorImplementation(bool locked)
+{
+	glfwSetInputMode((GLFWwindow*)window, GLFW_CURSOR, locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+}
+
 void unda::GLFWInput::keyCallBackImplementation(int keyCode)
 {
 	std::lock_guard<std::mutex> guard(callbacksMutex);
@@ -80,13 +85,10 @@ unda::GLFWApplication::GLFWApplication()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	window = glfwCreateWindow(unda::windowWidth, unda::windowHeight, "unda", NULL, NULL);
 	assert(window);
-	//glfwSetKeyCallback(window, )
+
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(unda::vSync);
 	glfwSetKeyCallback(window, keyCallBack);
-	//glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-	//glfwSetInputMode(window, GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	Input::setInstance(input);
 	Input::setWindow(window);

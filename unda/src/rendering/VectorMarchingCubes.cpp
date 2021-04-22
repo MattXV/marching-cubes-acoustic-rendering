@@ -302,7 +302,9 @@ namespace unda {
 
 		const auto& meshes = model_ptr->getMeshes();
 		nMeshes = meshes.size();
-		AABB* aabbs = new AABB[(size_t)nMeshes];
+		std::vector<AABB> aabbs;
+		aabbs.resize(meshes.size());
+
 		for (int i = 0; i < nMeshes; i++) memcpy(&aabbs[i], &meshes[i].aabb, sizeof(AABB));
 
 		model_ptr.reset();
@@ -322,18 +324,18 @@ namespace unda {
 					glm::vec3 cubeSize{ 0.0f, 0.0f, 0.0f };
 					AABB sampleCube = AABB(samplePoint - 0.02f, samplePoint + .02f, samplePoint);
 
-					float fieldValue = 0.0f;
+					float cellValue = 0.0f;
 					for (int i = 0; i < nMeshes; i++) {
 						if (CheckCollision(sampleCube, aabbs[i])) {
-							fieldValue = 1.0f;
+
+							cellValue = 1.0f;
 							break;
 						}
 					}
-					scalarField[std::array<size_t, 3>{x, y, z}] = fieldValue;
+					scalarField[{x, y, z}] = cellValue;
 				}
 			}
 		}
-		delete[] aabbs;
 	}
 
 	void MarchingCubes::marchingCubesWorker(double isoLevel, size_t indexStart, size_t indexEnd)

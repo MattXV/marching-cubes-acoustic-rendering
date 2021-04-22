@@ -165,11 +165,9 @@
     <ClCompile Include="externals\glad\src\glad.c" />
     <ClCompile Include="externals\glob\glob.cpp" />
     <ClCompile Include="externals\stb_image\stb_image.cpp" />
-    <ClCompile Include="src\acoustics\AcousticSpace.cpp" />
+    <ClCompile Include="externals\stb_image\stb_image_write.cpp" />
     <ClCompile Include="src\acoustics\DSP.cpp" />
-    <ClCompile Include="src\acoustics\ImageSource.cpp">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_DEBUG;_CONSOLE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-    </ClCompile>
+    <ClCompile Include="src\acoustics\ImageSource.cpp" />
     <ClCompile Include="src\acoustics\LateReverb.cpp" />
     <ClCompile Include="src\core\Engine.cpp" />
     <ClCompile Include="src\input\GLFWApplication.cpp" />
@@ -195,7 +193,8 @@
     <ClInclude Include="externals\glob\glob.h" />
     <ClInclude Include="externals\happly\happly.h" />
     <ClInclude Include="externals\stb_image\stb_image.h" />
-    <ClInclude Include="src\acoustics\AcousticSpace.h" />
+    <ClInclude Include="externals\stb_image\stb_image_write.h" />
+    <ClInclude Include="src\acoustics\Acoustics.h" />
     <ClInclude Include="src\acoustics\DSP.h" />
     <ClInclude Include="src\acoustics\ImageSource.h" />
     <ClInclude Include="src\acoustics\LateReverb.h" />

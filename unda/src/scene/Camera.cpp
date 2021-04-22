@@ -43,3 +43,9 @@ void unda::FPSCamera::handleInput()
     front = glm::normalize(direction);
     setPosition(position);
 }
+
+void unda::FPSCamera::toggleMovement()
+{
+    if (!Input::isKeyDown(Key::Tab)) movementEnabled = !movementEnabled;
+    Input::lockCursor(movementEnabled);
+}

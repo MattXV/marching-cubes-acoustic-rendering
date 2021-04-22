@@ -8,21 +8,70 @@ Texture::Texture(const std::string& f)
 	textureData = stbi_load(file.c_str(), &width, &height, &channels, STBI_rgb_alpha);
 
 	if (!textureData) {
-		std::cerr << "[ERROR] Could not read image file! File: " << file.c_str() << std::endl;
+		UNDA_ERROR("Could not Read texture! File: " + f);
 		return;
 	}
-
+	imageLoaded = true;
 	imageFormat = GL_RGBA8;
 	glImageFormat = GL_RGBA;
 
 	setTextureData();
 	// Allocate texture in OpenGL
-	stbi_image_free(textureData);
 }
 
 Texture::~Texture()
 {
+	if (imageLoaded) stbi_image_free(textureData);
 	GLCALL(glDeleteTextures(1, &textureId));
+}
+
+int Texture::generatePatch(std::pair<double, double> minUV, std::pair<double, double> maxUV)
+{
+	int xMin = (int)std::floor(minUV.first * width);
+    int xMax = (int)std::floor(maxUV.first * width);
+	int yMin = (int)std::floor(minUV.second * height);
+	int yMax = (int)std::floor(maxUV.second * height);
+	assert((xMin < width) && (xMin >= 0));
+	assert((xMax < width) && (xMax > xMin));
+	assert((yMin < height) && (yMin >= 0));
+	assert((yMax < height) && (yMax > yMin));
+
+	size_t patchWidth = size_t(xMax) - size_t(xMin);
+	size_t patchHeight = size_t(yMax) - size_t(yMin);
+	size_t patchChannels = 3;
+
+	std::vector<unsigned char> patchPixels;
+	patchPixels.resize(patchWidth * patchHeight * patchChannels);
+
+	for (size_t row = 0; row < patchHeight; row++) {
+		for (size_t column = 0; column < patchWidth; column++) {
+			unsigned char* imageIndex = (*this)[std::make_pair(column + size_t(xMin), row + size_t(yMin))];
+			
+			for (int patchChannel = 0; patchChannel < patchChannels; patchChannel++) {
+				patchPixels[row * patchWidth + column + patchChannel] = *imageIndex++;
+			}
+		}
+	}
+
+	std::string fileName = outputPatchesPrefix + file + std::to_string(++patchesGenerated) + ".png";
+	int written = stbi_write_png(
+		fileName.c_str(),
+		patchWidth,
+		patchHeight,
+		patchChannels,
+		(void*)&patchPixels[0],
+		patchChannels * sizeof(unsigned char));
+	return written;
+}
+
+unsigned char* Texture::operator[](const std::pair<size_t, size_t> xy)
+{
+	assert(xy.first >= 0 && xy.first <= width);
+	assert(xy.second >= 0 && xy.second <= height);
+
+	unsigned char* pointer = &textureData[(xy.second * size_t(width) + xy.first) * size_t(channels)];
+
+	return pointer;
 }
 
 Texture::Texture(const int textureHeight, const int textureWidth, unda::Colour<unsigned char> colour)
@@ -49,6 +98,7 @@ Texture::Texture(const int textureHeight, const int textureWidth, unda::Colour<u
 	setTextureData();
 	delete[] textureArray;
 }
+
 
 void Texture::setTextureData()
 {

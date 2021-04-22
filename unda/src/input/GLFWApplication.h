@@ -31,11 +31,15 @@ namespace unda {
 	protected:
 		bool isKeyDownImplementation(int keycode) override;
 		bool isKeyUpImplementation(int keycode) override;
+
 		bool isMouseButtonDownImplementation(int button) override;
 		bool isMouseButtonUpImplementation(int button) override;
 		std::pair<double, double> getMousePositionImplementation() override;
+		void lockCursorImplementation(bool locked) override;
+
 		void keyCallBackImplementation(int keyCode) override;
 		void registerKeyCallBackImplementation(int keyCode, std::function<void()> newCallBack) override;
+
 	private:
 		std::mutex callbacksMutex;
 		std::unordered_map<int, std::function<void()>> callbacks;

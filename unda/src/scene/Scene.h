@@ -7,10 +7,10 @@
 
 #include "Camera.h"
 #include "../input/Input.h"
-#include "../../externals/happly/happly.h"
+
 #include "Terrain.h"
 #include "../rendering/VectorMarchingCubes.h"
-#include "../acoustics/AcousticSpace.h"
+#include "../acoustics/ImageSource.h"
 #include "../acoustics/DSP.h"
 
 #include <FFTConvolver.h>
@@ -59,7 +59,7 @@ namespace unda {
 		std::unordered_map<std::string, Model*> boundingBoxes;
 		std::vector<std::unique_ptr<Model>> boundingBoxesModels;
 
-		unda::acoustics::AcousticSpace* acousticSpace;
+
 		std::vector<std::shared_ptr<Model>> models;
 		std::vector<Light*> lights;
 		FPSCamera* camera;

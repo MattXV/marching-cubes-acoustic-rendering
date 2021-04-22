@@ -259,8 +259,8 @@ namespace unda {
         std::vector<std::filesystem::path> textures = glob::glob(baseModelPath.string());
 
         
-        std::vector<std::vector<unda::Vertex>> verticesArray; // I know, hard to watch. I'm just testing 
-        std::vector<std::vector<unsigned int>> indicesArray; // Shut up, let me do the thing for now.
+        std::vector<std::vector<unda::Vertex>> verticesArray; 
+        std::vector<std::vector<unsigned int>> indicesArray; 
         std::vector<Texture*> texturesArrays;
 
         Model* model = new Model();
@@ -385,19 +385,6 @@ namespace unda {
         }
 
         return model;
-        // Calculate AABB
-
-
-        // Normalise vertex Positions
-        //for (int i = 0; i < verticesArray.size(); i++) {    
-        //    auto vertices = verticesArray[i];
-        //
-        //    //AssignVertexPositions(vertices, normalise);
-        //    //ModifyVertices(vertices, getAABB);
-        //    model->addMesh(vertices, indicesArray[i], texturesArrays[i]);
-        //}
-
-
 
     }
 

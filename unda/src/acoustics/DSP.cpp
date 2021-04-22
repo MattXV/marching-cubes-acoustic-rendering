@@ -3,7 +3,7 @@
 
 
 namespace unda {
-	void unda::NormaliseSignal(std::vector<double>& audioSamples)
+	void unda::NormaliseSignal(Signal& audioSamples)
 	{
 		double value = 0.0, tempValue;
 		for (double& sample : audioSamples) {
@@ -15,9 +15,9 @@ namespace unda {
 		}
 	}
 
-	std::vector<double> unda::NormaliseSignal(const std::vector<double>& audioSamples)
+	Signal unda::NormaliseSignal(const Signal& audioSamples)
 	{
-		std::vector<double> output;
+		Signal output;
 		double value = 0.0, tempValue;
 		for (const double& sample : audioSamples) {
 			tempValue = abs(sample);
@@ -62,6 +62,12 @@ namespace unda {
 		}
 
 		return allPassTaps;
+	}
+
+	Signal SchroederReverb(const Signal& input, float delay, float decay)
+	{
+
+		return Signal();
 	}
 
 
@@ -173,7 +179,7 @@ namespace unda {
 		//}
 
 		//convolver->process((float*)&signal[0], (float*)&output[0], signal.size());
-1		signal = Convolve(signal, taps);
+		signal = Convolve(signal, taps);
 		//signal.clear();
 		//signal = Signal(output.begin(), output.end());
 		//delete convolver;
