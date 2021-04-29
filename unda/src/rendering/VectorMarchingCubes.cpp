@@ -1,4 +1,5 @@
 #include "VectorMarchingCubes.h"
+#include <cmath>
 
 namespace unda {
 
@@ -290,6 +291,95 @@ namespace unda {
 
 
 
+	void MarchingCubes::generateMarchedCubesPatches(const AABB& aabb, Texture* objectTexture, const AABB& marchedCube)
+	{
+		// Here we take the current 'Marched Cube', and generate 6 square patches having their sides the size
+		// of a grid cell.
+		// Each of the 6 patches corresponds to a wall (or rather, a face) of the resulting volume generated from
+		// the marching cube poligonisation.
+		// It's an approximation, and will introduce noise in the resulting computation of the absorption volume
+		// but it enables the mapping between each marching cube and acoustic materials.
+
+		// Find the mean orientation of the surface to generate patches for the face that contributes more
+		
+		// 1) get distance between max and min: d1
+		// 2) calculate distance between current point and min: d2
+		// 3) Forget this. Well, just get the current position and add and subtract the size of a cell
+		//		to get a square patch.
+
+
+		float minXRelativeDistance = fabs(marchedCube.min.x - aabb.min.x) * fabs(aabb.max.x - aabb.min.x);
+		float minYRelativeDistance = fabs(marchedCube.min.y - aabb.min.y) * fabs(aabb.max.y - aabb.min.y);
+		float minZRelativeDistance = fabs(marchedCube.min.z - aabb.min.z) * fabs(aabb.max.z - aabb.min.z);
+
+		float maxXRelativeDistance = fabs(marchedCube.max.x - aabb.min.x) * fabs(aabb.max.x - aabb.min.x);
+		float maxYRelativeDistance = fabs(marchedCube.max.y - aabb.min.y) * fabs(aabb.max.y - aabb.min.y);
+		float maxZRelativeDistance = fabs(marchedCube.max.z - aabb.min.z) * fabs(aabb.max.z - aabb.min.z);
+
+
+
+		
+		{
+			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, minXRelativeDistance);
+			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, minYRelativeDistance);
+
+			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, maxXRelativeDistance);
+			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, maxYRelativeDistance);
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "frontFace");
+		}
+
+		{
+			float uMin = std::lerp(aabb.farBottomLeft.u, aabb.farTopRight.u, minXRelativeDistance);
+			float vMin = std::lerp(aabb.farBottomLeft.v, aabb.farTopRight.v, minYRelativeDistance);
+
+			float uMax = std::lerp(aabb.farBottomLeft.u, aabb.farTopRight.u, maxXRelativeDistance);
+			float vMax = std::lerp(aabb.farBottomLeft.v, aabb.farTopRight.v, maxYRelativeDistance);
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "backFace");
+		}
+
+		{
+			float uMin = std::lerp(aabb.nearTopLeft.u, aabb.farTopRight.u, minXRelativeDistance);
+			float vMin = std::lerp(aabb.nearTopLeft.v, aabb.farTopRight.v, minZRelativeDistance);
+
+			float uMax = std::lerp(aabb.nearTopLeft.u, aabb.farTopRight.u, maxXRelativeDistance);
+			float vMax = std::lerp(aabb.nearTopLeft.v, aabb.farTopRight.v, maxZRelativeDistance);
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "topFace");
+		}
+
+		{
+			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.farBottomRight.u, minXRelativeDistance);
+			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.farBottomRight.v, minZRelativeDistance);
+
+			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.farBottomRight.u, maxXRelativeDistance);
+			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.farBottomRight.v, maxZRelativeDistance);
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "bottomFace");
+		}
+
+		{
+			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.farTopLeft.u, minZRelativeDistance);
+			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.farTopLeft.v, minYRelativeDistance);
+
+			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.farTopLeft.u, maxZRelativeDistance);
+			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.farTopLeft.v, maxYRelativeDistance);
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "leftFace");
+		}
+
+		{
+			float uMin = std::lerp(aabb.nearBottomRight.u, aabb.farTopRight.u, minZRelativeDistance);
+			float vMin = std::lerp(aabb.nearBottomRight.v, aabb.farTopRight.v, minYRelativeDistance);
+
+			float uMax = std::lerp(aabb.nearBottomRight.u, aabb.farTopRight.u, maxZRelativeDistance);
+			float vMax = std::lerp(aabb.nearBottomRight.v, aabb.farTopRight.v, maxYRelativeDistance);
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "rightFace");
+		}
+	}
+
 	void MarchingCubes::scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd)
 	{
 		int nMeshes;
@@ -300,7 +390,7 @@ namespace unda {
 
 		std::shared_ptr<Model> model_ptr = model.lock();
 
-		const auto& meshes = model_ptr->getMeshes();
+		const std::vector<Mesh>& meshes = model_ptr->getMeshes();
 		nMeshes = meshes.size();
 		std::vector<AABB> aabbs;
 		aabbs.resize(meshes.size());
@@ -316,23 +406,40 @@ namespace unda {
 			{
 				for (size_t z = 0; z < resolution; z++)
 				{
-					glm::vec3 samplePoint = glm::vec3(
-						(float(x) / (float)resolution) * 2.0f - 1.0f,
-						(float(y) / (float)resolution) * 2.0f - 1.0f,
-						(float(z) / (float)resolution) * 2.0f - 1.0f);
+					Vertex samplePoint = Vertex(
+						(float(x) / (float)scalarField.sizeX) * 2.0f - 1.0f,
+						(float(y) / (float)scalarField.sizeY) * 2.0f - 1.0f,
+						(float(z) / (float)scalarField.sizeZ) * 2.0f - 1.0f,
+						0.0f, 0.0f,
+						0.0f, 0.0f, 0.0f);
 
-					glm::vec3 cubeSize{ 0.0f, 0.0f, 0.0f };
-					AABB sampleCube = AABB(samplePoint - 0.02f, samplePoint + .02f, samplePoint);
+					Vertex nextSamplePoint = Vertex(
+						(float(x + 1) / (float)scalarField.sizeX) * 2.0f - 1.0f,
+						(float(y + 1) / (float)scalarField.sizeY) * 2.0f - 1.0f,
+						(float(z + 1) / (float)scalarField.sizeZ) * 2.0f - 1.0f,
+						0.0f, 0.0f,
+						0.0f, 0.0f, 0.0f);
 
-					float cellValue = 0.0f;
-					for (int i = 0; i < nMeshes; i++) {
-						if (CheckCollision(sampleCube, aabbs[i])) {
+					AABB sampleCube = AABB(samplePoint, nextSamplePoint);
 
-							cellValue = 1.0f;
+					float fieldValue = 0.0f;
+					for (const Mesh& mesh : meshes) {
+
+						if (CheckCollision(sampleCube, mesh.aabb)) {
+							fieldValue = 1.0f;
+							// TODO: Generate 6 patches
+							// TODO: one per cube face
+							modelMutex.lock();
+							generateMarchedCubesPatches(mesh.aabb, mesh.texture.get(), sampleCube);
+							modelMutex.unlock();
 							break;
 						}
+						else {
+							fieldValue = 0.0f;
+						}
+
 					}
-					scalarField[{x, y, z}] = cellValue;
+					scalarField[std::array<size_t, 3>{x, y, z}] = fieldValue;
 				}
 			}
 		}

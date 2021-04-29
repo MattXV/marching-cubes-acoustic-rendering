@@ -2,9 +2,12 @@
 
 #include "../rendering/RenderTools.h"
 #include "../utils/Utils.h"
+#include "../utils/Maths.h"
 #include <stb_image.h>
 #include <stb_image_write.h>
 #include <string>
+#include <filesystem>
+#include <limits>
 
 class Texture {
 public:
@@ -12,10 +15,11 @@ public:
 	Texture(const int textureHeight, const int textureWidth, unda::Colour<unsigned char> colour);
 	~Texture();
 	unsigned int getTextureId() { return textureId; }
-	int generatePatch(std::pair<double, double> minUV, std::pair<double, double> maxUV);
-
+	int generatePatch(std::pair<double, double> minUV, std::pair<double, double> maxUV, const std::string& filename, bool opaque = true, bool nonBlack = true);
+	bool isImageLoaded() const { return imageLoaded; }
 
 	unsigned char* operator[](const std::pair<size_t, size_t> xy);
+
 private:
 	void setTextureData();
 

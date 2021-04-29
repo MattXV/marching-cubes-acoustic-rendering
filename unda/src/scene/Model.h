@@ -40,6 +40,7 @@ namespace unda {
 		long unsigned int vertexCount = 0, indexCount = 0;
 		std::unique_ptr<Texture> texture;
 		std::unique_ptr<Texture> normalMap;
+		float scale = 1.0;
 		glm::vec3 size = glm::vec3(0, 0, 0);
 		AABB aabb;
 

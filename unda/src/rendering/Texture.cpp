@@ -25,42 +25,68 @@ Texture::~Texture()
 	GLCALL(glDeleteTextures(1, &textureId));
 }
 
-int Texture::generatePatch(std::pair<double, double> minUV, std::pair<double, double> maxUV)
+int Texture::generatePatch(std::pair<double, double> minUV, std::pair<double, double> maxUV, const std::string& filename, bool opaque, bool nonBlack)
 {
+	if (!imageLoaded) {
+		UNDA_ERROR("No texture image loaded!");
+	}
 	int xMin = (int)std::floor(minUV.first * width);
     int xMax = (int)std::floor(maxUV.first * width);
 	int yMin = (int)std::floor(minUV.second * height);
 	int yMax = (int)std::floor(maxUV.second * height);
-	assert((xMin < width) && (xMin >= 0));
-	assert((xMax < width) && (xMax > xMin));
-	assert((yMin < height) && (yMin >= 0));
-	assert((yMax < height) && (yMax > yMin));
+
+	if (xMin > xMax) unda::integerAddSwap(&xMin, &xMax);
+	if (yMin > yMax) unda::integerAddSwap(&yMin, &yMax);
+	std::cout << "xmin: " << xMin << " xmax: " << xMax << std::endl;
+	std::cout << "ymin: " << yMin << " ymax " << yMax << std::endl;
+	if (xMin > width)  return -1;
+	if (xMin < 0)      return -1;
+	if (xMax > width)  return -1;
+	if (xMax == xMin)  return -1;
+	if (yMin > height) return -1;
+	if (yMin < 0)      return -1;
+	if (yMax > height) return -1;
+	if (yMax == yMin)  return -1;
 
 	size_t patchWidth = size_t(xMax) - size_t(xMin);
 	size_t patchHeight = size_t(yMax) - size_t(yMin);
-	size_t patchChannels = 3;
+	size_t patchChannels = 4;
 
 	std::vector<unsigned char> patchPixels;
 	patchPixels.resize(patchWidth * patchHeight * patchChannels);
 
+	long int alphaMean = static_cast<long int>(UCHAR_MAX), colourMean = 0;
 	for (size_t row = 0; row < patchHeight; row++) {
 		for (size_t column = 0; column < patchWidth; column++) {
 			unsigned char* imageIndex = (*this)[std::make_pair(column + size_t(xMin), row + size_t(yMin))];
 			
 			for (int patchChannel = 0; patchChannel < patchChannels; patchChannel++) {
-				patchPixels[row * patchWidth + column + patchChannel] = *imageIndex++;
+				unsigned char pixelValue = *(imageIndex + patchChannel);
+				
+				if (opaque && patchChannel == 3) {
+					alphaMean = (alphaMean + static_cast<long int>(pixelValue)) / 2;
+				}
+
+				if (nonBlack && patchChannel != 3) {
+					colourMean = (colourMean + static_cast<long int>(pixelValue)) / 2;
+				}
+				patchPixels[(row * patchWidth + column) * patchChannels + patchChannel] = pixelValue;
 			}
 		}
 	}
 
-	std::string fileName = outputPatchesPrefix + file + std::to_string(++patchesGenerated) + ".png";
+	if (opaque && alphaMean < static_cast<long int>(UCHAR_MAX)) return -1;
+	if (nonBlack && colourMean == 0) return -1;
+
+	auto imagePath = std::filesystem::path(file);
+	std::string fileName = outputPatchesPrefix + imagePath.stem().string() + "_" + filename + "_" + std::to_string(patchesGenerated++) + "_.png";
 	int written = stbi_write_png(
 		fileName.c_str(),
-		patchWidth,
-		patchHeight,
-		patchChannels,
+		static_cast<int>(patchWidth),
+		static_cast<int>(patchHeight),
+		static_cast<int>(patchChannels),
 		(void*)&patchPixels[0],
-		patchChannels * sizeof(unsigned char));
+		static_cast<int>(patchChannels * patchWidth));
 	return written;
 }
 
@@ -68,6 +94,8 @@ unsigned char* Texture::operator[](const std::pair<size_t, size_t> xy)
 {
 	assert(xy.first >= 0 && xy.first <= width);
 	assert(xy.second >= 0 && xy.second <= height);
+
+	//unsigned char* pointer = &textureData[(xy.second * size_t(width) + xy.first) * size_t(channels)];
 
 	unsigned char* pointer = &textureData[(xy.second * size_t(width) + xy.first) * size_t(channels)];
 

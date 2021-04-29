@@ -11,8 +11,6 @@
 
 
 namespace unda {
-
-
 	// ---------------------------------------------------------------------------
 
 	template<typename T>
@@ -122,11 +120,14 @@ namespace unda {
 			{
 				for (size_t z = 0; z < data.sizeZ; ++z)
 				{
-					glm::vec3 samplePoint = glm::vec3((float(x) / (float)data.sizeX) * 2.0f - 1.0f,
-													  (float(y) / (float)data.sizeY) * 2.0f - 1.0f,
-													  (float(z) / (float)data.sizeZ) * 2.0f - 1.0f);
+					Vertex samplePoint = Vertex((float(x) / (float)data.sizeX) * 2.0f - 1.0f,
+												(float(y) / (float)data.sizeY) * 2.0f - 1.0f,
+												(float(z) / (float)data.sizeZ) * 2.0f - 1.0f,
+												 0.0f, 0.0f,
+												0.0f, 0.0f, 0.0f);
 					glm::vec3 cubeSize{ 0.00f, 0.00f, 0.00f };
-					AABB sampleCube = AABB(samplePoint - cubeSize, samplePoint + cubeSize, samplePoint);
+
+					AABB sampleCube = AABB(samplePoint, samplePoint);
 
 					float fieldValue = 0.0f;
 					for (Mesh& mesh : model->getMeshes()) {
@@ -184,6 +185,7 @@ namespace unda {
 	};
 
 
+	// That's the current dude
 	class MarchingCubes {
 	public:
 		MarchingCubes(int _resolution, int _nThreads, float _gridSpacing, Point3D _centre);
@@ -204,11 +206,14 @@ namespace unda {
 		CubeLatticeVector cubeLattice;
 		std::vector<Vertex> vertices;
 
+		// Image Patch Generation
+		void generateMarchedCubesPatches(const AABB& objectAABB, Texture* objectTexture, const AABB& marchedCube);
+
 		// Workers
 		void scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd);
 		void marchingCubesWorker(double isoLevel, size_t indexStart, size_t indexEnd);
 
-		// Algorithm
+		// Marching Cubes Algorithm
 		unsigned int polygoniseCell(size_t x, size_t y, size_t z, double isoLevel, std::array<Triangle3D, 5>& triangleResult);
 		std::array<size_t, 3> cellCornerIndexToIJKIndex(size_t vertexIndex, size_t i, size_t j, size_t k);
 		Point3D interpolateVertex(double isoLevel, const std::array<size_t, 3>& xyzVertexA, const std::array<size_t, 3>& xyzVertexB);

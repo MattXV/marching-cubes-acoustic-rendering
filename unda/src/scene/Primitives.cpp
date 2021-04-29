@@ -62,8 +62,8 @@ namespace unda {
 		std::vector<unda::Vertex> vertices;
 		std::vector<unsigned int> indices;
 
-		glm::vec3 min = aabb.min;
-		glm::vec3 max = aabb.max;
+		glm::vec3 min = glm::vec3(aabb.min.x, aabb.min.y, aabb.min.z);
+		glm::vec3 max = glm::vec3(aabb.max.x, aabb.max.y, aabb.max.z);
 		Point3D A_bottomleft{ min.x, min.y, min.z }, A_topleft{ min.x, max.y, min.z }, A_topright{ max.x, max.y, min.z }, A_bottomright{ max.x, min.y, min.z };
 		Point3D B_bottomleft{ min.x, min.y, max.z }, B_topleft{ min.x, max.y, max.z }, B_topright{ max.x, max.y, max.z }, B_bottomright{ max.x, min.y, max.z };
 

@@ -11,6 +11,7 @@
 #include <math.h>
 #include <functional>
 
+
 namespace unda {
 	struct Point3D {
 		Point3D() {}
@@ -47,16 +48,6 @@ namespace unda {
 		}
 	};
 
-	struct AABB {
-		AABB() : min(0, 0, 0), max(0, 0, 0), size(0, 0, 0), position(0, 0, 0) {}
-		AABB(const glm::vec3& _min, const glm::vec3& _max, const glm::vec3& _position)
-			: min(_min)
-			, max(_max)
-			, size(_max - _min)
-			, position(_position)
-		{}
-		glm::vec3 min, max, size, position;
-	};
 
 	class Transform {
 	public:
@@ -96,16 +87,7 @@ namespace unda {
 	};
 
 	struct Vertex {
-		Vertex() {
-			x  = 0.0f;
-			y  = 0.0f;
-			z  = 0.0f;
-			u  = 0.0f;
-			v  = 0.0f;
-			nx = 0.0f;
-			ny = 0.0f;
-			nz = 0.0f;
-		}
+		Vertex() = default;
 		Vertex(float xPos, float yPos, float zPos, float uCoord, float vCoord, float xNorm, float yNorm, float zNorm) {
 			x = xPos;
 			y = yPos;
@@ -116,9 +98,37 @@ namespace unda {
 			ny = yNorm;
 			nz = zNorm;
 		}
-		float x, y, z, u, v, nx, ny, nz;
+		float x = 0.0f, y = 0.0f, z = 0.0f;
+		float u = 0.0f, v = 0.0f;
+		float nx = 0.0f, ny = 0.0f, nz = 0.0f;
+		Vertex& operator=(const Vertex& other) {
+			if (this == &other) return *this;
+			x = other.x;
+			y = other.y;
+			z = other.z;
+			u = other.u;
+			v = other.v;
+			nx = other.nx;
+			ny = other.ny;
+			nz = other.nz;
+			return *this;
+		}
 	};
 
+
+	struct AABB {
+		AABB() = default;
+		AABB(const Vertex& _min, const Vertex& _max)
+			: min(_min)
+			, max(_max) {};
+		~AABB() = default;
+		Vertex min = Vertex(), max = Vertex();
+		Vertex nearBottomLeft, nearBottomRight, nearTopRight, nearTopLeft;
+		Vertex farBottomLeft, farBottomRight, farTopRight, farTopLeft;
+
+
+		glm::vec3 surfaceNormal = glm::vec3();
+	};
 
 	class Listener : public Transform {
 	public:

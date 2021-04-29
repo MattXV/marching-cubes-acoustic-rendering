@@ -29,7 +29,7 @@ namespace unda {
             GLCALL(glBindVertexArray(vao));
 
             GLCALL(glBindBuffer(GL_ARRAY_BUFFER, vbo));
-            GLCALL(glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), &mesh.vertices[0], GL_STATIC_DRAW));
+            GLCALL(glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), (void*)mesh.vertices.data(), GL_STATIC_DRAW));
             GLCALL(glEnableVertexAttribArray(unda::shaders::vertexPositionLocation)); // vertexPosition
             GLCALL(glVertexAttribPointer(shaders::vertexPositionLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x)));
 
@@ -41,7 +41,7 @@ namespace unda {
             if (!mesh.indices.empty()) {
                 indexCount = (unsigned int)mesh.indices.size();
                 GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-                GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &mesh.indices[0], GL_STATIC_DRAW));
+                GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), (void*)mesh.indices.data(), GL_STATIC_DRAW));
             }
 
             GLCALL(glBindVertexArray(NULL));
@@ -73,29 +73,53 @@ namespace unda {
             return;
         }
 
-        glm::vec3 min, max;
+        Vertex minVertex, maxVertex;
         float distance = 0.0f;
         bool first = true;
 
-        std::function<void(Vertex&)> getMinimum = [&min, &first](Vertex& vertex) {
+        Vertex nearBottomLeft, nearBottomRight, nearTopRight, nearTopLeft;
+        Vertex farBottomLeft, farBottomRight, farTopRight, farTopLeft;
+        glm::vec3 surfaceNormal = glm::vec3();
+
+        std::function<void(Vertex&)> getMinimum = [&](Vertex& vertex) {
+            bool changed = false;
             if (first) {
-                min.x = vertex.x;
-                min.y = vertex.y;
-                min.z = vertex.z;
+                minVertex = vertex;
+                nearBottomLeft = nearBottomRight = nearTopRight = nearTopLeft = vertex;
+                farBottomLeft = farBottomRight = farTopRight = farTopLeft = vertex;
                 first = false;
+                surfaceNormal = glm::vec3(vertex.nx, vertex.ny, vertex.nz);
+            }
+            
+            if (vertex.x < minVertex.x) { minVertex.x = vertex.x; changed = true; } // Bounding points
+            if (vertex.y < minVertex.y) { minVertex.y = vertex.y; changed = true; }
+            if (vertex.z < minVertex.z) { minVertex.z = vertex.z; changed = true; }
+            if (changed) {
+                minVertex.u = vertex.u;
+                minVertex.v = vertex.v;
+                minVertex.nx = vertex.nx;
+                minVertex.ny = vertex.ny;
+                minVertex.nz = vertex.nz;
             }
 
-            if (vertex.x < min.x) min.x = vertex.x;
-            if (vertex.y < min.y) min.y = vertex.y;
-            if (vertex.z < min.z) min.z = vertex.z;
+            if (vertex.x < nearBottomLeft.x  && vertex.y < nearBottomLeft.y  && vertex.z < nearBottomLeft.z)  nearBottomLeft = vertex;
+            if (vertex.x < nearTopLeft.x     && vertex.y > nearTopLeft.y     && vertex.z < nearTopLeft.z)     nearTopLeft = vertex;
+            if (vertex.x > nearTopRight.x    && vertex.y > nearTopRight.y    && vertex.z < nearTopRight.z)    nearTopRight = vertex;
+            if (vertex.x > nearBottomRight.x && vertex.y < nearBottomRight.y && vertex.z < nearBottomRight.z) nearBottomRight = vertex;
+
+            if (vertex.x < farBottomLeft.x   && vertex.y < farBottomLeft.y   && vertex.z > farBottomLeft.z)  farBottomLeft = vertex;
+            if (vertex.x < farTopLeft.x      && vertex.y > farTopLeft.y      && vertex.z > farTopLeft.z)     farTopLeft = vertex;
+            if (vertex.x > farTopRight.x     && vertex.y > farTopRight.y     && vertex.z > farTopRight.z)    farTopRight = vertex;
+            if (vertex.x > farBottomRight.x  && vertex.y < farBottomRight.y  && vertex.z > farBottomRight.z) farBottomRight = vertex;
+            surfaceNormal = glm::normalize(surfaceNormal + glm::vec3(vertex.nx, vertex.ny, vertex.nz));
         };
 
-        std::function<void(Vertex&)> getMaximum = [&min, &max, &distance](Vertex& vertex) {
-            glm::vec3 point{ vertex.x, vertex.y, vertex.z };
-            float newDistance = fabs(glm::distance(min, point));
+        std::function<void(Vertex&)> getMaximum = [&minVertex, &maxVertex, &distance](Vertex& vertex) {
+            glm::vec3 currentPoint{ vertex.x, vertex.y, vertex.z };
+            float newDistance = fabs(glm::distance(glm::vec3(minVertex.x, minVertex.y, minVertex.z), currentPoint));
             if (newDistance > distance) {
                 distance = newDistance;
-                max = point;
+                maxVertex = vertex;
             }
         };
 
@@ -105,31 +129,20 @@ namespace unda {
             std::for_each(mesh.vertices.begin(), mesh.vertices.end(), getMinimum);
             std::for_each(mesh.vertices.begin(), mesh.vertices.end(), getMaximum);
 
-            mesh.aabb = AABB(min, max, Transform::getPosition());
+            AABB aabb = AABB(minVertex, maxVertex);
+            aabb.nearBottomLeft = nearBottomLeft;
+            aabb.nearBottomRight = nearBottomRight;
+            aabb.nearTopRight = nearTopRight;
+            aabb.nearTopLeft = nearTopLeft;
+            aabb.farBottomLeft = farBottomLeft;
+            aabb.farBottomRight = farBottomRight;
+            aabb.farTopRight = farTopRight;
+            aabb.farTopLeft = farTopLeft;
+            aabb.surfaceNormal = surfaceNormal;
+
+            mesh.aabb = aabb;
         }
-
-
-        //for (Mesh& mesh : meshes) {
-        //    memcpy(&min, &mesh.vertices[0], sizeof(Vertex));
-        //    memcpy(&max, &mesh.vertices[0], sizeof(Vertex));
-        //    for (Vertex& vertex : mesh.vertices) {
-        //        if (vertex.x < min.x && vertex.y < min.y && vertex.z < min.z) {
-        //            memcpy(&min, &vertex, sizeof(Vertex));
-        //            //min = vertex;
-        //        }
-        //        if (vertex.x > max.x && vertex.y > max.y && vertex.z > max.z) {
-        //            memcpy(&max, &vertex, sizeof(Vertex));
-        //            //max = vertex;
-        //        }
-        //    }
-        //    glm::vec3 cubeSize{ 0.05f, 0.05f, 0.05f };
-
-            //mesh.aabb = AABB(glm::vec3(min.x, min.y, min.z) - cubeSize, glm::vec3(max.x, max.y, max.z) + cubeSize, getPosition());
-
-            //ModifyVertices(mesh.vertices, getAABB);
-
-
-        
+  
     }
 
     void Model::normaliseMeshes()
@@ -154,6 +167,7 @@ namespace unda {
         }
         for (Mesh& mesh : meshes) {
             ModifyVertices(mesh.vertices, normalise); // vertices = vertices / maxValue
+            mesh.scale = *maxValue;
         }
         delete maxValue;
     }
@@ -255,9 +269,15 @@ namespace unda {
         std::filesystem::path baseModelPath(modelPath);
         std::string modelFileName = baseModelPath.stem().string();
         baseModelPath.remove_filename();
-        baseModelPath.append("*.png");
-        std::vector<std::filesystem::path> textures = glob::glob(baseModelPath.string());
 
+        auto modelParentPath = baseModelPath.parent_path().remove_filename();
+        auto texturesFolder = modelParentPath.append("Textures");
+        baseModelPath.append("*.png");
+        modelParentPath.append("**.png");
+        texturesFolder.append("*.png");
+
+        std::vector<std::filesystem::path> imageTexturesFound = glob::rglob(
+            { baseModelPath.string(), modelParentPath.string() });
         
         std::vector<std::vector<unda::Vertex>> verticesArray; 
         std::vector<std::vector<unsigned int>> indicesArray; 
@@ -314,44 +334,43 @@ namespace unda {
                 indices.push_back((unsigned int)face.mIndices[2]);
             }
             
+            // Look for textures
             std::string texturePath, normalPath;
             aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-            for (auto iterator = textures.begin(); iterator < textures.end(); iterator++) {
-                std::filesystem::path& path = *iterator;
+            for (auto& textureCandidate : imageTexturesFound) {
                 
-                if (path.string().find(material->GetName().C_Str()) != std::string::npos) {
+                if (textureCandidate.stem().string().find(material->GetName().C_Str()) != std::string::npos) {
                     if (verbose) {
                         std::cout << "Found aiStandardSurface!" << std::endl;
                     }
                     
-                    if (path.string().find("BaseColor" + mesh->mMaterialIndex) != std::string::npos) {
+                    if (textureCandidate.stem().string().find("BaseColor" + mesh->mMaterialIndex) != std::string::npos) {
                         if (verbose) {
                             std::cout << "Found colour texture!" << std::endl;
-                            texturePath = path.string();
                         }
+                        texturePath = textureCandidate.string();
                         //textures.erase(iterator);
                         break;
                     }
                 } else {
-                    //if (path.string().find(modelFileName) != std::string::npos) {
-                    //    texturePath = path.string();
-                    //}
+                    if (textureCandidate.stem().string().find(modelFileName) != std::string::npos) {
+                        texturePath = textureCandidate.string();
+                    }
                 }
             }
             // Normals
-            for (auto iterator = textures.begin(); iterator < textures.end(); iterator++) {
-                std::filesystem::path& path = *iterator;
+            for (auto& textureCandidate : imageTexturesFound) {
 
-                if (path.string().find(material->GetName().C_Str()) != std::string::npos) {
+                if (textureCandidate.stem().string().find(material->GetName().C_Str()) != std::string::npos) {
                     if (verbose) {
                         std::cout << "Found aiStandardSurface!" << std::endl;
                     }
 
-                    if (path.string().find("Normal" + mesh->mMaterialIndex) != std::string::npos) {
+                    if (textureCandidate.stem().string().find("Normal" + mesh->mMaterialIndex) != std::string::npos) {
                         if (verbose) {
                             std::cout << "Found colour texture!" << std::endl;
-                            normalPath = path.string();
                         }
+                        normalPath = textureCandidate.string();
                         //textures.erase(iterator);
                         break;
                     }
@@ -389,8 +408,6 @@ namespace unda {
     }
 
 
-
-
     Model* loadMeshDirectory(const std::string& directoryPath, const std::string& extension, const Colour<float>& baseColour, bool verbose)
     {
 
@@ -418,6 +435,4 @@ namespace unda {
 
         return combined;
     }
-
-
 }

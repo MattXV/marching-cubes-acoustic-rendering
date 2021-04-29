@@ -54,8 +54,9 @@ namespace unda {
 		addLight(light);
 
 		camera->setPosition(glm::vec3(1.0f, 0.0f, 1.0f));
-
-		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory("resources/models/ConferenceRoom/Models", "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
+		auto modelpath = std::filesystem::path("resources/models/ConferenceRoom/Models");
+		modelpath = modelpath.make_preferred();
+		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory(modelpath.string(), "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
 		if (conferenceModel->getMeshes().empty()) { std::cout << "No meshes!" << std::endl; return; }
 		conferenceModel->normaliseMeshes();
 		conferenceModel->calculateAABB();
@@ -64,19 +65,20 @@ namespace unda {
 
 		int unique = 0;
 		for (Mesh& mesh : conferenceModel->getMeshes()) {
-			Model* model = unda::primitives::cubeBoundingBox(mesh.aabb);		
+			Model* model = unda::primitives::cubeBoundingBox(mesh.aabb);
 			boundingBoxesModels.emplace_back(std::unique_ptr<Model>(model));
 			boundingBoxes.insert(std::make_pair(mesh.name + std::to_string(unique++), model));
 			model->setScale(glm::vec3(3.0f, 3.0f, 3.0f));
 			model->toVertexArray();
 		}
 
-		MarchingCubes* marchingCubes = new MarchingCubes(75, 32, 1.0f, Point3D(0, 0, 0));
+		MarchingCubes* marchingCubes = new MarchingCubes(45, 32, 1.0f, Point3D(0, 0, 0));
 		marchingCubes->computeScalarField(conferenceModel);
 		marchingCubes->computeMarchingCubes(1.0);
 		Model* marchingCubesModel = marchingCubes->createModel();
 		marchingCubesModel->normaliseMeshes();
 		marchingCubesModel->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
+
 
 		marchingCubesModel->toVertexArray();
 		conferenceModel->toVertexArray();
