@@ -51,8 +51,6 @@ namespace unda {
 		}
 
 		return vertices;
-
-
 	}
 
 	
@@ -307,76 +305,94 @@ namespace unda {
 		// 3) Forget this. Well, just get the current position and add and subtract the size of a cell
 		//		to get a square patch.
 
+		glm::vec3 aabbMinPoint   = glm::vec3(aabb.min.x, aabb.min.y, aabb.min.z);
+		glm::vec3 minMarchedCube = glm::vec3(marchedCube.min.x, marchedCube.min.y, marchedCube.min.z);
+		glm::vec3 maxMarchedCube = glm::vec3(marchedCube.max.x, marchedCube.max.y, marchedCube.max.z);
 
-		float minXRelativeDistance = fabs(marchedCube.min.x - aabb.min.x) * fabs(aabb.max.x - aabb.min.x);
-		float minYRelativeDistance = fabs(marchedCube.min.y - aabb.min.y) * fabs(aabb.max.y - aabb.min.y);
-		float minZRelativeDistance = fabs(marchedCube.min.z - aabb.min.z) * fabs(aabb.max.z - aabb.min.z);
+		float minRelativeDistance = glm::distance(aabbMinPoint, minMarchedCube);
+		float maxRelativeDistance = glm::distance(aabbMinPoint, maxMarchedCube);
 
-		float maxXRelativeDistance = fabs(marchedCube.max.x - aabb.min.x) * fabs(aabb.max.x - aabb.min.x);
-		float maxYRelativeDistance = fabs(marchedCube.max.y - aabb.min.y) * fabs(aabb.max.y - aabb.min.y);
-		float maxZRelativeDistance = fabs(marchedCube.max.z - aabb.min.z) * fabs(aabb.max.z - aabb.min.z);
+		//float minXRelativeDistance = fabs(marchedCube.min.x - aabb.min.x) * fabs(aabb.max.x - aabb.min.x);
+		//float minYRelativeDistance = fabs(marchedCube.min.y - aabb.min.y) * fabs(aabb.max.y - aabb.min.y);
+		//float minZRelativeDistance = fabs(marchedCube.min.z - aabb.min.z) * fabs(aabb.max.z - aabb.min.z);
+		//
+		//float maxXRelativeDistance = fabs(marchedCube.max.x - aabb.min.x) * fabs(aabb.max.x - aabb.min.x);
+		//float maxYRelativeDistance = fabs(marchedCube.max.y - aabb.min.y) * fabs(aabb.max.y - aabb.min.y);
+		//float maxZRelativeDistance = fabs(marchedCube.max.z - aabb.min.z) * fabs(aabb.max.z - aabb.min.z);
 
 
 
 		
 		{
-			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, minXRelativeDistance);
-			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, minYRelativeDistance);
+			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, minRelativeDistance);
+			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, minRelativeDistance);
 
-			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, maxXRelativeDistance);
-			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, maxYRelativeDistance);
+			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, maxRelativeDistance);
+			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, maxRelativeDistance);
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "frontFace");
+			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance}, "frontFace");
 		}
 
 		{
-			float uMin = std::lerp(aabb.farBottomLeft.u, aabb.farTopRight.u, minXRelativeDistance);
-			float vMin = std::lerp(aabb.farBottomLeft.v, aabb.farTopRight.v, minYRelativeDistance);
+			float uMin = std::lerp(aabb.farBottomLeft.u, aabb.farTopRight.u, minRelativeDistance);
+			float vMin = std::lerp(aabb.farBottomLeft.v, aabb.farTopRight.v, minRelativeDistance);
 
-			float uMax = std::lerp(aabb.farBottomLeft.u, aabb.farTopRight.u, maxXRelativeDistance);
-			float vMax = std::lerp(aabb.farBottomLeft.v, aabb.farTopRight.v, maxYRelativeDistance);
+			float uMax = std::lerp(aabb.farBottomLeft.u, aabb.farTopRight.u, maxRelativeDistance);
+			float vMax = std::lerp(aabb.farBottomLeft.v, aabb.farTopRight.v, maxRelativeDistance);
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "backFace");
+			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "backFace");
 		}
 
 		{
-			float uMin = std::lerp(aabb.nearTopLeft.u, aabb.farTopRight.u, minXRelativeDistance);
-			float vMin = std::lerp(aabb.nearTopLeft.v, aabb.farTopRight.v, minZRelativeDistance);
+			float uMin = std::lerp(aabb.nearTopLeft.u, aabb.farTopRight.u, minRelativeDistance);
+			float vMin = std::lerp(aabb.nearTopLeft.v, aabb.farTopRight.v, minRelativeDistance);
 
-			float uMax = std::lerp(aabb.nearTopLeft.u, aabb.farTopRight.u, maxXRelativeDistance);
-			float vMax = std::lerp(aabb.nearTopLeft.v, aabb.farTopRight.v, maxZRelativeDistance);
+			float uMax = std::lerp(aabb.nearTopLeft.u, aabb.farTopRight.u, maxRelativeDistance);
+			float vMax = std::lerp(aabb.nearTopLeft.v, aabb.farTopRight.v, maxRelativeDistance);
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "topFace");
+			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "topFace");
 		}
 
 		{
-			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.farBottomRight.u, minXRelativeDistance);
-			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.farBottomRight.v, minZRelativeDistance);
+			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.farBottomRight.u, minRelativeDistance);
+			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.farBottomRight.v, minRelativeDistance);
 
-			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.farBottomRight.u, maxXRelativeDistance);
-			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.farBottomRight.v, maxZRelativeDistance);
+			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.farBottomRight.u, maxRelativeDistance);
+			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.farBottomRight.v, maxRelativeDistance);
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "bottomFace");
+			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "bottomFace");
 		}
 
 		{
-			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.farTopLeft.u, minZRelativeDistance);
-			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.farTopLeft.v, minYRelativeDistance);
+			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.farTopLeft.u, minRelativeDistance);
+			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.farTopLeft.v, minRelativeDistance);
 
-			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.farTopLeft.u, maxZRelativeDistance);
-			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.farTopLeft.v, maxYRelativeDistance);
+			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.farTopLeft.u, maxRelativeDistance);
+			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.farTopLeft.v, maxRelativeDistance);
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "leftFace");
+			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "leftFace");
 		}
 
 		{
-			float uMin = std::lerp(aabb.nearBottomRight.u, aabb.farTopRight.u, minZRelativeDistance);
-			float vMin = std::lerp(aabb.nearBottomRight.v, aabb.farTopRight.v, minYRelativeDistance);
+			float uMin = std::lerp(aabb.nearBottomRight.u, aabb.farTopRight.u, minRelativeDistance);
+			float vMin = std::lerp(aabb.nearBottomRight.v, aabb.farTopRight.v, minRelativeDistance);
 
-			float uMax = std::lerp(aabb.nearBottomRight.u, aabb.farTopRight.u, maxZRelativeDistance);
-			float vMax = std::lerp(aabb.nearBottomRight.v, aabb.farTopRight.v, maxYRelativeDistance);
+			float uMax = std::lerp(aabb.nearBottomRight.u, aabb.farTopRight.u, maxRelativeDistance);
+			float vMax = std::lerp(aabb.nearBottomRight.v, aabb.farTopRight.v, maxRelativeDistance);
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMax, vMax }, "rightFace");
+			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
+
+			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "rightFace");
 		}
 	}
 

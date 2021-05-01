@@ -72,7 +72,7 @@ namespace unda {
 			model->toVertexArray();
 		}
 
-		MarchingCubes* marchingCubes = new MarchingCubes(45, 32, 1.0f, Point3D(0, 0, 0));
+		MarchingCubes* marchingCubes = new MarchingCubes(75, 32, 1.0f, Point3D(0, 0, 0));
 		marchingCubes->computeScalarField(conferenceModel);
 		marchingCubes->computeMarchingCubes(1.0);
 		Model* marchingCubesModel = marchingCubes->createModel();
