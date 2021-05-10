@@ -165,12 +165,11 @@ void ModelRenderer::drawModel(unda::Scene* scene)
 			GLCALL(glUniform3fv(viewPositionLocation, 1, glm::value_ptr(scene->getCamera()->getPosition())));
 			// Bind texture
 
-			Texture* texture = mesh.texture.get();
+			Texture* texture = mesh.texture;
 			if (texture) {
 				GLCALL(glActiveTexture(GL_TEXTURE0));
 				GLCALL(glUniform1i(textureSamplerLocation, 0));
 				GLCALL(glBindTexture(GL_TEXTURE_2D, mesh.texture->getTextureId()));
-
 
 			}
 

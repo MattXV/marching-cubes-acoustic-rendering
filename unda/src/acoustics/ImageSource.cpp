@@ -46,7 +46,7 @@ namespace unda {
 
 
 
-		ImageSourceModel::ImageSourceModel(int _nThreads, const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition, const std::array<double, 3>& _receiverPosition, const std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples)
+		ImageSourceModel::ImageSourceModel(int _nThreads, const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition, const std::array<double, 3>& _receiverPosition, std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples)
 			: spaceDimensions(_spaceDimensions)
 			, sourcePosition(_sourcePosition)
 			, receiverPosition(_receiverPosition)
@@ -79,8 +79,9 @@ namespace unda {
 			}
 			totalAlpha /= 6.0;
 			t_60 = 0.161 * (volume / totalAlpha);
-			meanFreePathEstimate = meanFreePath(volume,
-				floorSurface + ceilingSurface + backWallSurface + frontWallSurface + leftWallSurface + rightWallSurface);
+			totalSurface = floorSurface + ceilingSurface + backWallSurface + frontWallSurface + leftWallSurface + rightWallSurface;
+			meanFreePathEstimate = meanFreePath(volume, (double)totalSurface);
+
 
 			if (_nSamples < 1) {
 				nSamples = (int)round(t_60 * samplingFrequency);
@@ -111,6 +112,67 @@ namespace unda {
 		
 			computeTail();
 		}
+
+		void ImageSourceModel::doPatches(const std::vector<SurfacePatch>& patches, int cellsPerDimesion)
+		{
+			long double patchContribution = totalSurface / std::pow((long double)cellsPerDimesion, 3);
+			for (SurfacePatch patch : patches) {
+				
+				if (patch.name.find("bottomFace") != std::string::npos) {
+
+					for (int i = 0; i < 6; i++) {
+						long double patchCoefficient = (long double)patch.coefficients[i];
+						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+						surfaceReflection[0][i] = std::lerp((long double)surfaceReflection[0][i], patchCoefficient, patchContribution);
+					}
+				}
+
+				if (patch.name.find("topFace") != std::string::npos) {
+
+					for (int i = 0; i < 6; i++) {
+						long double patchCoefficient = (long double)patch.coefficients[i];
+						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+						surfaceReflection[1][i] = std::lerp((long double)surfaceReflection[1][i], patchCoefficient, patchContribution);
+					}
+				}
+
+				if (patch.name.find("backFace") != std::string::npos) {
+
+					for (int i = 0; i < 6; i++) {
+						long double patchCoefficient = (long double)patch.coefficients[i];
+						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+						surfaceReflection[2][i] = std::lerp((long double)surfaceReflection[2][i], patchCoefficient, patchContribution);
+					}
+				}
+				if (patch.name.find("frontFace") != std::string::npos) {
+
+					for (int i = 0; i < 6; i++) {
+						long double patchCoefficient = (long double)patch.coefficients[i];
+						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+						surfaceReflection[3][i] = std::lerp((long double)surfaceReflection[3][i], patchCoefficient, patchContribution);
+					}
+				}
+				if (patch.name.find("leftFace") != std::string::npos) {
+
+					for (int i = 0; i < 6; i++) {
+						long double patchCoefficient = (long double)patch.coefficients[i];
+						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+						surfaceReflection[4][i] = std::lerp((long double)surfaceReflection[4][i], patchCoefficient, patchContribution);
+					}
+				}
+
+				if (patch.name.find("rightFace") != std::string::npos) {
+
+					for (int i = 0; i < 6; i++) {
+						long double patchCoefficient = (long double)patch.coefficients[i];
+						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+						surfaceReflection[5][i] = std::lerp((long double)surfaceReflection[5][i], patchCoefficient, patchContribution);
+					}
+				}
+			}
+		}
+
+
 
 		void ImageSourceModel::computeIRs(int threadId)
 		{
@@ -295,6 +357,47 @@ namespace unda {
 			WriteAudioFile({ output }, "ir_reverb.wav", samplingFrequency);
 		}
 
-	}
 
+	
+		int loadPredictions(const std::string& predictionCsv, std::vector<SurfacePatch>& outPatches)
+		{
+			std::ifstream csvFile(predictionCsv);
+			outPatches.clear();
+
+			std::string line;
+			if (csvFile.is_open()) {
+				std::getline(csvFile, line);
+				while (std::getline(csvFile, line)) {
+					size_t pos = 0;
+					SurfacePatch patch{};
+					std::string token;
+					int i = 0;
+					while ((pos = line.find(',')) != std::string::npos) {
+					token = line.substr(0, pos);
+					line.erase(0, pos + 1);
+
+					if (i == 0) patch.name = token;
+					if (i == 1) patch.label = token;
+					if (i == 2) patch.confidence = std::stof(token);
+					if (i == 3) patch.coefficients[0] = std::stof(token);
+					if (i == 4) patch.coefficients[1] = std::stof(token);
+					if (i == 5) patch.coefficients[2] = std::stof(token);
+					if (i == 6) patch.coefficients[3] = std::stof(token);
+					if (i == 7) patch.coefficients[4] = std::stof(token);
+					if (i == 8) patch.coefficients[5] = std::stof(token);
+
+					i++;
+					}
+					outPatches.push_back(patch);
+				}
+				csvFile.close();
+			}
+			else {
+				UNDA_ERROR("Could not open: " + predictionCsv);
+				return -1;
+			}
+			return 0;
+		}
+
+	}
 }

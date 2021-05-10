@@ -12,6 +12,7 @@
 
 
 #define DISABLE_COPY_ASSIGN(Class) Class(const Class&) = delete; void operator=(const Class&) = delete; 
+#define UNDA_LOG_MESSAGE(Message) std::cout << Message << std::endl
 
 #if UNDA_DEBUG == 1
 	#define UNDA_ERROR(Message) std::cerr << Message << std::endl; __debugbreak();  
@@ -20,7 +21,7 @@
 		if (!unda::utils::printGLError(#call, __FILE__, __LINE__))\
 			__debugbreak()
 #else
-	#define UNDA_ERROR(Message) ;  
+	#define UNDA_ERROR(Message)
 	#define GLCALL(call) call;
 #endif
 

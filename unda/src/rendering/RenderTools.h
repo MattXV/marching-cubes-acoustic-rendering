@@ -5,6 +5,7 @@
 #include <glm/ext/scalar_constants.hpp>
 #include <glad/glad.h>
 
+#include <array>
 #include <assert.h>
 #include <iostream>
 #include <vector>
@@ -13,6 +14,35 @@
 
 
 namespace unda {
+	struct Vertex {
+		Vertex() = default;
+		Vertex(float xPos, float yPos, float zPos, float uCoord, float vCoord, float xNorm, float yNorm, float zNorm) {
+			x = xPos;
+			y = yPos;
+			z = zPos;
+			u = uCoord;
+			v = vCoord;
+			nx = xNorm;
+			ny = yNorm;
+			nz = zNorm;
+		}
+		float x = 0.0f, y = 0.0f, z = 0.0f;
+		float u = 0.0f, v = 0.0f;
+		float nx = 0.0f, ny = 0.0f, nz = 0.0f;
+		Vertex& operator=(const Vertex& other) {
+			if (this == &other) return *this;
+			x = other.x;
+			y = other.y;
+			z = other.z;
+			u = other.u;
+			v = other.v;
+			nx = other.nx;
+			ny = other.ny;
+			nz = other.nz;
+			return *this;
+		}
+	};
+
 	struct Point3D {
 		Point3D() {}
 		Point3D(float xPos, float yPos, float zPos) {
@@ -36,7 +66,7 @@ namespace unda {
 		}
 		Point3D a = Point3D(), b = Point3D(), c = Point3D();
 
-		glm::vec3 computeNormalVector() {
+		inline glm::vec3 computeNormalVector() {
 			//Dir = (B - A) x(C - A)
 			//Norm = Dir / len(Dir)
 			glm::vec3 dir = glm::cross(
@@ -45,6 +75,15 @@ namespace unda {
 			);
 			glm::vec3 retNormal = glm::normalize(dir);
 			return retNormal;
+		}
+
+		inline std::array<Vertex, 3> getVertices() {
+			glm::vec3 normal = computeNormalVector();
+			std::array<Vertex, 3> vertices;
+			vertices[0] = Vertex(a.x, a.y, a.z, 0.0f, 0.0f, normal.x, normal.y, normal.z);
+			vertices[1] = Vertex(b.x, b.y, b.z, 0.0f, 0.0f, normal.x, normal.y, normal.z);
+			vertices[2] = Vertex(c.x, c.y, c.z, 0.0f, 0.0f, normal.x, normal.y, normal.z);
+			return vertices;
 		}
 	};
 
@@ -86,34 +125,6 @@ namespace unda {
 		T r, g, b, a;
 	};
 
-	struct Vertex {
-		Vertex() = default;
-		Vertex(float xPos, float yPos, float zPos, float uCoord, float vCoord, float xNorm, float yNorm, float zNorm) {
-			x = xPos;
-			y = yPos;
-			z = zPos;
-			u = uCoord;
-			v = vCoord;
-			nx = xNorm;
-			ny = yNorm;
-			nz = zNorm;
-		}
-		float x = 0.0f, y = 0.0f, z = 0.0f;
-		float u = 0.0f, v = 0.0f;
-		float nx = 0.0f, ny = 0.0f, nz = 0.0f;
-		Vertex& operator=(const Vertex& other) {
-			if (this == &other) return *this;
-			x = other.x;
-			y = other.y;
-			z = other.z;
-			u = other.u;
-			v = other.v;
-			nx = other.nx;
-			ny = other.ny;
-			nz = other.nz;
-			return *this;
-		}
-	};
 
 
 	struct AABB {
@@ -139,6 +150,8 @@ namespace unda {
 		std::string microphoneType = "";
 	};
 
+
+
 	// ---------------------------------------------------------------------------
 
 
@@ -161,11 +174,6 @@ namespace unda {
 		}
 	}
 
-	static inline void ModifyVertices(std::vector<Vertex>& vertices, std::function<void(Vertex&)>& f) {
-		for (Vertex& vertex : vertices) {
-			f(vertex);
-		}
-	}
 
 	static inline bool pointMeshCollision(glm::vec3& point, std::pair<glm::vec3, glm::vec3>& two) // AABB - AABB collision
 	{

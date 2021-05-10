@@ -4,6 +4,8 @@
 #include "../rendering/Texture.h"
 #include "../utils/Settings.h"
 #include <glm/glm.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -11,23 +13,25 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <memory>
+#include <unordered_map>
 //class Texture;
 
 
 namespace unda {
-
-
+	static std::unordered_map<std::string, std::unique_ptr<Texture>> textures;
 
 	struct Mesh {
-		Mesh(std::vector<Vertex>&& _vertices, std::vector<unsigned int>&& _indices, Texture* _texture, const std::string& _name = std::string(), Texture* normal = nullptr)
+		Mesh(std::vector<Vertex>&& _vertices, std::vector<unsigned int>&& _indices, Texture* _texture, const std::string& _name = std::string(), Texture* normal = nullptr, glm::mat4 _transform = glm::mat4())
 			: vertices(std::move(_vertices))
 			, indices(std::move(_indices))
-			, texture(std::move(_texture))
+			, texture(_texture)
 			, name(_name)
 			, normalMap(normal)
+			, tranform(_transform)
 		{ }
 		Mesh(const unsigned int& _vao, const unsigned int& _vbo, const unsigned int& _ibo,
-			const long unsigned int& _vertexCount, const long unsigned int& _indexCount, Texture* t)
+			const long unsigned int& _vertexCount, const long unsigned int& _indexCount, Texture* t, glm::mat4 _transform = glm::mat4())
 			: texture(t)
 		{
 			vao = _vao;
@@ -35,13 +39,15 @@ namespace unda {
 			ibo = _ibo;
 			vertexCount = _vertexCount;
 			indexCount = _indexCount;
+			tranform = _transform;
 		}
 		unsigned int vao = 0, vbo = 0, ibo = 0;
 		long unsigned int vertexCount = 0, indexCount = 0;
-		std::unique_ptr<Texture> texture;
+		Texture* texture;
 		std::unique_ptr<Texture> normalMap;
 		float scale = 1.0;
 		glm::vec3 size = glm::vec3(0, 0, 0);
+		glm::mat4 tranform;
 		AABB aabb;
 
 		// Temporary CPU allocation
@@ -61,7 +67,7 @@ namespace unda {
 		void toVertexArray();
 		std::vector<Mesh>& getMeshes() { return meshes; }
 		const std::vector<Mesh>& getMeshes() const { return meshes; }
-		void addMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, Texture* texture, const std::string& name = std::string(), Texture* normal = nullptr);
+		void addMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, Texture* texture, const std::string& name = std::string(), Texture* normal = nullptr, glm::mat4 transform = glm::mat4(1.0f));
 
 		void calculateAABB();
 		void normaliseMeshes();

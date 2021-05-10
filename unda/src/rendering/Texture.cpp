@@ -37,8 +37,7 @@ int Texture::generatePatch(std::pair<double, double> minUV, std::pair<double, do
 
 	if (xMin > xMax) unda::integerAddSwap(&xMin, &xMax);
 	if (yMin > yMax) unda::integerAddSwap(&yMin, &yMax);
-	std::cout << "xmin: " << xMin << " xmax: " << xMax << std::endl;
-	std::cout << "ymin: " << yMin << " ymax " << yMax << std::endl;
+
 	if (xMin > width)  return -1;
 	if (xMin < 0)      return -1;
 	if (xMax > width)  return -1;

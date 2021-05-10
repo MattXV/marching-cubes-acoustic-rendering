@@ -4,7 +4,6 @@
 unda::Engine::Engine() 
 	: application(new unda::GLFWApplication())
 {
-	if (!init()) return;
 	scene = new unda::Scene();
 	modelRenderer = new ModelRenderer();
 	lightRenderer = new LightRenderer();
@@ -16,12 +15,13 @@ unda::Engine::Engine(int width, int height)
 	unda::windowWidth = width;
 	unda::windowHeight = height;
 
-	if (!init()) return;
 	scene = new unda::Scene();
 	modelRenderer = new ModelRenderer();
+	lightRenderer = new LightRenderer();
 }
 
 unda::Engine::~Engine() {
+
 	delete scene;
 	delete modelRenderer;
 	delete lightRenderer;
@@ -30,8 +30,8 @@ unda::Engine::~Engine() {
 
 bool unda::Engine::keepRunning()
 {
-	while (application->isRunning())
-		return true;
+	while (application->isRunning()) return true;
+	cleanUp();
 	return false;
 }
 
@@ -43,22 +43,16 @@ void unda::Engine::update(double deltaTime)
 
 void unda::Engine::render()
 {
-	glClearColor(0.33f, 0.33f, 0.33f, 1.0f);
-	//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	//glEnable(GL_CULL_FACE);
+	unda::render::prepare();
+	scene->render();
 	lightRenderer->drawLights(scene);
 	modelRenderer->drawModel(scene);
 
 	application->processEvents();
 }
 
-bool unda::Engine::init()
+void unda::Engine::cleanUp()
 {
-
-	return true;
+	textures.clear();
 }
+

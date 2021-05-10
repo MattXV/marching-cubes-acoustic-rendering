@@ -269,13 +269,13 @@ namespace unda {
 		}
 
 		for (std::thread& thread : threads) thread.join();
-		std::cout << "Computed marching cubes: " << vertices.size() << std::endl;
+
 	}
 
 	Model* MarchingCubes::createModel()
 	{
 		if (vertices.empty()) {
-			utils::logError("Marching Cubes: No vertices generated!", unda::errorSeverity::CRITICAL);
+			UNDA_ERROR("Marching Cubes: No vertices generated!")
 			return nullptr;
 		}
 
@@ -311,16 +311,6 @@ namespace unda {
 
 		float minRelativeDistance = glm::distance(aabbMinPoint, minMarchedCube);
 		float maxRelativeDistance = glm::distance(aabbMinPoint, maxMarchedCube);
-
-		//float minXRelativeDistance = fabs(marchedCube.min.x - aabb.min.x) * fabs(aabb.max.x - aabb.min.x);
-		//float minYRelativeDistance = fabs(marchedCube.min.y - aabb.min.y) * fabs(aabb.max.y - aabb.min.y);
-		//float minZRelativeDistance = fabs(marchedCube.min.z - aabb.min.z) * fabs(aabb.max.z - aabb.min.z);
-		//
-		//float maxXRelativeDistance = fabs(marchedCube.max.x - aabb.min.x) * fabs(aabb.max.x - aabb.min.x);
-		//float maxYRelativeDistance = fabs(marchedCube.max.y - aabb.min.y) * fabs(aabb.max.y - aabb.min.y);
-		//float maxZRelativeDistance = fabs(marchedCube.max.z - aabb.min.z) * fabs(aabb.max.z - aabb.min.z);
-
-
 
 		
 		{
@@ -445,9 +435,11 @@ namespace unda {
 							fieldValue = 1.0f;
 							// TODO: Generate 6 patches
 							// TODO: one per cube face
-							modelMutex.lock();
-							generateMarchedCubesPatches(mesh.aabb, mesh.texture.get(), sampleCube);
-							modelMutex.unlock();
+							if (generatePatches) {
+								modelMutex.lock();
+								generateMarchedCubesPatches(mesh.aabb, mesh.texture, sampleCube);
+								modelMutex.unlock();
+							}
 							break;
 						}
 						else {

@@ -13,11 +13,11 @@
 
 namespace unda {
 
-	class Camera : public Listener {
+	class Camera : public Transform {
 	public:
-		Camera(float _fov, float aspectRatio, float nearClippingPlane, float farClippingPlane, 
+		Camera(float _fov, float aspectRatio, float nearClippingPlane, float farClippingPlane,
 			const glm::vec3& pos = glm::vec3(0, 0, 0),
-			const glm::vec3& upDirection = glm::vec3(0, 1, 0), const glm::vec3& lookAt = glm::vec3(0, 0, 0)) 
+			const glm::vec3& upDirection = glm::vec3(0, 1, 0), const glm::vec3& lookAt = glm::vec3(0, 0, 0))
 		{
 			fov = _fov;
 			aRatio = aspectRatio;

@@ -18,6 +18,9 @@ namespace unda {
 		static inline double meanFreePath(double totalVolume, double totalSurface) { 
 			return 4.0 * (totalVolume / totalSurface); 
 		}
+		static inline double alphaToBeta(double alpha) {
+			return sqrt(1.0 - alpha);
+		}
 
 		class Material {
 		public:

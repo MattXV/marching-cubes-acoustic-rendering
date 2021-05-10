@@ -103,8 +103,11 @@ unda::GLFWApplication::GLFWApplication()
 	glViewport(0, 0, width, height);
 	running = true;
 
-	std::cout << "Loaded GLFW, Version: " << glfwGetVersionString() << std::endl;
-	std::cout << "Loaded OpenGL, Version: " << GLVersion.major << '.' << GLVersion.minor << std::endl;
+	std::string versionString = std::string(glfwGetVersionString());
+	std::string glVersion = "Loaded OpenGL, Version: ";
+	glVersion.append(std::to_string(GLVersion.major) + "." + std::to_string(GLVersion.minor));
+	UNDA_LOG_MESSAGE("Loaded GLFW, Version: " + versionString);
+	UNDA_LOG_MESSAGE(glVersion);
 }
 
 unda::GLFWApplication::~GLFWApplication() {

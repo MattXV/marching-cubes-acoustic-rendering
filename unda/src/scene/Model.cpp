@@ -61,9 +61,9 @@ namespace unda {
         isBuffered = true;
     }
 
-    void Model::addMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, Texture* texture, const std::string& name, Texture* normal)
+    void Model::addMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, Texture* texture, const std::string& name, Texture* normal, glm::mat4 transform)
     {
-        meshes.push_back(Mesh(std::forward<std::vector<Vertex>>(vertices), std::forward<std::vector<unsigned int>>(indices), texture, name, normal));
+        meshes.push_back(Mesh(std::forward<std::vector<Vertex>>(vertices), std::forward<std::vector<unsigned int>>(indices), texture, name, normal, transform));
     }
 
     void Model::calculateAABB()
@@ -102,15 +102,15 @@ namespace unda {
                 minVertex.nz = vertex.nz;
             }
 
-            if (vertex.x < nearBottomLeft.x  && vertex.y < nearBottomLeft.y  && vertex.z < nearBottomLeft.z)  nearBottomLeft = vertex;
-            if (vertex.x < nearTopLeft.x     && vertex.y > nearTopLeft.y     && vertex.z < nearTopLeft.z)     nearTopLeft = vertex;
-            if (vertex.x > nearTopRight.x    && vertex.y > nearTopRight.y    && vertex.z < nearTopRight.z)    nearTopRight = vertex;
+            if (vertex.x < nearBottomLeft.x  && vertex.y < nearBottomLeft.y  && vertex.z < nearBottomLeft.z)  nearBottomLeft  = vertex;
+            if (vertex.x < nearTopLeft.x     && vertex.y > nearTopLeft.y     && vertex.z < nearTopLeft.z)     nearTopLeft     = vertex;
+            if (vertex.x > nearTopRight.x    && vertex.y > nearTopRight.y    && vertex.z < nearTopRight.z)    nearTopRight    = vertex;
             if (vertex.x > nearBottomRight.x && vertex.y < nearBottomRight.y && vertex.z < nearBottomRight.z) nearBottomRight = vertex;
 
-            if (vertex.x < farBottomLeft.x   && vertex.y < farBottomLeft.y   && vertex.z > farBottomLeft.z)  farBottomLeft = vertex;
-            if (vertex.x < farTopLeft.x      && vertex.y > farTopLeft.y      && vertex.z > farTopLeft.z)     farTopLeft = vertex;
-            if (vertex.x > farTopRight.x     && vertex.y > farTopRight.y     && vertex.z > farTopRight.z)    farTopRight = vertex;
-            if (vertex.x > farBottomRight.x  && vertex.y < farBottomRight.y  && vertex.z > farBottomRight.z) farBottomRight = vertex;
+            if (vertex.x < farBottomLeft.x   && vertex.y < farBottomLeft.y   && vertex.z > farBottomLeft.z)  farBottomLeft    = vertex;
+            if (vertex.x < farTopLeft.x      && vertex.y > farTopLeft.y      && vertex.z > farTopLeft.z)     farTopLeft       = vertex;
+            if (vertex.x > farTopRight.x     && vertex.y > farTopRight.y     && vertex.z > farTopRight.z)    farTopRight      = vertex;
+            if (vertex.x > farBottomRight.x  && vertex.y < farBottomRight.y  && vertex.z > farBottomRight.z) farBottomRight   = vertex;
             surfaceNormal = glm::normalize(surfaceNormal + glm::vec3(vertex.nx, vertex.ny, vertex.nz));
         };
 
@@ -148,25 +148,46 @@ namespace unda {
     void Model::normaliseMeshes()
     {
         float* maxValue = new float{ 1.0f };
-        std::function<void(Vertex&)> getAbsMax = [&maxValue](Vertex& vertex) { 
-            float x = fabs(vertex.x);
-            float y = fabs(vertex.y);
-            float z = fabs(vertex.z);
+        glm::mat4 transform = glm::mat4(1.0f);
+
+        std::function<void(Vertex&)> getAbsMax = [&maxValue, &transform](Vertex& vertex) { 
+
+            glm::vec4 position = glm::vec4(vertex.x, vertex.y, vertex.z, 1.0f);
+
+
+            float x = fabs(position.x);
+            float y = fabs(position.y);
+            float z = fabs(position.z);
             if (x > *maxValue) memcpy(maxValue, &x, sizeof(float));
             if (y > *maxValue) memcpy(maxValue, &y, sizeof(float));
             if (z > *maxValue) memcpy(maxValue, &z, sizeof(float));
 
         };
-        std::function<void(Vertex&)> normalise = [&maxValue](Vertex& vertex) { 
-            vertex.x /= *maxValue;
-            vertex.y /= *maxValue;
-            vertex.z /= *maxValue;
+        std::function<void(Vertex&)> normalise = [&maxValue, &transform](Vertex& vertex) { 
+            glm::vec4 position = glm::vec4(vertex.x / float(*maxValue), vertex.y / float(*maxValue), vertex.z / float(*maxValue), 1.0f);
+
+            //position = transform * position;
+            //position = position * 2.0f;
+
+            vertex.x = position.x;
+            vertex.y = position.y;
+            vertex.z = position.z;
+
         };
         for (Mesh& mesh : meshes) {
-            ModifyVertices(mesh.vertices, getAbsMax); // maxValue = max(|vertices|) 
+            transform = mesh.tranform;
+            std::for_each(mesh.vertices.begin(), mesh.vertices.end(), getAbsMax);
         }
         for (Mesh& mesh : meshes) {
-            ModifyVertices(mesh.vertices, normalise); // vertices = vertices / maxValue
+            float scale = float(*maxValue);
+            transform = transform / scale;
+
+            glm::vec4 test = glm::vec4(1.0f);
+            test = transform * test;
+            glm::vec4 test2 = glm::vec4(1.0f);
+
+
+            std::for_each(mesh.vertices.begin(), mesh.vertices.end(), normalise);
             mesh.scale = *maxValue;
         }
         delete maxValue;
@@ -219,6 +240,11 @@ namespace unda {
                 ny = normal.y;
                 nz = normal.z;
             }
+            aiNode* node = scene->mRootNode->FindNode(mesh->mName);
+            if (node) {
+                aiMatrix4x4 transform = node->mTransformation;
+            }
+
 
             vertices.emplace_back(x, y, z, u, v, nx, ny, nz);
         }
@@ -322,6 +348,7 @@ namespace unda {
                     nz = normal.z;
                 }
 
+
                 vertices.emplace_back(x, y, z, u, v, nx, ny, nz);
             }
 
@@ -334,72 +361,122 @@ namespace unda {
                 indices.push_back((unsigned int)face.mIndices[2]);
             }
             
+            glm::mat4 transform = glm::mat4(1.0f);
+            aiNode* node = scene->mRootNode->FindNode(mesh->mName);
+            if (node) {
+                aiMatrix4x4 aiTransform = node->mTransformation;
+                transform = glm::make_mat4(&aiTransform.a1);
+            }
             // Look for textures
             std::string texturePath, normalPath;
-            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-            for (auto& textureCandidate : imageTexturesFound) {
-                
-                if (textureCandidate.stem().string().find(material->GetName().C_Str()) != std::string::npos) {
-                    if (verbose) {
-                        std::cout << "Found aiStandardSurface!" << std::endl;
-                    }
-                    
-                    if (textureCandidate.stem().string().find("BaseColor" + mesh->mMaterialIndex) != std::string::npos) {
-                        if (verbose) {
-                            std::cout << "Found colour texture!" << std::endl;
-                        }
-                        texturePath = textureCandidate.string();
-                        //textures.erase(iterator);
-                        break;
-                    }
-                } else {
-                    if (textureCandidate.stem().string().find(modelFileName) != std::string::npos) {
-                        texturePath = textureCandidate.string();
-                    }
+            //aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+            //for (auto& textureCandidate : imageTexturesFound) {
+            //    
+            //    if (textureCandidate.stem().string().find(material->GetName().C_Str()) != std::string::npos) {
+            //        if (verbose) {
+            //            std::cout << "Found aiStandardSurface!" << std::endl;
+            //        }
+            //        
+            //        if (textureCandidate.stem().string().find("BaseColor" + mesh->mMaterialIndex) != std::string::npos) {
+            //            if (verbose) {
+            //                std::cout << "Found colour texture!" << std::endl;
+            //            }
+            //            texturePath = textureCandidate.string();
+            //            //textures.erase(iterator);
+            //            break;
+            //        }
+            //    } else {
+            //        if (textureCandidate.stem().string().find(modelFileName) != std::string::npos) {
+            //            texturePath = textureCandidate.string();
+            //        }
+            //    }
+            //}
+            //// Normals
+            //for (auto& textureCandidate : imageTexturesFound) {
+
+            //    if (textureCandidate.stem().string().find(material->GetName().C_Str()) != std::string::npos) {
+            //        if (verbose) {
+            //            std::cout << "Found aiStandardSurface!" << std::endl;
+            //        }
+
+            //        if (textureCandidate.stem().string().find("Normal" + mesh->mMaterialIndex) != std::string::npos) {
+            //            if (verbose) {
+            //                std::cout << "Found colour texture!" << std::endl;
+            //            }
+            //            normalPath = textureCandidate.string();
+            //            //textures.erase(iterator);
+            //            break;
+            //        }
+            //    }
+            //    else {
+            //        //if (path.string().find(modelFileName) != std::string::npos) {
+            //        //    texturePath = path.string();
+            //        //}
+            //    }
+            //}
+            for (unsigned int m = 0; m < scene->mNumMaterials; ++m)
+            {
+                aiMaterial* material = scene->mMaterials[m];//Get the current material
+                aiString materialName;//The name of the material found in mesh file
+                aiReturn ret;//Code which says whether loading something has been successful of not
+
+                ret = material->Get(AI_MATKEY_NAME, materialName);//Get the material name (pass by reference)
+                if (ret != AI_SUCCESS) materialName = "";//Failed to find material name so makes var empty
+
+                //Diffuse maps
+                int numTextures = material->GetTextureCount(aiTextureType_DIFFUSE);//Amount of diffuse textures
+                aiString textureName;//Filename of the texture using the aiString assimp structure
+
+                if (numTextures > 0)
+                {
+                    //Get the file name of the texture by passing the variable by reference again
+                    //Second param is 0, which is the first diffuse texture
+                    //There can be more diffuse textures but for now we are only interested in the first one
+                    ret = material->Get(AI_MATKEY_TEXTURE(aiTextureType_DIFFUSE, 0), textureName);
+                    texturePath = textureName.data;//The actual name of the texture file
                 }
             }
-            // Normals
-            for (auto& textureCandidate : imageTexturesFound) {
-
-                if (textureCandidate.stem().string().find(material->GetName().C_Str()) != std::string::npos) {
-                    if (verbose) {
-                        std::cout << "Found aiStandardSurface!" << std::endl;
-                    }
-
-                    if (textureCandidate.stem().string().find("Normal" + mesh->mMaterialIndex) != std::string::npos) {
-                        if (verbose) {
-                            std::cout << "Found colour texture!" << std::endl;
-                        }
-                        normalPath = textureCandidate.string();
-                        //textures.erase(iterator);
-                        break;
-                    }
-                }
-                else {
-                    //if (path.string().find(modelFileName) != std::string::npos) {
-                    //    texturePath = path.string();
-                    //}
-                }
-            }
-
-
             Texture* texture = nullptr;
             Texture* normalMap = nullptr;
             if (!texturePath.empty()) {
-                texture = new Texture(texturePath);
+                baseModelPath = baseModelPath.remove_filename();
+                std::filesystem::path relativeTexturePath = baseModelPath.make_preferred() / std::filesystem::path(texturePath).make_preferred();
+                std::string textureName = relativeTexturePath.filename().stem().string();
+
+                for (std::pair<const std::string, std::unique_ptr<Texture>>& textureEntry : textures) {
+                    if (textureEntry.first.find(textureName) != std::string::npos) {
+                        texture = textureEntry.second.get();
+                        break;
+                    }
+                }
+                if (!texture) {
+                    texture = new Texture(relativeTexturePath.string());
+                    textures.insert(std::make_pair(textureName, std::unique_ptr<Texture>(std::move(texture))));
+                }
             }
             else {
-                texture = new Texture(1024, 1024,
-                    unda::Colour<unsigned char>((unsigned int)(baseColour.r * 255.0f), 
-                                                (unsigned int)(baseColour.g * 255.0f),
-                                                (unsigned int)(baseColour.b * 255.0f),
-                                                (unsigned int)(baseColour.a * 255.0f)));
-            }
+                std::string textureName = "Default";
+                for (std::pair<const std::string, std::unique_ptr<Texture>>& textureEntry : textures) {
+                    if (textureEntry.first.find(textureName) != std::string::npos) {
+                        texture = textureEntry.second.get();
+                        break;
+                    }
+                }
+                if (!texture) {
+                    texture = new Texture(1024, 1024,
+                        unda::Colour<unsigned char>((unsigned int)(baseColour.r * 255.0f), 
+                                                    (unsigned int)(baseColour.g * 255.0f),
+                                                    (unsigned int)(baseColour.b * 255.0f),
+                                                    (unsigned int)(baseColour.a * 255.0f)));
+                    textures.insert(std::make_pair(textureName, std::unique_ptr<Texture>(std::move(texture))));
+                    }
+                }
             if (normalPath.size() > 0) {
                 normalMap = new Texture(normalPath);
             }
 
-            model->addMesh(std::move(vertices), std::move(indices), texture);
+            std::string name = std::string(mesh->mName.C_Str());
+            model->addMesh(std::move(vertices), std::move(indices), texture, name, nullptr, transform);
 
         }
 
@@ -426,7 +503,7 @@ namespace unda {
             int i = 0;
             for (Mesh& mesh : loaded->getMeshes()) {
                 std::string name = path.filename().stem().string() + std::to_string(i);
-                combined->addMesh(std::move(mesh.vertices), std::move(mesh.indices), mesh.texture.release(), name);
+                combined->addMesh(std::move(mesh.vertices), std::move(mesh.indices), mesh.texture, name);
                 i++;
             }
 

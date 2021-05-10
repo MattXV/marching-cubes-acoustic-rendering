@@ -5,6 +5,7 @@
 #include "../utils/Maths.h"
 #include "../utils/Settings.h"
 
+#include <string>
 #include <thread>
 #include <mutex>
 #include <vector>
@@ -13,6 +14,9 @@
 #include <functional>
 #include <math.h>
 #include <iostream>
+#include <unordered_map>
+#include <fstream>
+
 
 #define _USE_MATH_DEFINES
 
@@ -29,12 +33,16 @@ namespace unda {
 			return (x == 0) ? 1 : sin(x) / x;
 			0 ? true : false;
 		}
-
+		struct SurfacePatch {
+			std::string name, label;
+			float confidence;
+			std::array<float, 6> coefficients;
+		};
 
 		class ImageSourceModel {
 		public:
 			ImageSourceModel(int _nThreads, const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition,
-							 const std::array<double, 3>& _receiverPosition, const std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples = 0);
+							 const std::array<double, 3>& _receiverPosition, std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples = 0);
 			~ImageSourceModel();
 
 			std::array<std::vector<double>, 6> getIRs() { return irs; }
@@ -45,6 +53,7 @@ namespace unda {
 			void setNSamples(int newNSamples) { nSamples = newNSamples; }
 
 			void generateIR();
+			void doPatches(const std::vector<SurfacePatch>& patches, int cellsPerDimesion);
 
 		private:
 
@@ -59,8 +68,9 @@ namespace unda {
 			double t_60;
 
 			// X, Y and Z space imensions in metres
+			long double totalSurface = 0.0;
 			const std::array<double, 3>& spaceDimensions;
-			const std::array<std::array<double, 6>, 6>& surfaceReflection; // F_cubeFace x Coeff_frequencyBin 
+			std::array<std::array<double, 6>, 6>& surfaceReflection; // F_cubeFace x Coeff_frequencyBin 
 			std::array<double, 3> sourcePosition;
 			std::array<double, 3> receiverPosition;
 			std::array<double, 2> microphoneAngle{ 0, 0 };
@@ -80,6 +90,8 @@ namespace unda {
 			ImageSourceModel(const ImageSourceModel&) = delete;
 			ImageSourceModel& operator=(const ImageSourceModel&) = delete;
 		};
+
+		int loadPredictions(const std::string& predictionCsv, std::vector<SurfacePatch>& outPatches);
 	}
 }
 

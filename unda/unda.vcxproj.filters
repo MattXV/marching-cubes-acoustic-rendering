@@ -72,9 +72,6 @@
     <ClCompile Include="src\acoustics\LateReverb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rendering\Rendering.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\acoustics\DSP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -91,6 +88,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="externals\stb_image\stb_image_write.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rendering\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -173,9 +173,6 @@
     <ClInclude Include="src\acoustics\LateReverb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\rendering\Rendering.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\acoustics\DSP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -194,8 +191,17 @@
     <ClInclude Include="externals\stb_image\stb_image_write.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\rendering\Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene\SceneRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="scripts\convolve_a_with_b.py" />
+    <None Include="resources\shaders\boundingbox_vertex_shader.glsl" />
+    <None Include="cpp.hint" />
+    <None Include="resources\shaders\boundingbox_fragment_shader.glsl" />
   </ItemGroup>
 </Project>

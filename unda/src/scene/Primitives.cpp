@@ -78,6 +78,9 @@ namespace unda {
 			std::make_pair(Triangle3D(A_topright, A_bottomright, B_topright), Triangle3D(B_topright, A_bottomright, B_bottomright))			// Right face
 		};
 
+
+
+
 		vertices.emplace_back(A_bottomleft.x, A_bottomleft.y, A_bottomleft.z, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);	// 0
 		vertices.emplace_back(A_topleft.x, A_topleft.y, A_topleft.z, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);				// 1
 		vertices.emplace_back(A_topright.x, A_topright.y, A_topright.z, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);			// 2 

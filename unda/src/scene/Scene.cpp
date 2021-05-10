@@ -47,6 +47,7 @@ namespace unda {
 
 	{
 		camera = new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.1f, 90.0f);
+		boundingBoxRenderer.reset(new BoundingBoxRenderer((Camera&)std::ref(camera)));
 
 		auto [vertices, indices] = unda::primitives::createSphere(16, 0.2f);
 		Light* light = new Light(vertices, indices);
@@ -54,14 +55,14 @@ namespace unda {
 		addLight(light);
 
 		camera->setPosition(glm::vec3(1.0f, 0.0f, 1.0f));
-		auto modelpath = std::filesystem::path("resources/models/ConferenceRoom/Models");
+		auto modelpath = std::filesystem::path("resources/models/Office/");
 		modelpath = modelpath.make_preferred();
-		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory(modelpath.string(), "fbx", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
+		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory(modelpath.string(), "obj", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
 		if (conferenceModel->getMeshes().empty()) { std::cout << "No meshes!" << std::endl; return; }
 		conferenceModel->normaliseMeshes();
 		conferenceModel->calculateAABB();
-		conferenceModel->setScale(glm::vec3(10, 10, 10));
-		//conferenceModel->computeEnvelopes();
+		conferenceModel->setPosition(glm::vec3(2.0f, 0.0f, 0.0f));
+		conferenceModel->setScale(glm::vec3(1, 1, 1));
 
 		int unique = 0;
 		for (Mesh& mesh : conferenceModel->getMeshes()) {
@@ -72,19 +73,22 @@ namespace unda {
 			model->toVertexArray();
 		}
 
-		MarchingCubes* marchingCubes = new MarchingCubes(75, 32, 1.0f, Point3D(0, 0, 0));
+		int cellsPerDimension = 125;
+		MarchingCubes* marchingCubes = new MarchingCubes(cellsPerDimension, 32, 0.1f, Point3D(0, 0, 0));
+		marchingCubes->setGeneratePatches(false);
 		marchingCubes->computeScalarField(conferenceModel);
 		marchingCubes->computeMarchingCubes(1.0);
 		Model* marchingCubesModel = marchingCubes->createModel();
 		marchingCubesModel->normaliseMeshes();
-		marchingCubesModel->setPosition(glm::vec3(2.0f, 0.0f, 2.0f));
-
+		marchingCubesModel->setPosition(glm::vec3(0.0f, 0.0f, 2.0f));
 
 		marchingCubesModel->toVertexArray();
 		conferenceModel->toVertexArray();
-		//addModel(conferenceModel);
-		addModel(marchingCubesModel);
 		
+		addModel(conferenceModel);
+		addModel(marchingCubesModel);
+		std::vector<acoustics::SurfacePatch> patches;
+		if (acoustics::loadPredictions("classifier/results.csv", patches) < 0) { UNDA_ERROR("Could not load patches") return; }
 		std::array<std::array<double, 6>, 6> betaCoefficients = {
 			acoustics::Materials::carpet.getBetaCoefficients(),
 			acoustics::Materials::floor.getBetaCoefficients(),
@@ -93,10 +97,9 @@ namespace unda {
 			acoustics::Materials::wallTreatments.getBetaCoefficients(),
 			acoustics::Materials::wallTreatments.getBetaCoefficients(),
 		};
-		
 
 		int nThreads = 32, ISM_sampleRate = (int)unda::sampleRate, nTaps = 2048; //11025
-		int nSamples = (int)std::round((double)ISM_sampleRate * 0.2);
+		int nSamples = (int)std::round((double)ISM_sampleRate * 0.7);
 		std::array<double, 3> spaceDimensions{ 3.5, 3.5, 2.8 };
 		std::array<double, 3> listener{ 1.05, 1.2, 1.68 };
 		std::array<double, 3> source{ 3.0, 1.2, 0.6 };
@@ -104,8 +107,8 @@ namespace unda {
 		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(nThreads, spaceDimensions, source, listener, betaCoefficients);
 		ism->setSamplingFrequency(ISM_sampleRate);
 		ism->setNSamples(nSamples);
-		//ism->generateIR();
-
+		ism->doPatches(patches, cellsPerDimension);
+		ism->generateIR();
 		delete ism;	
 	}
 
@@ -114,6 +117,10 @@ namespace unda {
 		models.clear();
 		std::for_each(lights.begin(), lights.end(), [](Light* light) { delete light; });
 		delete camera;
+	}
+
+	void Scene::render() {
+		boundingBoxRenderer->render();
 	}
 
 	void Scene::update()
@@ -125,6 +132,7 @@ namespace unda {
 	{
 		models.push_back(std::shared_ptr<Model>(newModel));
 	}
+
 	void Scene::addModel(std::shared_ptr<Model>& newModel)
 	{
 		models.push_back(newModel);

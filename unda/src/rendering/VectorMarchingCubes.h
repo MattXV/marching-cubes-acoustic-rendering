@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../scene/Model.h"
+#include "../scene/SceneRenderer.h"
 #include "MarchingCubesTables.h"
 #include <glm/glm.hpp>
 #include <vector>
@@ -192,6 +193,7 @@ namespace unda {
 		~MarchingCubes();
 
 		void computeScalarField(std::weak_ptr<Model> model);
+		void setGeneratePatches(bool doIGeneratePatches) { generatePatches = doIGeneratePatches; }
 		void computeMarchingCubes(double isoLevel);
 		LatticeVector3D<float>& getScalarField() { return scalarField; }
 		Model* createModel();
@@ -208,6 +210,7 @@ namespace unda {
 
 		// Image Patch Generation
 		void generateMarchedCubesPatches(const AABB& objectAABB, Texture* objectTexture, const AABB& marchedCube);
+		bool generatePatches = true;
 
 		// Workers
 		void scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd);

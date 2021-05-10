@@ -7,6 +7,7 @@
 #include <mutex>
 #include <functional>
 #include "../utils/Settings.h"
+#include "../utils/Utils.h"
 #include "Input.h"
 #include "../core/Time.h"
 

@@ -1,21 +1,18 @@
 #pragma once
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-#include <glad/glad.h>
-#include <glm/glm.hpp>
+#include "../rendering/Renderer.h"
 #include "../rendering/ModelRenderer.h"
 #include "../input/GLFWApplication.h"
-#include <assert.h>
 #include "../scene/Scene.h"
 #include "../rendering/LightRenderer.h"
+#include <assert.h>
 
 
 class GLFWApplication;
 class ModelRenderer;
 
-namespace unda {
 
+namespace unda {
 
 	class Engine
 	{
@@ -28,14 +25,13 @@ namespace unda {
 		void update(double deltaTime);
 		void render();
 		void* getWindow() { return application->getWindow(); }
+
+		void cleanUp();
 	private:
 		unda::Scene* scene;
 		ModelRenderer* modelRenderer;
 		LightRenderer* lightRenderer;
 		GLFWApplication* application;
-
-		// Program
-		bool init();
 
 	};
 

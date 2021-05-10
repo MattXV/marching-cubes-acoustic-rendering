@@ -160,6 +160,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\rendering\Renderer.cpp" />
     <ClCompile Include="externals\FFTConvolver\AudioFFT.cpp" />
     <ClCompile Include="externals\FFTConvolver\FFTConvolver.cpp" />
     <ClCompile Include="externals\FFTConvolver\Utilities.cpp" />
@@ -175,7 +176,6 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\rendering\LightRenderer.cpp" />
     <ClCompile Include="src\rendering\ModelRenderer.cpp" />
-    <ClCompile Include="src\rendering\Rendering.cpp" />
     <ClCompile Include="src\rendering\RenderTools.cpp" />
     <ClCompile Include="src\rendering\Texture.cpp" />
     <ClCompile Include="src\rendering\VectorMarchingCubes.cpp" />
@@ -188,6 +188,7 @@
     <ClCompile Include="src\utils\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\rendering\Renderer.h" />
     <ClInclude Include="externals\FFTConvolver\AudioFFT.h" />
     <ClInclude Include="externals\FFTConvolver\FFTConvolver.h" />
     <ClInclude Include="externals\FFTConvolver\Utilities.h" />
@@ -207,7 +208,6 @@
     <ClInclude Include="src\input\KeyCodes.h" />
     <ClInclude Include="src\rendering\LightRenderer.h" />
     <ClInclude Include="src\rendering\MarchingCubesTables.h" />
-    <ClInclude Include="src\rendering\Rendering.h" />
     <ClInclude Include="src\rendering\VectorMarchingCubes.h" />
     <ClInclude Include="src\scene\Camera.h" />
     <ClInclude Include="src\scene\Model.h" />
@@ -216,6 +216,7 @@
     <ClInclude Include="src\rendering\Texture.h" />
     <ClInclude Include="src\scene\Primitives.h" />
     <ClInclude Include="src\scene\Scene.h" />
+    <ClInclude Include="src\scene\SceneRenderer.h" />
     <ClInclude Include="src\scene\Terrain.h" />
     <ClInclude Include="src\utils\Maths.h" />
     <ClInclude Include="src\utils\Settings.h" />
@@ -223,6 +224,9 @@
     <ClInclude Include="src\utils\Utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cpp.hint" />
+    <None Include="resources\shaders\boundingbox_fragment_shader.glsl" />
+    <None Include="resources\shaders\boundingbox_vertex_shader.glsl" />
     <None Include="scripts\convolve_a_with_b.py" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

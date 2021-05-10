@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../rendering/Renderer.h"
 #include "Model.h"
 #include "Primitives.h"
 #include "../utils/Settings.h"
@@ -16,6 +17,7 @@
 #include <FFTConvolver.h>
 #include <vector>
 #include <string>
+#include <memory>
 #include <filesystem>
 #include <functional>
 
@@ -44,7 +46,7 @@ namespace unda {
 		virtual ~Scene();
 
 		void update();
-
+		void render();
 		// All temporary stuff. Sufficient for now.
 		void addModel(unda::Model* newModel);
 		void addModel(std::shared_ptr<Model>& newModel);
@@ -63,6 +65,8 @@ namespace unda {
 		std::vector<std::shared_ptr<Model>> models;
 		std::vector<Light*> lights;
 		FPSCamera* camera;
+		
+		std::unique_ptr<BoundingBoxRenderer> boundingBoxRenderer;
 	};
 
 
