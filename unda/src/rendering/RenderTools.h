@@ -128,6 +128,18 @@ namespace unda {
 
 
 	struct AABB {
+		AABB(const AABB& other) {
+			min = other.min;
+			max = other.max;
+			nearBottomLeft = other.nearBottomLeft;
+			nearBottomRight = other.nearBottomRight;
+			nearTopRight = other.nearTopRight;
+			nearTopLeft = other.nearTopLeft;
+			farBottomLeft = other.farBottomLeft;
+			farBottomRight = other.farBottomRight;
+			farTopRight = other.farTopRight;
+			farTopLeft = other.farTopLeft;
+		}
 		AABB() = default;
 		AABB(const Vertex& _min, const Vertex& _max)
 			: min(_min)

@@ -69,18 +69,20 @@ namespace unda {
 			for (int bin = 0; bin < 6; bin++) {
 				// Using Sabine's equation to determine space reverberation if n_samples is not known.
 				double alpha =
-					floorSurface * surfaceReflection[0][bin] + // floor
-					ceilingSurface * surfaceReflection[1][bin] + // celing
-					backWallSurface * surfaceReflection[2][bin] + // back wall
-					frontWallSurface * surfaceReflection[3][bin] + // front wall
-					leftWallSurface * surfaceReflection[4][bin] + // left wall
-					rightWallSurface * surfaceReflection[5][bin];  // right wall
+					floorSurface     * (1 - pow(surfaceReflection[0][bin], 2)) + // floor
+					ceilingSurface   * (1 - pow(surfaceReflection[1][bin], 2)) + // celing
+					backWallSurface  * (1 - pow(surfaceReflection[2][bin], 2)) + // back wall
+					frontWallSurface * (1 - pow(surfaceReflection[3][bin], 2)) + // front wall
+					leftWallSurface  * (1 - pow(surfaceReflection[4][bin], 2)) + // left wall
+					rightWallSurface * (1 - pow(surfaceReflection[5][bin], 2));  // right wall
 				totalAlpha += alpha;
 			}
 			totalAlpha /= 6.0;
 			t_60 = 0.161 * (volume / totalAlpha);
 			totalSurface = floorSurface + ceilingSurface + backWallSurface + frontWallSurface + leftWallSurface + rightWallSurface;
 			meanFreePathEstimate = meanFreePath(volume, (double)totalSurface);
+			UNDA_LOG_MESSAGE("Predicted t60: " + std::to_string(t_60));
+			UNDA_LOG_MESSAGE("Volume: " + std::to_string(volume));
 
 
 			if (_nSamples < 1) {
@@ -98,7 +100,10 @@ namespace unda {
 
 		void ImageSourceModel::generateIR()
 		{
+			utils::Timer timer("Office - Generating RIR");
+			timer.setInfo(" RIR . Estimated t60:" + std::to_string(t_60));
 
+			timer.start();
 			//computeIRs(16);
 			for (int bin = 0; bin < 6; bin++) {
 				irs[bin].resize(nSamples);
@@ -109,7 +114,8 @@ namespace unda {
 			}
 			for (std::thread& thread : workers)
 				thread.join();
-		
+			timer.stop();
+
 			computeTail();
 		}
 
@@ -117,6 +123,9 @@ namespace unda {
 		{
 			long double patchContribution = totalSurface / std::pow((long double)cellsPerDimesion, 3);
 			for (SurfacePatch patch : patches) {
+				if (patch.confidence < 0.97f) {
+					continue;
+				}
 				
 				if (patch.name.find("bottomFace") != std::string::npos) {
 
@@ -187,8 +196,9 @@ namespace unda {
 
 			// Temporary variables and constants (image-method)
 
-			double		 s[3];
-			double		 L[3];
+			double		 source[3];
+			double		 listener[3];
+			double	     room[3];
 			double       Rm[3];
 			double       Rp_plus_Rm[3];
 
@@ -202,22 +212,29 @@ namespace unda {
 			double*		 LPI = new double[Tw];
 			const double timeStep = speedOfSound / samplingFrequency;
 
-			s[0] = sourcePosition[0] / timeStep;
-			s[1] = sourcePosition[1] / timeStep;
-			s[2] = sourcePosition[2] / timeStep;
-			L[0] = receiverPosition[0] / timeStep;
-			L[1] = receiverPosition[1] / timeStep;
-			L[2] = receiverPosition[2] / timeStep;
-
+			source[0] = sourcePosition[0] / timeStep;
+			source[1] = sourcePosition[1] / timeStep;
+			source[2] = sourcePosition[2] / timeStep;
+			listener[0] = receiverPosition[0] / timeStep;
+			listener[1] = receiverPosition[1] / timeStep;
+			listener[2] = receiverPosition[2] / timeStep;
+			room[0] = spaceDimensions[0] / timeStep;
+			room[1] = spaceDimensions[1] / timeStep;
+			room[2] = spaceDimensions[2] / timeStep;
 
 			// Image Source Model dimensions:
 			// 
 			// number of points computed along the Y axis
-			int points_x = (int)ceil(nSamples / (2.0 * L[0]));
-			int points_y = (int)ceil(nSamples / (2.0 * L[1]));
-			int points_z = (int)ceil(nSamples / (2.0 * L[2]));
+			//int points_x = (int)ceil(nSamples / (2.0 * L[0]));
+			//int points_y = (int)ceil(nSamples / (2.0 * L[1]));
+			//int points_z = (int)ceil(nSamples / (2.0 * L[2]));
+			int points_x = (int)ceil(nSamples / (2.0 * room[0]));
+			int points_y = (int)ceil(nSamples / (2.0 * room[1]));
+			int points_z = (int)ceil(nSamples / (2.0 * room[2]));
+
+			
 			//
-			// Each thread is assigned with a slice of the cube representing the space
+			// Each thread is assigned with a slice of the cube2 *  representing the space
 			// The cubes has as many slices as number of threads.
 			// Each thread still computes the other two dimensions, it just operates at
 			// a different height.
@@ -234,35 +251,35 @@ namespace unda {
 			// Generate room impulse response
 			for (int mx = -points_x; mx <= points_x; mx++)
 			{
-				Rm[0] = 2 * (double)mx * L[0];
+				        Rm[0] = 2 * (double)mx * room[0];
 
-				for (int my = startIndex; my < endIndex; my++)
+				for (int my = startIndex; my < endIndex; my++) 
 				{
-					Rm[1] = 2 * (double)my * L[1];
+					    Rm[1] = 2 * (double)my * room[1];
 
 					for (int mz = -points_z; mz <= points_z; mz++)
 					{
-						Rm[2] = 2 * (double)mz * L[2];
+						Rm[2] = 2 * (double)mz * room[2];
 
-						for (int q = 0; q <= 1; q++)
+						for (int q = 0; q <= 4; q++)
 						{
-							Rp_plus_Rm[0] = (1 - 2 * (double)q) * s[0] - L[0] + Rm[0];
+							Rp_plus_Rm[0] = (1 - 2 * (double)q) * source[0] - listener[0] + Rm[0];
 
 							// Frequency-dependent relfection calculation :D
 							for (int bin = 0; bin < 6; bin++) {
 								reflections[0][bin] = pow(surfaceReflection[0][bin], abs(mx - q)) * pow(surfaceReflection[1][bin], abs(mx));
 							}
 
-							for (int j = 0; j <= 1; j++)
+							for (int j = 0; j <= 4; j++)
 							{
-								Rp_plus_Rm[1] = (1 - 2 * (double)j) * s[1] - L[1] + Rm[1];
+								Rp_plus_Rm[1] = (1 - 2 * (double)j) * source[1] - listener[1] + Rm[1];
 								for (int bin = 0; bin < 6; bin++) {
 									reflections[1][bin] = pow(surfaceReflection[2][bin], std::abs(my - j)) * pow(surfaceReflection[3][bin], std::abs(my));
 								}
 
-								for (int k = 0; k <= 1; k++)
+								for (int k = 0; k <= 4; k++)
 								{
-									Rp_plus_Rm[2] = (1 - 2 * (double)k) * s[2] - L[2] + Rm[2];
+									Rp_plus_Rm[2] = (1 - 2 * (double)k) * source[2] - listener[2] + Rm[2];
 
 									for (int bin = 0; bin < 6; bin++) {
 										reflections[2][bin] = pow(surfaceReflection[4][bin], std::abs(mz - k)) * pow(surfaceReflection[5][bin], std::abs(mz));

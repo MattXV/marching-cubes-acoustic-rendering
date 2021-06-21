@@ -14,14 +14,14 @@ void unda::FPSCamera::handleInput()
 {
     //if (Input::isKeyDown(Key::Tab))
     //    movementEnabled = !movementEnabled;
-
+    float multiplier = Input::isKeyDown(Key::LeftShift) ? 10.0f : 3.0f;
     if (!movementEnabled) return;
     glm::vec3 position = getPosition();
     float speed = cameraSpeed * (float)Time::getDeltaTime();
-    if (Input::isKeyDown(Key::W)) position += speed * front;
-    if (Input::isKeyDown(Key::S)) position -= speed * front;
-    if (Input::isKeyDown(Key::A)) position -= glm::normalize(glm::cross(front, up)) * speed;
-    if (Input::isKeyDown(Key::D)) position += glm::normalize(glm::cross(front, up)) * speed;
+    if (Input::isKeyDown(Key::W)) position += speed * front * multiplier;
+    if (Input::isKeyDown(Key::S)) position -= speed * front * multiplier;
+    if (Input::isKeyDown(Key::A)) position -= glm::normalize(glm::cross(front, up)) * speed * multiplier;
+    if (Input::isKeyDown(Key::D)) position += glm::normalize(glm::cross(front, up)) * speed * multiplier;
 
     auto [x, y] = Input::getMousePosition();
     float xOffset = ((float)x - lastX) * sensitivity;
@@ -31,10 +31,8 @@ void unda::FPSCamera::handleInput()
     yaw += xOffset;
     pitch += yOffset;
 
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
+    if (pitch > 89.0f) pitch = 89.0f;
+    if (pitch < -89.0f) pitch = -89.0f;
 
     glm::vec3 direction;
     direction.x = cosf(glm::radians(pitch)) * cosf(glm::radians(yaw));

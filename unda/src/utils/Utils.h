@@ -9,13 +9,14 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <chrono>
 
 
 #define DISABLE_COPY_ASSIGN(Class) Class(const Class&) = delete; void operator=(const Class&) = delete; 
 #define UNDA_LOG_MESSAGE(Message) std::cout << Message << std::endl
 
 #if UNDA_DEBUG == 1
-	#define UNDA_ERROR(Message) std::cerr << Message << std::endl; __debugbreak();  
+	#define UNDA_ERROR(Message) std::cerr << Message << std::endl; __debugbreak()  
 	#define GLCALL(call) unda::utils::clearGLError();\
 		call;\
 		if (!unda::utils::printGLError(#call, __FILE__, __LINE__))\
@@ -93,6 +94,24 @@ namespace unda {
 		private:
 			unsigned int numVertices = 0;
 			std::string path;
+		};
+
+
+		class Timer {
+		public:
+			Timer(const std::string& procedureName) : procedure(procedureName) { logName = prefix + procedureName + ".csv"; }
+
+			void reset(const std::string& procedureName) { procedure = procedureName; logName = prefix + procedureName + ".csv"; }
+			void setInfo(const std::string& newInfo) { info = newInfo; }
+			void start();
+			void stop();
+		private:
+			std::string procedure;
+			std::chrono::steady_clock::time_point t1;
+			std::string logName;
+			std::string prefix = "output/logs/";
+			std::string info = "";
+			DISABLE_COPY_ASSIGN(Timer)
 		};
 
 	}

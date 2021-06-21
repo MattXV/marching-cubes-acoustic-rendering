@@ -1,34 +1,26 @@
 #pragma once
 
-#include "../utils/Utils.h"
-#include "../utils/Settings.h"
-#include "../scene/Scene.h"
-#include "../scene/Camera.h"
-#include <iostream>
-#include <vector>
-#include <glad/glad.h>
+#include "Renderer.h"
+#include "../scene/Model.h"
+#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-
-namespace unda { class Model; }
 
 
 class ModelRenderer
 {
 public:
 	ModelRenderer();
-	~ModelRenderer();
+	~ModelRenderer() = default;
 
-	void drawModel(unda::Scene* scene);
+	void render();
+	void setModel(unda::Model* newModel) { model = newModel; }
+	void setCamera(unda::Camera* newCamera) { camera = newCamera; }
+	void setLightPosition(const glm::vec3& newPosition) { lightPosition = newPosition; }
+	void setLightColour(const glm::vec3& newColour) { lightColour = newColour; }
 
 private:
-	unsigned int vertexArrayLocation;
-	unsigned int programId;
-	// Attributes
-	static const int vertexPosition = 0, uvCoordinatesLayout = 1, vertexNormalLayout = 2;
-	int vertexPositionLocation, uvCoordinatesLocation, vertexNormalLocation;
-	// Uniforms
-	int modelMatrixLocation, viewMatrixLocation, projectionMatrixLocation;
-	int textureSamplerLocation, lightColourLocation, lightPositionLocation, viewPositionLocation;
-	int normalSamplerLocation;
+	unda::Camera* camera = nullptr;
+	glm::vec3 lightColour = glm::vec3(1.0f, 1.0f, 1.0f), lightPosition = glm::vec3(1.0f, 1.0f, 1.0f);
+	unda::Model* model = nullptr;
+	unda::Shader shaders;
 };

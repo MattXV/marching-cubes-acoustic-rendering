@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Texture.h"
 #include "../utils/Utils.h"
 #include "../scene/SceneRenderer.h"
 #include "../scene/Camera.h"
@@ -26,6 +27,17 @@ namespace unda {
 		DISABLE_COPY_ASSIGN(Shader)
 	};
 
+	class BoundingBox : public IBoundingBox {
+	public:
+		BoundingBox(const unda::AABB&);
+		const std::array<Vertex, 36>& getVertices() { return vertices; }
+		unsigned int getTextureLocation() { return cubeMap.getTextureLocation(); }
+		void doPatch(TexturePatch& patch, CubeMap::Face face);
+	private:
+		CubeMap cubeMap;
+		std::array<Vertex, 36> vertices;
+		DISABLE_COPY_ASSIGN(BoundingBox)
+	};
 
 	class BoundingBoxRenderer : public IBoundingBoxRenderer {
 	public:
@@ -34,9 +46,11 @@ namespace unda {
 
 		void render();
 		void cleanUp();
+
 	private:
-		std::array<Vertex, 12> vertices;
-		Shader shaders;
+		glm::vec3 position = glm::vec3(20.0f, 20.0f, 20.0f);
+		Shader shaderProgram;
+		unsigned int VAO, VBO, UVBO;
 		Camera& camera;
 		DISABLE_COPY_ASSIGN(BoundingBoxRenderer)
 	};

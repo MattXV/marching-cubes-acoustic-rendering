@@ -1,7 +1,10 @@
 #include "VectorMarchingCubes.h"
-#include <cmath>
+
 
 namespace unda {
+
+	std::unordered_map<IBoundingBox*, std::vector<TexturePatch>> AABBPatches = std::unordered_map<IBoundingBox*, std::vector<TexturePatch>>();
+	std::vector<std::pair<AABB, std::vector<TexturePatch>>> MarchingCubesPatches = std::vector<std::pair<AABB, std::vector<TexturePatch>>>();
 
 	std::vector<unda::Vertex> ScalarFieldVector3D::computeVertexData(double isoLevel)
 	{
@@ -205,11 +208,6 @@ namespace unda {
 
 	// -----------------------------------------------------------------------------
 
-	void MarchingCubesWorker::calculateFieldFromMesh()
-	{
-
-	}
-
 
 
 	// -------------------------------------------------------------------------
@@ -225,9 +223,7 @@ namespace unda {
 
 	MarchingCubes::~MarchingCubes()
 	{
-		for (MarchingCubesWorker* worker : workers) {
-			delete worker;
-		}
+
 	}
 
 	/// <summary>
@@ -238,17 +234,37 @@ namespace unda {
 	/// </param>
 	void MarchingCubes::computeScalarField(std::weak_ptr<Model> model)
 	{
+
 		std::vector<std::thread> threads;
 		for (int i = 0; i < nThreads; i++) {
 			size_t stride = (size_t)floor((long double)resolution / (long double)nThreads);
 			size_t startIndex = i * stride;
 			size_t endIndex = (i == nThreads - 1) ? resolution : startIndex + stride;
-
+			//scalarFieldFromMeshWorker(model, startIndex, endIndex);
 			threads.push_back(std::thread([this, model, startIndex, endIndex]() { scalarFieldFromMeshWorker(model, startIndex, endIndex); }));
+
 		}
-		for (auto& thread : threads) {
-			thread.join();
+		for (auto& thread : threads) thread.join();
+		// Resynchronised to main. Can use OpenGL now.
+
+		if (generatePatches) {
+			
+			//for (auto& aabbPatch : AABBPatches) {
+
+			//	long int largest = 0;
+			//	TexturePatch* patch = nullptr;
+			//	
+			//	for (int i = 0; i < aabbPatch.second.size(); i++) {
+			//		if (aabbPatch.second[i].width * aabbPatch.second[i].height > largest) {
+			//			largest = aabbPatch.second[i].width * aabbPatch.second[i].height;
+			//			patch = &aabbPatch.second[i];
+			//		}
+			//	}
+			//	if (patch) aabbPatch.first->doPatch(*patch, static_cast<CubeMap::Face>(patch->cubeMapFace));
+			//}
+
 		}
+
 	}
 
 	void MarchingCubes::computeMarchingCubes(double isoLevel)
@@ -270,18 +286,17 @@ namespace unda {
 
 		for (std::thread& thread : threads) thread.join();
 
+
 	}
 
 	Model* MarchingCubes::createModel()
 	{
 		if (vertices.empty()) {
-			UNDA_ERROR("Marching Cubes: No vertices generated!")
+			UNDA_ERROR("Marching Cubes: No vertices generated!");
 			return nullptr;
 		}
+		Model* model = fromVertexData(std::move(vertices), {}, "MarchingCubes");
 
-		Model* model = new Model();
-		Texture* texture = new Texture(16, 16, unda::Colour<unsigned char>(120, 120, 120, 255));
-		model->addMesh(std::move(vertices), std::vector<unsigned int>(), texture, "Marching Cubes", nullptr);
 		return model;
 	}
 
@@ -289,7 +304,10 @@ namespace unda {
 
 
 
-	void MarchingCubes::generateMarchedCubesPatches(const AABB& aabb, Texture* objectTexture, const AABB& marchedCube)
+	void MarchingCubes::generateMarchedCubesPatches(const AABB& aabb, 
+		Texture* objectTexture,
+		const AABB& marchedCube,
+		const std::string& objectName)
 	{
 		// Here we take the current 'Marched Cube', and generate 6 square patches having their sides the size
 		// of a grid cell.
@@ -313,6 +331,8 @@ namespace unda {
 		float maxRelativeDistance = glm::distance(aabbMinPoint, maxMarchedCube);
 
 		
+		std::vector<TexturePatch> marchedCubePatches;
+
 		{
 			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, minRelativeDistance);
 			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, minRelativeDistance);
@@ -322,7 +342,14 @@ namespace unda {
 
 			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance}, "frontFace");
+
+			TexturePatch patch;
+			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "frontFace_" + objectName, patch)) {
+				//aabb.doPatch(patch, CubeMap::POSITIVE_Z);
+				patch.cubeMapFace = CubeMap::NEGATIVE_Z;
+				//AABBPatches[&aabb].push_back(patch);
+				marchedCubePatches.push_back(patch);
+			}
 		}
 
 		{
@@ -334,7 +361,13 @@ namespace unda {
 
 			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "backFace");
+			TexturePatch patch;
+			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "backFace_" + objectName, patch)) {
+				//aabb.doPatch(patch, CubeMap::NEGATIVE_Z);
+				patch.cubeMapFace = CubeMap::POSITIVE_Z;
+				//AABBPatches[&aabb].push_back(patch);
+				marchedCubePatches.push_back(patch);
+			}
 		}
 
 		{
@@ -346,7 +379,15 @@ namespace unda {
 
 			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "topFace");
+
+			TexturePatch patch;
+			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "topFace_" + objectName, patch)) {
+				//aabb.doPatch(patch, CubeMap::POSITIVE_Y);
+				patch.cubeMapFace = CubeMap::POSITIVE_Y;
+				//AABBPatches[&aabb].push_back(patch);
+				marchedCubePatches.push_back(patch);
+
+			}
 		}
 
 		{
@@ -358,7 +399,14 @@ namespace unda {
 
 			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "bottomFace");
+			TexturePatch patch;
+			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "bottomFace_" + objectName, patch)) {
+				//aabb.doPatch(patch, CubeMap::NEGATIVE_Y);
+				patch.cubeMapFace = CubeMap::Face::NEGATIVE_Y;
+				//AABBPatches[&aabb].push_back(patch);
+				marchedCubePatches.push_back(patch);
+
+			}
 		}
 
 		{
@@ -370,7 +418,14 @@ namespace unda {
 
 			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "leftFace");
+			TexturePatch patch;
+			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "leftFace_" + objectName, patch)) {
+				//aabb.doPatch(patch, CubeMap::NEGATIVE_X);
+				patch.cubeMapFace = CubeMap::Face::NEGATIVE_X;
+				//AABBPatches[&aabb].push_back(patch);
+				marchedCubePatches.push_back(patch);
+
+			}
 		}
 
 		{
@@ -382,12 +437,22 @@ namespace unda {
 
 			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
 
-			objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "rightFace");
+			TexturePatch patch;
+			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "rightFace_" + objectName, patch)) {
+				//aabb.doPatch(patch, CubeMap::POSITIVE_X);
+				patch.cubeMapFace = CubeMap::Face::POSITIVE_X;
+				//AABBPatches[&aabb].push_back(patch);
+				marchedCubePatches.push_back(patch);
+
+			}
 		}
+		MarchingCubesPatches.push_back(std::make_pair(marchedCube, marchedCubePatches));
+
 	}
 
 	void MarchingCubes::scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd)
 	{
+
 		int nMeshes;
 		scalarFieldMutex.lock();
 		size_t resolution = scalarField.sizeX;
@@ -398,10 +463,11 @@ namespace unda {
 
 		const std::vector<Mesh>& meshes = model_ptr->getMeshes();
 		nMeshes = meshes.size();
-		std::vector<AABB> aabbs;
-		aabbs.resize(meshes.size());
 
-		for (int i = 0; i < nMeshes; i++) memcpy(&aabbs[i], &meshes[i].aabb, sizeof(AABB));
+		std::vector<std::unique_ptr<IBoundingBox>>& boundingBoxes = IBoundingBoxRenderer::getBoundingBoxes();
+		//AABBPatches.insert(std::make_pair())
+
+		for (std::unique_ptr<IBoundingBox>& aabb : boundingBoxes) AABBPatches.insert(std::make_pair(aabb.get(), std::vector<TexturePatch>()));
 
 		model_ptr.reset();
 
@@ -427,17 +493,17 @@ namespace unda {
 						0.0f, 0.0f, 0.0f);
 
 					AABB sampleCube = AABB(samplePoint, nextSamplePoint);
-
 					float fieldValue = 0.0f;
+					int i = 0;
 					for (const Mesh& mesh : meshes) {
-
 						if (CheckCollision(sampleCube, mesh.aabb)) {
 							fieldValue = 1.0f;
 							// TODO: Generate 6 patches
 							// TODO: one per cube face
 							if (generatePatches) {
 								modelMutex.lock();
-								generateMarchedCubesPatches(mesh.aabb, mesh.texture, sampleCube);
+
+								generateMarchedCubesPatches(mesh.aabb, mesh.texture, sampleCube, mesh.name);
 								modelMutex.unlock();
 							}
 							break;
@@ -445,7 +511,7 @@ namespace unda {
 						else {
 							fieldValue = 0.0f;
 						}
-
+						i++;
 					}
 					scalarField[std::array<size_t, 3>{x, y, z}] = fieldValue;
 				}

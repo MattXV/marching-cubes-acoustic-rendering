@@ -84,13 +84,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\FFTConvolver;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\FFTConvolver;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\libsndfile\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\FFTConvolver;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\libsndfile\build\install\lib;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -149,7 +149,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>UNDA_DEBUG=0;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -224,10 +224,14 @@
     <ClInclude Include="src\utils\Utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="conf.json" />
     <None Include="cpp.hint" />
     <None Include="resources\shaders\boundingbox_fragment_shader.glsl" />
     <None Include="resources\shaders\boundingbox_vertex_shader.glsl" />
     <None Include="scripts\convolve_a_with_b.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="notes.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

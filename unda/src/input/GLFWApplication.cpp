@@ -1,5 +1,20 @@
 #include "GLFWApplication.h"
 
+void GLAPIENTRY
+GLMessageCallback(GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam)
+{
+	if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
+	fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+		type, severity, message);
+}
+
 unda::Time* unda::Time::singleton = nullptr;
 void* unda::Input::window = nullptr;
 unda::Input* unda::Input::singletonInstance = nullptr;
@@ -83,6 +98,7 @@ unda::GLFWApplication::GLFWApplication()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 	window = glfwCreateWindow(unda::windowWidth, unda::windowHeight, "unda", NULL, NULL);
 	assert(window);
 
@@ -108,6 +124,12 @@ unda::GLFWApplication::GLFWApplication()
 	glVersion.append(std::to_string(GLVersion.major) + "." + std::to_string(GLVersion.minor));
 	UNDA_LOG_MESSAGE("Loaded GLFW, Version: " + versionString);
 	UNDA_LOG_MESSAGE(glVersion);
+
+
+
+	// During init, enable debug output
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(GLMessageCallback, 0);
 }
 
 unda::GLFWApplication::~GLFWApplication() {

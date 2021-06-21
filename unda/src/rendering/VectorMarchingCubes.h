@@ -4,14 +4,21 @@
 #include "../scene/SceneRenderer.h"
 #include "MarchingCubesTables.h"
 #include <glm/glm.hpp>
+#include <cmath>
 #include <vector>
 #include <array>
 #include <assert.h>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
+
+
 
 
 namespace unda {
+	// --------------------------------Global Texture Patches---------------------
+	extern std::unordered_map<IBoundingBox*, std::vector<TexturePatch>> AABBPatches;
+	extern std::vector<std::pair<AABB, std::vector<TexturePatch>>> MarchingCubesPatches;
 	// ---------------------------------------------------------------------------
 
 	template<typename T>
@@ -148,43 +155,6 @@ namespace unda {
 		}
 	}
 
-	///////////////////////////////////////////////////////////////////////////////
-	// Multithreadead Marching Cubes from a multi-mesh Model
-	///////////////////////////////////////////////////////////////////////////////
-
-	class MarchingCubesWorker {
-	public:
-		MarchingCubesWorker(size_t _idxStart, size_t _idxEnd,
-			std::mutex& _scalarFieldMutex, std::mutex& _modelMutex,
-			LatticeVector3D<float>& _scalarField, CubeLatticeVector& _cubeLattice, std::weak_ptr<Model>& _model,
-			int _id = 0)
-			: scalarFieldMutex(_scalarFieldMutex)
-			, modelMutex(_modelMutex)
-			, scalarField(_scalarField)
-			, cubeLattice(_cubeLattice)
-			, indexStart(_idxStart)
-			, indexEnd(_idxEnd)
-			, model(_model)
-			, id(_id)
-		{
-		}
-		void calculateFieldFromMesh();
-	private:
-		size_t indexStart, indexEnd;
-		std::mutex& scalarFieldMutex;
-		std::mutex& modelMutex;
-		LatticeVector3D<float>& scalarField;
-		CubeLatticeVector& cubeLattice;
-		std::weak_ptr<Model> model;
-
-		int id;
-
-		// Marching Cubes Algorithm
-		unsigned int polygoniseCell(size_t x, size_t y, size_t z, double isoLevel, std::array<Triangle3D, 5>& triangleResult);
-		std::array<size_t, 3> cellCornerIndexToIJKIndex(size_t vertexIndex, size_t i, size_t j, size_t k);
-		Point3D interpolateVertex(double isoLevel, const std::array<size_t, 3>& xyzVertexA, const std::array<size_t, 3>& xyzVertexB);
-	};
-
 
 	// That's the current dude
 	class MarchingCubes {
@@ -201,7 +171,6 @@ namespace unda {
 	private:
 		// Multithreading 
 		const int nThreads, resolution;
-		std::vector<MarchingCubesWorker*> workers;
 
 		std::mutex scalarFieldMutex, modelMutex, verticesMutex;
 		LatticeVector3D<float> scalarField;
@@ -209,7 +178,7 @@ namespace unda {
 		std::vector<Vertex> vertices;
 
 		// Image Patch Generation
-		void generateMarchedCubesPatches(const AABB& objectAABB, Texture* objectTexture, const AABB& marchedCube);
+		void generateMarchedCubesPatches(const AABB& aabb, Texture* objectTexture, const AABB& marchedCube, const std::string& objectName);
 		bool generatePatches = true;
 
 		// Workers

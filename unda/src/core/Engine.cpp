@@ -5,7 +5,7 @@ unda::Engine::Engine()
 	: application(new unda::GLFWApplication())
 {
 	scene = new unda::Scene();
-	modelRenderer = new ModelRenderer();
+
 	lightRenderer = new LightRenderer();
 }
 
@@ -16,16 +16,13 @@ unda::Engine::Engine(int width, int height)
 	unda::windowHeight = height;
 
 	scene = new unda::Scene();
-	modelRenderer = new ModelRenderer();
+
 	lightRenderer = new LightRenderer();
 }
 
 unda::Engine::~Engine() {
 
-	delete scene;
-	delete modelRenderer;
-	delete lightRenderer;
-	delete application;
+
 }
 
 bool unda::Engine::keepRunning()
@@ -43,16 +40,19 @@ void unda::Engine::update(double deltaTime)
 
 void unda::Engine::render()
 {
-	unda::render::prepare();
+	unda::render::prepare(glm::vec4(0.7f));
 	scene->render();
 	lightRenderer->drawLights(scene);
-	modelRenderer->drawModel(scene);
 
 	application->processEvents();
 }
 
 void unda::Engine::cleanUp()
 {
-	textures.clear();
+
+	delete scene;
+
+	delete lightRenderer;
+	delete application;
 }
 

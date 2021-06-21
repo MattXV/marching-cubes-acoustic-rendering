@@ -203,5 +203,9 @@
     <None Include="resources\shaders\boundingbox_vertex_shader.glsl" />
     <None Include="cpp.hint" />
     <None Include="resources\shaders\boundingbox_fragment_shader.glsl" />
+    <None Include="conf.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="notes.txt" />
   </ItemGroup>
 </Project>

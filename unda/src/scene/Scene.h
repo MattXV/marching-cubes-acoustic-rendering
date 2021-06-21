@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../rendering/Renderer.h"
+#include "../rendering/ModelRenderer.h"
 #include "Model.h"
 #include "Primitives.h"
 #include "../utils/Settings.h"
@@ -20,7 +20,9 @@
 #include <memory>
 #include <filesystem>
 #include <functional>
+#include <json.hpp>
 
+using json = nlohmann::json;
 
 namespace unda {
 
@@ -58,6 +60,8 @@ namespace unda {
 		const std::unordered_map<std::string, Model*>& getBoundingBoxes() const { return boundingBoxes; }
 
 	private:
+		std::shared_ptr<Model> inputScene, marchingCubesModel;
+
 		std::unordered_map<std::string, Model*> boundingBoxes;
 		std::vector<std::unique_ptr<Model>> boundingBoxesModels;
 
@@ -66,7 +70,8 @@ namespace unda {
 		std::vector<Light*> lights;
 		FPSCamera* camera;
 		
-		std::unique_ptr<BoundingBoxRenderer> boundingBoxRenderer;
+		BoundingBoxRenderer boundingBoxRenderer;
+		ModelRenderer modelRenderer;
 	};
 
 

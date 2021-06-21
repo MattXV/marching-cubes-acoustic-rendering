@@ -14,10 +14,10 @@ namespace unda {
 	glm::mat4 unda::createModelMatrix(const glm::vec3& rotation, const glm::vec3& translation, const glm::vec3& scale)
 	{
 		glm::mat4 modelMatrix = glm::mat4(1.0f); // Identity matrix
-		modelMatrix = glm::rotate(modelMatrix, rotation.x * 180.0f / pi, glm::vec3(1.0f, 0.0f, 0.0f));
-		modelMatrix = glm::rotate(modelMatrix, rotation.y * 180.0f / pi, glm::vec3(0.0f, 1.0f, 0.0f));
-		modelMatrix = glm::rotate(modelMatrix, rotation.z * 180.0f / pi, glm::vec3(0.0f, 0.0f, 1.0f));
 		modelMatrix = glm::translate(modelMatrix, translation);
+		modelMatrix = glm::rotate(modelMatrix, rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+		modelMatrix = glm::rotate(modelMatrix, rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+		modelMatrix = glm::rotate(modelMatrix, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
 		modelMatrix = glm::scale(modelMatrix, scale);
 		return modelMatrix;
 	}

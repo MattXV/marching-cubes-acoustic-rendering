@@ -25,10 +25,12 @@ namespace unda {
 				GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW));
 			}
 
-		glBindVertexArray(NULL);
-		glBindBuffer(GL_ARRAY_BUFFER, NULL);
-		if (hasIndices)
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL);
+		GLCALL(glBindVertexArray(NULL));
+		GLCALL(glBindBuffer(GL_ARRAY_BUFFER, NULL));
+		if (hasIndices) {
+			GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL));
+
+		}
 
 	}
 
@@ -44,83 +46,132 @@ namespace unda {
 	// ---------------------------------------------------------------------------
 
 	Scene::Scene()
-
+		: camera(new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.001f, 900.0f))
+		, boundingBoxRenderer(*camera)
 	{
-		camera = new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.1f, 90.0f);
-		boundingBoxRenderer.reset(new BoundingBoxRenderer((Camera&)std::ref(camera)));
+		json configuration = json::parse(utils::ReadTextFile("conf.json"));
 
 		auto [vertices, indices] = unda::primitives::createSphere(16, 0.2f);
 		Light* light = new Light(vertices, indices);
-		light->setPosition(glm::vec3(2.0f, 2.5f, 7.0f));
+		light->setPosition(glm::vec3(2.0f, 9.5f, 7.0f));
 		addLight(light);
-
 		camera->setPosition(glm::vec3(1.0f, 0.0f, 1.0f));
-		auto modelpath = std::filesystem::path("resources/models/Office/");
-		modelpath = modelpath.make_preferred();
-		std::shared_ptr<Model> conferenceModel = std::shared_ptr<Model>(loadMeshDirectory(modelpath.string(), "obj", Colour<float>(0.2f, 0.2f, 0.2f, 1.0f), true));
-		if (conferenceModel->getMeshes().empty()) { std::cout << "No meshes!" << std::endl; return; }
-		conferenceModel->normaliseMeshes();
-		conferenceModel->calculateAABB();
-		conferenceModel->setPosition(glm::vec3(2.0f, 0.0f, 0.0f));
-		conferenceModel->setScale(glm::vec3(1, 1, 1));
+		modelRenderer.setCamera(camera);
+		modelRenderer.setLightPosition(light->getPosition());
+		modelRenderer.setLightColour(light->getColour());
+		// Input Scene
+		inputScene.reset(loadSceneGraph(configuration["Scene"]["SceneGraphFile"].get<std::string>()));
+		//inputScene->normaliseMeshes();
+		inputScene->calculateAABB();
+		for (Mesh& mesh : inputScene->getMeshes()) 
+			boundingBoxRenderer.getBoundingBoxes().push_back(std::make_unique<BoundingBox>(mesh.aabb));
 
-		int unique = 0;
-		for (Mesh& mesh : conferenceModel->getMeshes()) {
-			Model* model = unda::primitives::cubeBoundingBox(mesh.aabb);
-			boundingBoxesModels.emplace_back(std::unique_ptr<Model>(model));
-			boundingBoxes.insert(std::make_pair(mesh.name + std::to_string(unique++), model));
-			model->setScale(glm::vec3(3.0f, 3.0f, 3.0f));
-			model->toVertexArray();
+
+		int cellsPerDimension = configuration["GeometryReduction"]["MarchingCubesResolution"].get<int>();
+		bool generatePatches = (bool)configuration["GeometryReduction"]["GeneratePatches"].get<int>();
+		MarchingCubes* marchingCubes = new MarchingCubes(cellsPerDimension, 1, (float)inputScene->getModelScale() / cellsPerDimension, Point3D(0, 0, 0));
+		marchingCubes->setGeneratePatches(generatePatches);
+
+		utils::Timer timer{ "Computing Scalar Field + patches" };
+
+		timer.start();
+		marchingCubes->computeScalarField(inputScene);
+		timer.stop();
+		
+		// TODO: FIX PATCH GENERATION IN MARCHING CUBES IMPLEMENTATION
+		// UV CROPPING IS WRONG
+		// DEBUG VISUALLY
+		// INFER FROM IMAGE PATCHES.
+		if (generatePatches) {
+			for (std::pair<AABB, std::vector<TexturePatch>>& aabbCube : MarchingCubesPatches) {
+				BoundingBox* aabb = new BoundingBox(aabbCube.first);
+				for (TexturePatch patch : aabbCube.second) {
+					if (patch.pixels.size() == 0) continue;
+					aabb->doPatch(patch, static_cast<CubeMap::Face>(patch.cubeMapFace));
+				}
+				boundingBoxRenderer.getBoundingBoxes().push_back(std::unique_ptr<BoundingBox>(aabb));
+			}
 		}
-
-		int cellsPerDimension = 125;
-		MarchingCubes* marchingCubes = new MarchingCubes(cellsPerDimension, 32, 0.1f, Point3D(0, 0, 0));
-		marchingCubes->setGeneratePatches(false);
-		marchingCubes->computeScalarField(conferenceModel);
+			 
+		timer.reset("Computing Marching Cubes");
+		timer.start();
 		marchingCubes->computeMarchingCubes(1.0);
-		Model* marchingCubesModel = marchingCubes->createModel();
-		marchingCubesModel->normaliseMeshes();
-		marchingCubesModel->setPosition(glm::vec3(0.0f, 0.0f, 2.0f));
+		timer.stop();
 
-		marchingCubesModel->toVertexArray();
-		conferenceModel->toVertexArray();
+		marchingCubesModel.reset(marchingCubes->createModel());
+		for (auto& mesh : marchingCubesModel->getMeshes()) {
+			mesh.transform = glm::translate(glm::mat4(1.0f), glm::vec3(-10, 0, -10));
+			//mesh.transform = glm::scale(mesh.transform, glm::vec3(10, 10, 10));
+		}
+		glm::vec3 boundingVolume = marchingCubesModel->calculateBoundingVolume();
 		
-		addModel(conferenceModel);
-		addModel(marchingCubesModel);
+		UNDA_LOG_MESSAGE("width: " + std::to_string(inputScene->getVolume().x) + "height: " + std::to_string(inputScene->getVolume().y) + "depth: " + std::to_string(inputScene->getVolume().z));
+
+
+
+
 		std::vector<acoustics::SurfacePatch> patches;
-		if (acoustics::loadPredictions("classifier/results.csv", patches) < 0) { UNDA_ERROR("Could not load patches") return; }
-		std::array<std::array<double, 6>, 6> betaCoefficients = {
-			acoustics::Materials::carpet.getBetaCoefficients(),
-			acoustics::Materials::floor.getBetaCoefficients(),
-			acoustics::Materials::wallTreatments.getBetaCoefficients(),
-			acoustics::Materials::wallTreatments.getBetaCoefficients(),
-			acoustics::Materials::wallTreatments.getBetaCoefficients(),
-			acoustics::Materials::wallTreatments.getBetaCoefficients(),
-		};
+		//if (acoustics::loadPredictions("classifier/results.csv", patches) < 0) { UNDA_ERROR("Could not load patches"); return; }
+		////std::array<std::array<double, 6>, 6> betaCoefficients = {
+		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
+		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
+		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
+		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
+		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
+		////	acoustics::Materials::wallTreatments.getBetaCoefficients()
+		////};
 
-		int nThreads = 32, ISM_sampleRate = (int)unda::sampleRate, nTaps = 2048; //11025
-		int nSamples = (int)std::round((double)ISM_sampleRate * 0.7);
-		std::array<double, 3> spaceDimensions{ 3.5, 3.5, 2.8 };
-		std::array<double, 3> listener{ 1.05, 1.2, 1.68 };
-		std::array<double, 3> source{ 3.0, 1.2, 0.6 };
-		
+		std::array<std::array<double, 6>, 6> betaCoefficients{};
+		betaCoefficients[2] = acoustics::Materials::ceramic.getBetaCoefficients();
+		betaCoefficients[3] = acoustics::Materials::ceramic.getBetaCoefficients();
+		betaCoefficients[0] = acoustics::Materials::ceramic.getBetaCoefficients();
+		betaCoefficients[1] = acoustics::Materials::ceramic.getBetaCoefficients();
+		betaCoefficients[4] = acoustics::Materials::ceramic.getBetaCoefficients();
+		betaCoefficients[5] = acoustics::Materials::ceramic.getBetaCoefficients();
+
+			//betaCoefficients.fill(acoustics::Materials::defaultMaterial.getBetaCoefficients());
+		//betaCoefficients.fill({ 0.0 , 0.0 , 0.0 , 0.0, 0.0, 0.0 });
+
+
+		glm::vec3 sceneVolume = inputScene->getVolume();
+		std::array<double, 3> spaceDimensions = { (double)sceneVolume.x, (double)sceneVolume.y, (double)sceneVolume.z };
+		std::array<double, 3> source = configuration["IR"]["SourcePosition"].get<std::array<double, 3>>();
+		std::array<double, 3> listener = configuration["IR"]["ListenerPosition"].get<std::array<double, 3>>();
+
+		int nThreads = 30, ISM_sampleRate = (int)unda::sampleRate, nTaps = 2048; //11025
+		int nSamples = (int)std::round((double)ISM_sampleRate * configuration["IR"]["TailLength"].get<double>());
 		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(nThreads, spaceDimensions, source, listener, betaCoefficients);
 		ism->setSamplingFrequency(ISM_sampleRate);
 		ism->setNSamples(nSamples);
-		ism->doPatches(patches, cellsPerDimension);
-		ism->generateIR();
+		//ism->doPatches(patches, cellsPerDimension);
+		if (configuration["IR"]["GenerateIR"].get<int>())
+			ism->generateIR();
+
 		delete ism;	
+
 	}
 
 	Scene::~Scene()
 	{
+		boundingBoxRenderer.cleanUp();
 		models.clear();
+
 		std::for_each(lights.begin(), lights.end(), [](Light* light) { delete light; });
+		for (auto& texture : loadedTextures)
+			delete texture.second.release();
+		//for (std::pair<const std::string, std::vector<std::unique_ptr<Texture>>>& textureEntry : loadedTextures) {
+		//	for (auto& texture : textureEntry.second) delete texture.release();
+		//	// Manual deletion is to dispose GL objects before context gets deleted.
+		//}
 		delete camera;
 	}
 
 	void Scene::render() {
-		boundingBoxRenderer->render();
+		modelRenderer.setModel(inputScene.get());
+		modelRenderer.render();
+		modelRenderer.setModel(marchingCubesModel.get());
+		modelRenderer.render();
+		boundingBoxRenderer.render();
 	}
 
 	void Scene::update()

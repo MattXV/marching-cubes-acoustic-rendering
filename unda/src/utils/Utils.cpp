@@ -118,3 +118,28 @@ std::vector<std::array<float, 3>> unda::utils::PlyParser::parseVertices()
 
 	return vertices;
 }
+
+void unda::utils::Timer::start()
+{
+	 t1 = std::chrono::high_resolution_clock::now();
+}
+
+void unda::utils::Timer::stop()
+{
+	auto t2 = std::chrono::high_resolution_clock::now();
+
+	auto milliSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
+
+	std::ofstream logFile;
+	logFile.open(logName);
+	if (logFile.is_open()) {
+		logFile << "Operation,Duration(ms),Info" << std::endl;
+		logFile << procedure + "," + std::to_string(milliSeconds.count()) + "," + info << std::endl;
+		logFile.close();
+	}
+	else {
+		UNDA_ERROR("Could not open file: " + logName);
+	}
+
+	UNDA_LOG_MESSAGE(procedure + std::to_string(milliSeconds.count()));
+}

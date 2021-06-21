@@ -1,13 +1,13 @@
 #include "UndaAPI.h"
 
 namespace unda {
-	UndaAPI* UndaAPI::singleton = nullptr;
+	//UndaAPI* UndaAPI::singleton = nullptr;
 
 	UndaAPI::UndaAPI()
 		: window(nullptr)
 	{
 		engine = new Engine();
-		singleton = this;
+		//singleton = this;
 	}
 
 	void UndaAPI::run() {

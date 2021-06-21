@@ -1,0 +1,19 @@
+{
+  "Scene": {
+    "SceneGraphFile": "resources/models/Church/Scene/SceneGraph.json"
+  },
+  "GeometryReduction": {
+    "MarchingCubesResolution": 35,
+    "GeneratePatches": 0
+  },
+  "IR": {
+    "GenerateIR": 1,
+    "SourcePosition": [ 30.0, 1.2, 26 ],
+    "ListenerPosition": [ 30.0, 1.2, 27 ],
+    "TailLength": 9
+  },
+  "DSP": {
+    "FilterResolution": 2048
+  },
+  "Threads": 30
+}

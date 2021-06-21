@@ -8,77 +8,96 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
+#include <assimp/Exporter.hpp>
 #include <assimp/postprocess.h>
-#include "../glob/glob.h"
 #include <vector>
+#include <array>
 #include <string>
 #include <filesystem>
 #include <memory>
 #include <unordered_map>
+#include <json.hpp>
 //class Texture;
 
 
 namespace unda {
-	static std::unordered_map<std::string, std::unique_ptr<Texture>> textures;
+	struct LoadedMesh {
+		LoadedMesh() = default;
+		~LoadedMesh() = default;
+		LoadedMesh(const LoadedMesh& other) { vertices.reset(other.vertices.get()); indices.reset(other.indices.get()); texture = other.texture; vao = other.vao; vbo = other.vbo; ibo = other.ibo; }
+		LoadedMesh& operator=(const LoadedMesh& other) { vertices.reset(other.vertices.get()); indices.reset(other.indices.get()); texture = other.texture; vao = other.vao; vbo = other.vbo; ibo = other.ibo; return *this; }
+
+		std::shared_ptr<std::vector<Vertex>> vertices = std::shared_ptr<std::vector<Vertex>>();
+		std::shared_ptr<std::vector<unsigned int>> indices = std::shared_ptr<std::vector<unsigned int>>();
+		Texture* texture = nullptr;
+		unsigned int vao = 0, vbo = 0, ibo = 0;
+	};
+	LoadedMesh* loadMesh(const std::vector<Vertex>&& _vertices, const std::vector<unsigned int>&& _indices, Texture* texture);
+
+	extern std::unordered_map<std::string, std::unique_ptr<Texture>> loadedTextures;
+	extern std::unordered_map<std::string, std::vector<LoadedMesh>> loadedMeshes;
+	// Mesh      -> VAO - VBO - IBO
 
 	struct Mesh {
-		Mesh(std::vector<Vertex>&& _vertices, std::vector<unsigned int>&& _indices, Texture* _texture, const std::string& _name = std::string(), Texture* normal = nullptr, glm::mat4 _transform = glm::mat4())
-			: vertices(std::move(_vertices))
-			, indices(std::move(_indices))
+		Mesh(std::vector<Vertex>& _vertices, std::vector<unsigned int>& _indices, Texture* _texture, const std::string& _name = std::string(), glm::mat4 _transform = glm::mat4())
+			: vertices(&_vertices)
+			, indices(&_indices)
 			, texture(_texture)
 			, name(_name)
-			, normalMap(normal)
-			, tranform(_transform)
-		{ }
-		Mesh(const unsigned int& _vao, const unsigned int& _vbo, const unsigned int& _ibo,
-			const long unsigned int& _vertexCount, const long unsigned int& _indexCount, Texture* t, glm::mat4 _transform = glm::mat4())
-			: texture(t)
-		{
-			vao = _vao;
-			vbo = _vbo;
-			ibo = _ibo;
-			vertexCount = _vertexCount;
-			indexCount = _indexCount;
-			tranform = _transform;
+			, transform(_transform)
+		{ 
+			vertexCount = (long unsigned int)_vertices.size();
+			indexCount = (long unsigned int)_indices.size();
 		}
+		Mesh() : vertices(nullptr), indices(nullptr) {}
 		unsigned int vao = 0, vbo = 0, ibo = 0;
 		long unsigned int vertexCount = 0, indexCount = 0;
 		Texture* texture;
-		std::unique_ptr<Texture> normalMap;
-		float scale = 1.0;
+		//float scale = 1.0;
 		glm::vec3 size = glm::vec3(0, 0, 0);
-		glm::mat4 tranform;
 		AABB aabb;
 
 		// Temporary CPU allocation
-		std::vector<Vertex> vertices;
-		std::vector<unsigned int> indices;
+		std::vector<Vertex>* vertices;
+		std::vector<unsigned int>* indices;
+
+		// Transform
+		glm::mat4 transform = glm::mat4(1.0f);
+		glm::vec3 position = glm::vec3(), scale = glm::vec3(1.0f, 1.0f, 1.0f), rotation = glm::vec3();
 
 		// Misc
 		std::string name;
+		std::string meshFileName;
 	};
 
 	class Model : public unda::Transform {
 	public:
 		Model() = default;
-		Model(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, Texture* texture = nullptr);
-		virtual ~Model();
+		~Model();
 
-		void toVertexArray();
+
 		std::vector<Mesh>& getMeshes() { return meshes; }
 		const std::vector<Mesh>& getMeshes() const { return meshes; }
-		void addMesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, Texture* texture, const std::string& name = std::string(), Texture* normal = nullptr, glm::mat4 transform = glm::mat4(1.0f));
+
+		double getModelScale() { return normalisationScale; }
+		glm::vec3 getVolume() { return volume; }
+
+		bool exportModel(const std::string& filename, bool overwrite = false);
+		void recomputeAABBs() { normaliseMeshes(); calculateAABB(); }
 
 		void calculateAABB();
-		void normaliseMeshes();
-
+		double normaliseMeshes();
+		glm::vec3 calculateBoundingVolume();
 
 	private:
+		glm::vec3 volume = glm::vec3();
+		double normalisationScale = 1.0;
 		bool isBuffered = false;
 		std::vector<Mesh> meshes;
 
 	};
-	Model* loadSingleMesh(const std::string& modelPath, const std::string texturePath, const std::string normalPath);
-	Model* loadModel(const std::string& modelPath, Colour<float> baseColour = Colour<float>(0.7f, 0.7f, 0.7f, 1.0f), bool verbose = true);
-	Model* loadMeshDirectory(const std::string& directoryPath, const std::string& extension = "obj", const Colour<float>& baseColour = Colour<float>(1.0f, 1.0f, 1.0f, 1.0f), bool verbose = false);
+
+	Model* fromVertexData(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, const std::string& name, Texture* texture = nullptr);
+	std::vector<Mesh> loadMeshes(const std::string& objFileName);
+	Model* loadSceneGraph(const std::string& sceneGraphJson);
 }

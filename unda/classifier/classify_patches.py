@@ -14,7 +14,7 @@ def preprocess(x):
     return x * 2 - 1
 
 
-PATCHES_DIR = '../output/'
+PATCHES_DIR = '../output/patches/'
 WEIGHTS_PATH = 'cache/PatchClassifier.h5'
 CLASSES_PATH = 'cache/PatchClassifierClasses.json'
 ONE_TO_MANY = 'onetomany_mapping.json'
@@ -35,6 +35,7 @@ patches = glob(path.join(PATCHES_DIR, '*.png'))
 predictions = list()
 for image_file in patches:
     path = Path(image_file)
+    print('Working on {}'.format(str(path)), end='\r')
     image = cold_wax.image.read_image(str(path.resolve()), None, False)
     
     if image.shape[0] * image.shape[1] < INPUT_SHAPE[0] * INPUT_SHAPE[1]:

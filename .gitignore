@@ -368,3 +368,5 @@ FodyWeavers.xsd
 # UNDA
 ################################################################################
 unda/output/*.png
+/unda/output
+/unda/scripts/plots

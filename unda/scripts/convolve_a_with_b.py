@@ -6,7 +6,7 @@ import soundfile as sf
 
 
 A = 'drums.wav'
-IRs = ['ir.wav', 'conference_ir_dc.wav']
+IRs = ['Room_GT.wav', 'ir.wav']
 OUT_SAMPLERATE = 48000
 
 

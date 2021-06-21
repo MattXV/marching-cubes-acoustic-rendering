@@ -1,19 +1,18 @@
 #pragma once
 
-#include "../rendering/RenderTools.h"
+#include "../rendering/Texture.h"
 #include <memory>
 #include <vector>
 
 namespace unda {
-	class BoundingBox : public unda::AABB, public unda::Transform {
+	class IBoundingBox : public unda::Transform, public AABB {
 	public:
-		BoundingBox(const unda::AABB& aabb);
+		IBoundingBox(const AABB& aabb) : AABB(aabb) {}
+		virtual const std::array<Vertex, 36>& getVertices() = 0;
+		virtual unsigned int getTextureLocation() = 0;
+		virtual void doPatch(TexturePatch& patch, CubeMap::Face face) = 0;
+
 	private:
-		size_t nFaces = 6, nTrianglesPerFace = 2;
-		size_t toLinearVertexIndex(const std::array<size_t, 3>& ijk) {
-			return ijk[0]; 
-		}
-		std::array<Vertex, 36> vertices;
 	};
 
 
@@ -24,9 +23,9 @@ namespace unda {
 		virtual void render() = 0;
 		virtual void cleanUp() = 0;
 
-		std::vector<std::unique_ptr<BoundingBox>>& getBoundingBoxes() { return boundingBoxes; }
-		const std::vector<std::unique_ptr<BoundingBox>>& getBoundingBoxes() const { return boundingBoxes; }
+		//std::vector<std::unique_ptr<IBoundingBox>>& getBoundingBoxes() { return boundingBoxes; }
+		static std::vector<std::unique_ptr<IBoundingBox>>& getBoundingBoxes() { return boundingBoxes; }
 	private:
-		std::vector<std::unique_ptr<BoundingBox>> boundingBoxes;
+		static std::vector<std::unique_ptr<IBoundingBox>> boundingBoxes;
 	};
 }

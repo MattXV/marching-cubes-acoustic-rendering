@@ -1,0 +1,7 @@
+    "SourcePosition": [ 1.0, 1.2, 2.6 ],
+    "ListenerPosition": [ 1.0, 1.2, 1.68 ],
+
+
+    CHURCH:
+    "SourcePosition": [ 30.0, 1.2, 26 ],
+    "ListenerPosition": [ 30.0, 1.2, 27 ],
