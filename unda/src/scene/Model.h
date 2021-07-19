@@ -36,6 +36,7 @@ namespace unda {
 
 	extern std::unordered_map<std::string, std::unique_ptr<Texture>> loadedTextures;
 	extern std::unordered_map<std::string, std::vector<LoadedMesh>> loadedMeshes;
+	
 	// Mesh      -> VAO - VBO - IBO
 
 	struct Mesh {
@@ -68,6 +69,7 @@ namespace unda {
 		// Misc
 		std::string name;
 		std::string meshFileName;
+		bool patchWritten = false;
 	};
 
 	class Model : public unda::Transform {
@@ -89,7 +91,9 @@ namespace unda {
 		double normaliseMeshes();
 		glm::vec3 calculateBoundingVolume();
 
+		static unsigned int uniqueId;
 	private:
+
 		glm::vec3 volume = glm::vec3();
 		double normalisationScale = 1.0;
 		bool isBuffered = false;

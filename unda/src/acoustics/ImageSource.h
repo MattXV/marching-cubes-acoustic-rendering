@@ -42,10 +42,10 @@ namespace unda {
 		class ImageSourceModel {
 		public:
 			ImageSourceModel(int _nThreads, const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition,
-							 const std::array<double, 3>& _receiverPosition, std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples = 0);
+							 const std::array<double, 3>& _receiverPosition, std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples = 0, unsigned int order=2);
 			~ImageSourceModel();
 
-			std::array<std::vector<double>, 6> getIRs() { return irs; }
+			std::array<Signal, 6> getIRs() { return irs; }
 
 			void setSourcePosition(const std::array<double, 3>& position) { sourcePosition = position; }
 			void setReceiverPosition(const std::array<double, 3>& position) { receiverPosition = position; }
@@ -58,10 +58,11 @@ namespace unda {
 		private:
 
 			// Variables
+			unsigned int order = 2;
 			double samplingFrequency;
 			double speedOfSound;
-			int nSamples;
-			int DSP_nTaps = 2048;
+			int nSamples = 0;
+			int DSP_nTaps = 8192;
 
 			// Acoustic parameter estimates
 			double meanFreePathEstimate;
@@ -78,7 +79,7 @@ namespace unda {
 
 			// Data
 			// Frequency-dependent RIRs - [125 - 250, 250 - 500, 500 - 1000, 1000 - 2000, 2000 - 4000, 6000 - 12000]
-			std::array<std::vector<double>, 6> irs;
+			std::array<Signal, 6> irs;
 			Signal output;
 
 			// Thread workers

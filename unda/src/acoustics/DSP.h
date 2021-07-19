@@ -4,26 +4,24 @@
 #include "../utils/Utils.h"
 #include "../utils/Maths.h"
 #include <sndfile.h>
-#include <FFTConvolver.h>
 #include <vector>
-
-
+#include <pffft.h>
+#include <string>
 
 
 namespace unda {
-	typedef std::vector<double> Signal;
+	typedef float Sample;
+	typedef std::vector<Sample> Signal;
 
 	void NormaliseSignal(Signal& audioSamples);
 	Signal NormaliseSignal(const Signal& audioSamples);
-	int WriteAudioFile(const std::vector<std::vector<double>>& audioChannels, const std::string& filePath, double samplingFrequency = unda::sampleRate);
-
-	Signal AllPassFilter(std::vector<double>& audioSamples, float delayMilliseconds = 90.0f, float decay = 0.131f, double sampleRate = unda::sampleRate);
-	Signal CombFilter(std::vector<double>& audioSamples, float delayMilliseconds = 90.0f, float decay = 0.131f, double sampleRate = unda::sampleRate);
-	Signal SchroederReverb(const Signal& input, float delay, float decay);
-
+	int WriteAudioFile(const std::vector<Signal>& audioChannels, const std::string& filePath, double samplingFrequency = unda::sampleRate);
+	Signal ReadAudioFileIntoMono(const std::string& filePath);
+	void ZeroCrossingFadeInOut(Signal& signal);
 
 	template<typename T>
-	std::vector<T>	Convolve(std::vector<T> const& f, std::vector<T> const& g) {
+	std::vector<T> TimeDomainConvolution(std::vector<T> const& f, std::vector<T> const& g) {
+		// For plebs and 'slow' people like me.
 		int const nf = (int)f.size();
 		int const ng = (int)g.size();
 		int const n = nf + ng - 1;
@@ -37,41 +35,27 @@ namespace unda {
 		}
 		return out;
 	}
+	Signal FFTConvolution(const Signal& signal, const Signal& kernel);
 
 
 	class Filter {
 	public:
-		enum filterType { LPF, HPF, BPF, COMB, ALLPASS };
-		Filter(filterType filt_t, int num_taps, double Fs, double Fx);
-		Filter(filterType filt_t, int num_taps, double Fs, double Fl, double Fu);
-		~Filter();
+		enum class filterType { LPF, HPF, BPF };
+		Filter(filterType filt_t, float cutoff_hz);
+		Filter(filterType filt_t, float lower_cutoff_hz, float upper_cutoff_hz);
+		~Filter() = default;
 
-		void convolveToSignal(Signal& signal);
-		Signal convolveToSignal(const Signal& signal);
-		int getError() { return errorFlag; };
-
-		template<typename T>
-		void getTaps(T* out_taps) {
-			if (errorFlag != 0) return;
-			for (int i = 0; i < nTaps; i++) out_taps[i] = T(taps[i]);
-		}
+		inline void writeFilterToFile(std::string filename) { Signal out = Signal(h.begin(), h.end()); WriteAudioFile({ out }, filename, (double)fs); }
+		const Signal& getKernel() { return h; }
 
 	private:
-		double omega;					// Cutoff frequency
-		double omegaLower, omegaUpper;	// Lower and Upper Cutoff for BandPass types
-		double fs;
-		filterType type;
-		size_t nTaps;
-		Signal taps;
-		int errorFlag;
-		std::unique_ptr<fftconvolver::FFTConvolver> convolver;
+		// Parameters
+		float lower_fc = 0, upper_fc = 0, fs = (float)unda::sampleRate;
+		unsigned int M = (unsigned int)pow(2, 13);
+		
+		// Kernel
+		Signal h;
 
-		void designLPF();
-		void designHPF();
-		void designBPF();
-		void designAllPass();
-
-		void setError(int x) { errorFlag = x; UNDA_ERROR("Error in Filter operations!"); }
 		DISABLE_COPY_ASSIGN(Filter);
 	};
 }

@@ -3,7 +3,7 @@
 namespace unda {
     std::unordered_map<std::string, std::vector<LoadedMesh>> loadedMeshes = std::unordered_map<std::string, std::vector<LoadedMesh>>();
     std::unordered_map<std::string, std::unique_ptr<Texture>> loadedTextures = std::unordered_map<std::string, std::unique_ptr<Texture>>();
-
+    unsigned int Model::uniqueId = 0;
     Model::~Model()
     {
         for (Mesh& mesh : meshes) {
@@ -70,6 +70,7 @@ namespace unda {
         glm::vec3 surfaceNormal = glm::vec3();
         glm::mat4 worldTransform;
         glm::vec3 absMin, absMax;
+        glm::vec2 UVmin, UVmax;
 
         std::function<void(Vertex&)> getMinimum = [&](Vertex& vertex) {
             glm::vec4 worldPosition = worldTransform * glm::vec4(vertex.x, vertex.y, vertex.z, 1.0f);
@@ -86,6 +87,7 @@ namespace unda {
             bool maxChanged = false;
             if (first) {
                 minVertex = Vertex(worldPosition.x, worldPosition.y, worldPosition.z, vertex.u, vertex.v, worldNormal.x, worldNormal.y, worldNormal.z);
+                maxVertex = Vertex(worldPosition.x, worldPosition.y, worldPosition.z, vertex.u, vertex.v, worldNormal.x, worldNormal.y, worldNormal.z);
                 nearBottomLeft = nearBottomRight = nearTopRight = nearTopLeft = vertex;
                 farBottomLeft = farBottomRight = farTopRight = farTopLeft = vertex;
                 first = false;
@@ -93,6 +95,7 @@ namespace unda {
             }
             if (absFirst) {
                 absMin = absMax = worldPosition;
+                UVmin = UVmax = glm::vec2(vertex.u, vertex.v);
                 absFirst = false;
             }
 
@@ -112,6 +115,10 @@ namespace unda {
             if (worldPosition.y < absMin.y) { absMin.y = worldPosition.y; }
             if (worldPosition.z < absMin.z) { absMin.z = worldPosition.z; }
 
+            if (vertex.u < UVmin.x) UVmin.x = vertex.u;
+            if (vertex.v < UVmin.y) UVmin.y = vertex.v;
+            if (vertex.u > UVmax.x) UVmax.x = vertex.u;
+            if (vertex.v > UVmax.y) UVmax.y = vertex.v;
 
             if (minChanged) {
                 minVertex.u = vertex.u;
@@ -128,6 +135,9 @@ namespace unda {
                 //minVertex.nz = worldNormal.z;
             }
 
+            
+
+            // 
             if (worldPosition.x < nearBottomLeft.x  && worldPosition.y < nearBottomLeft.y  && worldPosition.z < nearBottomLeft.z)  nearBottomLeft  = vertex;
             if (worldPosition.x < nearTopLeft.x     && worldPosition.y > nearTopLeft.y     && worldPosition.z < nearTopLeft.z)     nearTopLeft     = vertex;
             if (worldPosition.x > nearTopRight.x    && worldPosition.y > nearTopRight.y    && worldPosition.z < nearTopRight.z)    nearTopRight    = vertex;
@@ -171,6 +181,8 @@ namespace unda {
             aabb.farTopRight = farTopRight;
             aabb.farTopLeft = farTopLeft;
             aabb.surfaceNormal = surfaceNormal;
+            aabb.UVmin = UVmin;
+            aabb.UVmax = UVmax;
 
             mesh.aabb = aabb;
             if (fabs(mesh.aabb.min.x) > maxAABB) maxAABB = fabs(mesh.aabb.min.x);
@@ -495,7 +507,7 @@ namespace unda {
                 mesh.scale = vScl;
                 mesh.transform = myModelMatrix;
                 mesh.meshFileName = meshFileName;
-                mesh.name = nodeName;
+                mesh.name = nodeName + std::to_string(Model::uniqueId++);
 
                 scene->getMeshes().push_back(std::move(mesh));
             }

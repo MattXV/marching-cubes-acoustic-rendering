@@ -75,15 +75,6 @@
     <ClCompile Include="src\acoustics\DSP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="externals\FFTConvolver\FFTConvolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\FFTConvolver\AudioFFT.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="externals\FFTConvolver\Utilities.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\acoustics\ImageSource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -91,6 +82,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\rendering\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\pffft\fftpack.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="externals\pffft\pffft.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -176,15 +173,6 @@
     <ClInclude Include="src\acoustics\DSP.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="externals\FFTConvolver\FFTConvolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\FFTConvolver\AudioFFT.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="externals\FFTConvolver\Utilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\utils\Maths.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -195,6 +183,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\scene\SceneRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="externals\pffft\fftpack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="externals\pffft\pffft.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

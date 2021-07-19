@@ -46,11 +46,13 @@ namespace unda {
 
 
 
-		ImageSourceModel::ImageSourceModel(int _nThreads, const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition, const std::array<double, 3>& _receiverPosition, std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples)
+		ImageSourceModel::ImageSourceModel(int _nThreads, const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition, const std::array<double, 3>& _receiverPosition,
+			std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples, unsigned int _order)
 			: spaceDimensions(_spaceDimensions)
 			, sourcePosition(_sourcePosition)
 			, receiverPosition(_receiverPosition)
 			, surfaceReflection(_surfaceReflection)
+			, order(_order)
 		{
 			if (nThreads > 32) { throw std::invalid_argument("Invalind number of threads!"); return; }
 			nThreads = _nThreads;
@@ -66,6 +68,7 @@ namespace unda {
 			double rightWallSurface = spaceDimensions[1] * spaceDimensions[2];
 
 			double totalAlpha = 0.0;
+			std::array<double, 6> frequencyDependentT60;
 			for (int bin = 0; bin < 6; bin++) {
 				// Using Sabine's equation to determine space reverberation if n_samples is not known.
 				double alpha =
@@ -76,21 +79,22 @@ namespace unda {
 					leftWallSurface  * (1 - pow(surfaceReflection[4][bin], 2)) + // left wall
 					rightWallSurface * (1 - pow(surfaceReflection[5][bin], 2));  // right wall
 				totalAlpha += alpha;
+				frequencyDependentT60[bin] = 0.161 * (volume / alpha);
 			}
 			totalAlpha /= 6.0;
 			t_60 = 0.161 * (volume / totalAlpha);
 			totalSurface = floorSurface + ceilingSurface + backWallSurface + frontWallSurface + leftWallSurface + rightWallSurface;
 			meanFreePathEstimate = meanFreePath(volume, (double)totalSurface);
-			UNDA_LOG_MESSAGE("Predicted t60: " + std::to_string(t_60));
-			UNDA_LOG_MESSAGE("Volume: " + std::to_string(volume));
 
+			//UNDA_LOG_MESSAGE("T60: " + std::to_string(frequencyDependentT60[0])
+			//	+ ", " + std::to_string(frequencyDependentT60[1]) + ", "
+			//	+ std::to_string(frequencyDependentT60[2]) + ", "
+			//	+ std::to_string(frequencyDependentT60[3]) + ", "
+			//	+ std::to_string(frequencyDependentT60[4]) + ", "
+			//	+ std::to_string(frequencyDependentT60[5]) + ", ");
+			//UNDA_LOG_MESSAGE("Predicted total t60: " + std::to_string(t_60));
+			//UNDA_LOG_MESSAGE("Volume: " + std::to_string(volume));
 
-			if (_nSamples < 1) {
-				nSamples = (int)round(t_60 * samplingFrequency);
-			}
-			else {
-				nSamples = _nSamples;
-			}
 		}
 
 		ImageSourceModel::~ImageSourceModel()
@@ -100,6 +104,43 @@ namespace unda {
 
 		void ImageSourceModel::generateIR()
 		{
+			double volume = spaceDimensions[0] * spaceDimensions[1] * spaceDimensions[2];
+			double floorSurface = spaceDimensions[0] * spaceDimensions[2];
+			double ceilingSurface = spaceDimensions[0] * spaceDimensions[2];
+			double backWallSurface = spaceDimensions[1] * spaceDimensions[0];
+			double frontWallSurface = spaceDimensions[1] * spaceDimensions[0];
+			double leftWallSurface = spaceDimensions[1] * spaceDimensions[2];
+			double rightWallSurface = spaceDimensions[1] * spaceDimensions[2];
+
+			double totalAlpha = 0.0;
+			std::array<double, 6> frequencyDependentT60;
+			for (int bin = 0; bin < 6; bin++) {
+				// Using Sabine's equation to determine space reverberation if n_samples is not known.
+				double alpha =
+					floorSurface * (1 - pow(surfaceReflection[0][bin], 2)) + // floor
+					ceilingSurface * (1 - pow(surfaceReflection[1][bin], 2)) + // celing
+					backWallSurface * (1 - pow(surfaceReflection[2][bin], 2)) + // back wall
+					frontWallSurface * (1 - pow(surfaceReflection[3][bin], 2)) + // front wall
+					leftWallSurface * (1 - pow(surfaceReflection[4][bin], 2)) + // left wall
+					rightWallSurface * (1 - pow(surfaceReflection[5][bin], 2));  // right wall
+				totalAlpha += alpha;
+				frequencyDependentT60[bin] = 0.161 * (volume / alpha);
+			}
+			totalAlpha /= 6.0;
+			t_60 = 0.161 * (volume / totalAlpha);
+			totalSurface = floorSurface + ceilingSurface + backWallSurface + frontWallSurface + leftWallSurface + rightWallSurface;
+			meanFreePathEstimate = meanFreePath(volume, (double)totalSurface);
+
+			UNDA_LOG_MESSAGE("T60: " + std::to_string(frequencyDependentT60[0])
+				+ ", " + std::to_string(frequencyDependentT60[1]) + ", "
+				+ std::to_string(frequencyDependentT60[2]) + ", "
+				+ std::to_string(frequencyDependentT60[3]) + ", "
+				+ std::to_string(frequencyDependentT60[4]) + ", "
+				+ std::to_string(frequencyDependentT60[5]) + ", ");
+			UNDA_LOG_MESSAGE("Predicted total t60: " + std::to_string(t_60));
+			UNDA_LOG_MESSAGE("Volume: " + std::to_string(volume));
+			if (nSamples == 0) nSamples = (int)((std::ceil(t_60)) * samplingFrequency);
+
 			utils::Timer timer("Office - Generating RIR");
 			timer.setInfo(" RIR . Estimated t60:" + std::to_string(t_60));
 
@@ -123,61 +164,64 @@ namespace unda {
 		{
 			long double patchContribution = totalSurface / std::pow((long double)cellsPerDimesion, 3);
 			for (SurfacePatch patch : patches) {
-				if (patch.confidence < 0.97f) {
+				if (patch.confidence < 0.90f) {
 					continue;
 				}
+				//
+				//if (patch.name.find("bottomFace") != std::string::npos) {
+
+				for (int wall = 0; wall < 6; wall++) {
+					for (int i = 0; i < 6; i++) {
+						long double patchCoefficient = (long double)patch.coefficients[i];
+						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+						//surfaceReflection[wall][i] = std::lerp((long double)surfaceReflection[0][i], patchCoefficient, patchContribution);
+						surfaceReflection[wall][i] = (surfaceReflection[wall][i] + patchCoefficient) / 2;
+					}
+				}
 				
-				if (patch.name.find("bottomFace") != std::string::npos) {
 
-					for (int i = 0; i < 6; i++) {
-						long double patchCoefficient = (long double)patch.coefficients[i];
-						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
-						surfaceReflection[0][i] = std::lerp((long double)surfaceReflection[0][i], patchCoefficient, patchContribution);
-					}
-				}
+				//if (patch.name.find("topFace") != std::string::npos) {
 
-				if (patch.name.find("topFace") != std::string::npos) {
+				//	for (int i = 0; i < 6; i++) {
+				//		long double patchCoefficient = (long double)patch.coefficients[i];
+				//		patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+				//		surfaceReflection[1][i] = std::lerp((long double)surfaceReflection[1][i], patchCoefficient, patchContribution);
+				//	}
+				//}
 
-					for (int i = 0; i < 6; i++) {
-						long double patchCoefficient = (long double)patch.coefficients[i];
-						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
-						surfaceReflection[1][i] = std::lerp((long double)surfaceReflection[1][i], patchCoefficient, patchContribution);
-					}
-				}
+				//if (patch.name.find("backFace") != std::string::npos) {
 
-				if (patch.name.find("backFace") != std::string::npos) {
+				//	for (int i = 0; i < 6; i++) {
+				//		long double patchCoefficient = (long double)patch.coefficients[i];
+				//		patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+				//		surfaceReflection[2][i] = std::lerp((long double)surfaceReflection[2][i], patchCoefficient, patchContribution);
+				//	}
+				//}
+				//if (patch.name.find("frontFace") != std::string::npos) {
 
-					for (int i = 0; i < 6; i++) {
-						long double patchCoefficient = (long double)patch.coefficients[i];
-						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
-						surfaceReflection[2][i] = std::lerp((long double)surfaceReflection[2][i], patchCoefficient, patchContribution);
-					}
-				}
-				if (patch.name.find("frontFace") != std::string::npos) {
+				//	for (int i = 0; i < 6; i++) {
+				//		long double patchCoefficient = (long double)patch.coefficients[i];
+				//		patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+				//		surfaceReflection[3][i] = std::lerp((long double)surfaceReflection[3][i], patchCoefficient, patchContribution);
+				//	}
+				//}
+				//if (patch.name.find("leftFace") != std::string::npos) {
 
-					for (int i = 0; i < 6; i++) {
-						long double patchCoefficient = (long double)patch.coefficients[i];
-						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
-						surfaceReflection[3][i] = std::lerp((long double)surfaceReflection[3][i], patchCoefficient, patchContribution);
-					}
-				}
-				if (patch.name.find("leftFace") != std::string::npos) {
+				//	for (int i = 0; i < 6; i++) {
+				//		long double patchCoefficient = (long double)patch.coefficients[i];
+				//		patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+				//		surfaceReflection[4][i] = std::lerp((long double)surfaceReflection[4][i], patchCoefficient, patchContribution);
+				//	}
+				//}
 
-					for (int i = 0; i < 6; i++) {
-						long double patchCoefficient = (long double)patch.coefficients[i];
-						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
-						surfaceReflection[4][i] = std::lerp((long double)surfaceReflection[4][i], patchCoefficient, patchContribution);
-					}
-				}
+				//if (patch.name.find("rightFace") != std::string::npos) {
 
-				if (patch.name.find("rightFace") != std::string::npos) {
-
-					for (int i = 0; i < 6; i++) {
-						long double patchCoefficient = (long double)patch.coefficients[i];
-						patchCoefficient = (long double)alphaToBeta(patchCoefficient);
-						surfaceReflection[5][i] = std::lerp((long double)surfaceReflection[5][i], patchCoefficient, patchContribution);
-					}
-				}
+				//	for (int i = 0; i < 6; i++) {
+				//		long double patchCoefficient = (long double)patch.coefficients[i];
+				//		patchCoefficient = (long double)alphaToBeta(patchCoefficient);
+				//		surfaceReflection[5][i] = std::lerp((long double)surfaceReflection[5][i], patchCoefficient, patchContribution);
+				//	}
+				//}
 			}
 		}
 
@@ -261,7 +305,7 @@ namespace unda {
 					{
 						Rm[2] = 2 * (double)mz * room[2];
 
-						for (int q = 0; q <= 4; q++)
+						for (int q = 0; q <= (int)order; q++)
 						{
 							Rp_plus_Rm[0] = (1 - 2 * (double)q) * source[0] - listener[0] + Rm[0];
 
@@ -270,14 +314,14 @@ namespace unda {
 								reflections[0][bin] = pow(surfaceReflection[0][bin], abs(mx - q)) * pow(surfaceReflection[1][bin], abs(mx));
 							}
 
-							for (int j = 0; j <= 4; j++)
+							for (int j = 0; j <= (int)order; j++)
 							{
 								Rp_plus_Rm[1] = (1 - 2 * (double)j) * source[1] - listener[1] + Rm[1];
 								for (int bin = 0; bin < 6; bin++) {
 									reflections[1][bin] = pow(surfaceReflection[2][bin], std::abs(my - j)) * pow(surfaceReflection[3][bin], std::abs(my));
 								}
 
-								for (int k = 0; k <= 4; k++)
+								for (int k = 0; k <= (int)order; k++)
 								{
 									Rp_plus_Rm[2] = (1 - 2 * (double)k) * source[2] - listener[2] + Rm[2];
 
@@ -305,9 +349,8 @@ namespace unda {
 										for (int n = 0; n < Tw; n++)
 											for (int bin = 0; bin < 6; bin++)
 												if (startPosition + n >= 0 && startPosition + n < nSamples)
-													irs[bin][startPosition + (size_t)n] += gains[bin] *LPI[n];
-									}
-									
+													irs[bin][startPosition + (size_t)n] += (float)gains[bin] * (float)LPI[n];
+									}	
 								}
 							}
 						}
@@ -315,63 +358,52 @@ namespace unda {
 				}
 			} // End of RIR computation
 			delete[] LPI;
-
 		}
 
 		void ImageSourceModel::computeTail()
 		{
-			output.clear();
-				output.resize(irs[0].size());
+			//for (int i = 0; i < 6; i++)
+				//WriteAudioFile({ irs[i] }, "frequency_bin_" + std::to_string(i) + ".wav", samplingFrequency);
 			{
-				Filter filter = Filter(Filter::BPF, DSP_nTaps, samplingFrequency, 20, 125);
-				filter.convolveToSignal(irs[0]);
+				Filter filter = Filter(Filter::filterType::BPF, 20, 125);
+				irs[0] = FFTConvolution(irs[0], filter.getKernel());
 			}
 			{
-				Filter filter = Filter(Filter::BPF, DSP_nTaps, samplingFrequency, 125, 250);
-				filter.convolveToSignal(irs[1]);
+				Filter filter = Filter(Filter::filterType::BPF, 125, 250);
+				irs[1] = FFTConvolution(irs[1], filter.getKernel());
 			}
 			{
-				Filter filter = Filter(Filter::BPF, DSP_nTaps, samplingFrequency, 250, 500);
-				filter.convolveToSignal(irs[2]);
+				Filter filter = Filter(Filter::filterType::BPF, 250, 500);
+				irs[2] = FFTConvolution(irs[2], filter.getKernel());
 			}
 			{
-				Filter filter = Filter(Filter::BPF, DSP_nTaps, samplingFrequency, 500, 1000);
-				filter.convolveToSignal(irs[3]);
+				Filter filter = Filter(Filter::filterType::BPF, 500, 1000);
+				irs[3] = FFTConvolution(irs[3], filter.getKernel());
 			}
 			{
-				Filter filter = Filter(Filter::BPF, DSP_nTaps, samplingFrequency, 1000, 2000);
-				filter.convolveToSignal(irs[4]);
+				Filter filter = Filter(Filter::filterType::BPF, 1000, 2000);
+				irs[4] = FFTConvolution(irs[4], filter.getKernel());
 			}
 			{
-				Filter filter = Filter(Filter::BPF, DSP_nTaps, samplingFrequency, 2000, 20000);
-				filter.convolveToSignal(irs[5]);
+				Filter filter = Filter(Filter::filterType::BPF, 2000, 20000);
+				irs[5] = FFTConvolution(irs[5], filter.getKernel());
 			}
 
-			for (int value = 0; value < output.size(); value++) {
+
+			output.clear();
+			output.resize(irs[0].size());
+			for (int value = 0; value < output.size(); value++)
 				output[value] = irs[0][value] + irs[1][value] + irs[2][value] + irs[3][value] + irs[4][value] + irs[5][value];
-			}
+			//
+			//{
+			//	Filter filter = Filter(Filter::HPF, DSP_nTaps, samplingFrequency, 25);
+			//	filter.convolveToSignal(output);
+			//	WriteAudioFile({ filter.getIR() }, "Filter_hpf.wav", samplingFrequency);
+			//}
 
 			NormaliseSignal(output);
 			WriteAudioFile({ output }, "ir.wav", samplingFrequency);
 
-			// Apply Schroeder reverb
-			float delay = 950.9f;
-			float decay = 0.9f;
-
-			std::vector<double> comb1 = NormaliseSignal(CombFilter(output, delay, decay));
-			std::vector<double> comb2 = NormaliseSignal(CombFilter(output, delay - 11.73f, decay - 0.131f));
-			std::vector<double> comb3 = NormaliseSignal(CombFilter(output, delay + 19.31f, decay - 0.274f));
-			std::vector<double> comb4 = NormaliseSignal(CombFilter(output, delay - 7.97f, decay - 0.31f));
-			output.clear();
-			output.resize(comb1.size());
-			for (int i = 0; i < comb1.size(); i++) {
-				output[i] = comb1[i] + comb2[i] + comb3[i] + comb4[i];
-			}
-			output = AllPassFilter(output);
-			output = AllPassFilter(output);
-
-			NormaliseSignal(output);
-			WriteAudioFile({ output }, "ir_reverb.wav", samplingFrequency);
 		}
 
 

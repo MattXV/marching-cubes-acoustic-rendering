@@ -14,7 +14,6 @@
 #include "../acoustics/ImageSource.h"
 #include "../acoustics/DSP.h"
 
-#include <FFTConvolver.h>
 #include <vector>
 #include <string>
 #include <memory>

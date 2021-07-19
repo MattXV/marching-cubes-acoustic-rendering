@@ -11,7 +11,7 @@
 #include <mutex>
 #include <thread>
 #include <unordered_map>
-
+#include <map>
 
 
 
@@ -171,6 +171,7 @@ namespace unda {
 	private:
 		// Multithreading 
 		const int nThreads, resolution;
+		unsigned int uniqueId;
 
 		std::mutex scalarFieldMutex, modelMutex, verticesMutex;
 		LatticeVector3D<float> scalarField;
@@ -178,7 +179,7 @@ namespace unda {
 		std::vector<Vertex> vertices;
 
 		// Image Patch Generation
-		void generateMarchedCubesPatches(const AABB& aabb, Texture* objectTexture, const AABB& marchedCube, const std::string& objectName);
+		void generateMarchedCubesPatches(const AABB& marchedCube, Mesh& mesh);
 		bool generatePatches = true;
 
 		// Workers
@@ -192,4 +193,5 @@ namespace unda {
 
 	};
 
+	CubeMap::Face pointIsNearestTo(glm::vec3 point);
 }

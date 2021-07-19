@@ -1,19 +1,83 @@
 {
-  "Scene": {
-    "SceneGraphFile": "resources/models/Church/Scene/SceneGraph.json"
-  },
-  "GeometryReduction": {
-    "MarchingCubesResolution": 35,
-    "GeneratePatches": 0
-  },
-  "IR": {
-    "GenerateIR": 1,
-    "SourcePosition": [ 30.0, 1.2, 26 ],
-    "ListenerPosition": [ 30.0, 1.2, 27 ],
-    "TailLength": 9
-  },
-  "DSP": {
-    "FilterResolution": 2048
-  },
-  "Threads": 30
+    "DSP": {
+        "FilterResolution": 2048
+    },
+    "GeometryReduction": {
+        "GeneratePatches": 0,
+        "MarchingCubesResolution": 65
+    },
+    "IR": {
+        "GenerateIR": 1,
+        "ListenerPosition": [
+            6.19,
+            1.2,
+            10.68
+        ],
+        "Order": 2,
+        "SourcePosition": [
+            6.19,
+            1.2,
+            9.0
+        ],
+        "SurfaceAbsorption": [
+            [
+                0.01,
+                0.01,
+                0.02,
+                0.02,
+                0.02,
+                0.05
+            ],
+            [
+                0.01,
+                0.01,
+                0.02,
+                0.02,
+                0.02,
+                0.05
+            ],
+            [
+                0.01,
+                0.01,
+                0.02,
+                0.02,
+                0.02,
+                0.05
+            ],
+            [
+                0.01,
+                0.01,
+                0.02,
+                0.02,
+                0.02,
+                0.05
+            ],
+            [
+                0.01,
+                0.01,
+                0.02,
+                0.02,
+                0.02,
+                0.05
+            ],
+            [
+                0.01,
+                0.01,
+                0.02,
+                0.02,
+                0.02,
+                0.05
+            ]
+        ],
+        "TailLength": 0
+    },
+    "Scene": {
+        "Dimensions": [
+            17.12102508544922,
+            9.475486755371094,
+            24.997310638427734
+        ],
+        "SceneGraphFile": "resources/models/Church/Scene/SceneGraph.json"
+    },
+    "Threads": 30
 }

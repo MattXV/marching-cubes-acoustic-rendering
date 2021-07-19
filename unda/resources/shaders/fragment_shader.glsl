@@ -7,7 +7,6 @@ in vec3 out_normal;
 out vec4 fragmentColor;
 
 uniform sampler2D textureSampler;
-uniform sampler2D normal_map;
 uniform vec3 lightColour;
 uniform vec3 lightPosition;
 uniform vec3 viewPosition;
@@ -17,13 +16,9 @@ void main() {
 	// Ambient Light
 	float ambientStrength = 1.0f;
 	vec3 ambient = ambientStrength * lightColour;
+	
+	vec3 normal = normalize(out_normal);
 
-	// Diffuse Lighting
-	vec3 sampledNormal = texture(normal_map, out_uv).xyz;
-	vec3 normal = normalize(sampledNormal * 2.0f - 1.0f);
-
-
-	normal = normalize(out_normal);
 	vec3 lightDirection = normalize(lightPosition - fragPosition);
 	float diff = max(dot(normal, lightDirection), 0.0f);
 	vec3 diffuse = diff * lightColour;

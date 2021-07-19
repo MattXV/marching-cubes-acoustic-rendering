@@ -139,16 +139,18 @@ namespace unda {
 			farBottomRight = other.farBottomRight;
 			farTopRight = other.farTopRight;
 			farTopLeft = other.farTopLeft;
+
 		}
 		AABB() = default;
 		AABB(const Vertex& _min, const Vertex& _max)
-			: min(_min)
-			, max(_max) {};
+			: min(glm::vec3(_min.x, _min.y, _min.z))
+			, max(glm::vec3(_max.x, _max.y, _max.z)) {};
 		~AABB() = default;
-		Vertex min = Vertex(), max = Vertex();
+		glm::vec3 min = glm::vec3(), max = glm::vec3();
 		Vertex nearBottomLeft, nearBottomRight, nearTopRight, nearTopLeft;
 		Vertex farBottomLeft, farBottomRight, farTopRight, farTopLeft;
 
+		glm::vec2 UVmin = glm::vec2(), UVmax = glm::vec2();
 
 		glm::vec3 surfaceNormal = glm::vec3();
 	};

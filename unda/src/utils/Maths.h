@@ -12,6 +12,7 @@ namespace unda {
 			return sin(x) / x;
 		}
 		static constexpr double pi = glm::pi<double>();
+
 		static double c = 343.0;						// Speed of sound
 
 		template<typename T>
@@ -22,12 +23,29 @@ namespace unda {
 				sum += a[i] * b[i];
 			return sum;
 		}
-	}
 
-	template<typename T>
-	static inline void integerAddSwap(T* a, T* b) {
-		*a = *a + *b;
-		*b = *a - *b;
-		*a = *a - *b;
+		inline bool SameSign(float a, float b) {
+			return a * b >= 0.0f;
+		}
 	}
+		template<typename T>
+		static inline void integerAddSwap(T* a, T* b) {
+			*a = *a + *b;
+			*b = *a - *b;
+			*a = *a - *b;
+		}
+
+		static unsigned int roundUpToNextPowerOfTwo(unsigned int x)
+		{
+			x--;
+			x |= x >> 1;  // handle  2 bit numbers
+			x |= x >> 2;  // handle  4 bit numbers
+			x |= x >> 4;  // handle  8 bit numbers
+			x |= x >> 8;  // handle 16 bit numbers
+			x |= x >> 16; // handle 32 bit numbers
+			x++;
+
+			return x;
+		}
+
 }

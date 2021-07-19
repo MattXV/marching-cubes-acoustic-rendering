@@ -11,3 +11,6 @@
 [submodule "unda/externals/stk"]
 	path = unda/externals/stk
 	url = https://github.com/thestk/stk.git
+[submodule "unda/externals/pffft"]
+	path = unda/externals/pffft
+	url = https://bitbucket.org/jpommier/pffft

@@ -6,6 +6,21 @@ namespace unda {
 	std::unordered_map<IBoundingBox*, std::vector<TexturePatch>> AABBPatches = std::unordered_map<IBoundingBox*, std::vector<TexturePatch>>();
 	std::vector<std::pair<AABB, std::vector<TexturePatch>>> MarchingCubesPatches = std::vector<std::pair<AABB, std::vector<TexturePatch>>>();
 
+	CubeMap::Face unda::pointIsNearestTo(glm::vec3 point)
+	{
+		std::map<float, CubeMap::Face> distances;
+		 
+		distances[glm::distance(point, glm::vec3(-1, 0, 0))] = CubeMap::Face::NEGATIVE_X;
+		distances[glm::distance(point, glm::vec3(1, 0, 0))]  = CubeMap::Face::POSITIVE_X;
+		distances[glm::distance(point, glm::vec3(0, 0, -1))] = CubeMap::Face::NEGATIVE_Z;
+		distances[glm::distance(point, glm::vec3(0, 0, 1))]  = CubeMap::Face::POSITIVE_Z;
+		distances[glm::distance(point, glm::vec3(0, -1, 0))] = CubeMap::Face::NEGATIVE_Y;
+		distances[glm::distance(point, glm::vec3(0, 1, 0))]  = CubeMap::Face::POSITIVE_Y;
+
+		return distances.begin()->second;
+	}
+	 
+
 	std::vector<unda::Vertex> ScalarFieldVector3D::computeVertexData(double isoLevel)
 	{
 		std::vector<unda::Vertex> vertices;
@@ -246,25 +261,6 @@ namespace unda {
 		}
 		for (auto& thread : threads) thread.join();
 		// Resynchronised to main. Can use OpenGL now.
-
-		if (generatePatches) {
-			
-			//for (auto& aabbPatch : AABBPatches) {
-
-			//	long int largest = 0;
-			//	TexturePatch* patch = nullptr;
-			//	
-			//	for (int i = 0; i < aabbPatch.second.size(); i++) {
-			//		if (aabbPatch.second[i].width * aabbPatch.second[i].height > largest) {
-			//			largest = aabbPatch.second[i].width * aabbPatch.second[i].height;
-			//			patch = &aabbPatch.second[i];
-			//		}
-			//	}
-			//	if (patch) aabbPatch.first->doPatch(*patch, static_cast<CubeMap::Face>(patch->cubeMapFace));
-			//}
-
-		}
-
 	}
 
 	void MarchingCubes::computeMarchingCubes(double isoLevel)
@@ -304,10 +300,7 @@ namespace unda {
 
 
 
-	void MarchingCubes::generateMarchedCubesPatches(const AABB& aabb, 
-		Texture* objectTexture,
-		const AABB& marchedCube,
-		const std::string& objectName)
+	void MarchingCubes::generateMarchedCubesPatches(const AABB& marchedCube, Mesh& mesh)
 	{
 		// Here we take the current 'Marched Cube', and generate 6 square patches having their sides the size
 		// of a grid cell.
@@ -323,131 +316,51 @@ namespace unda {
 		// 3) Forget this. Well, just get the current position and add and subtract the size of a cell
 		//		to get a square patch.
 
-		glm::vec3 aabbMinPoint   = glm::vec3(aabb.min.x, aabb.min.y, aabb.min.z);
+
+		glm::vec3 aabbMinPoint   = glm::vec3(mesh.aabb.min.x, mesh.aabb.min.y, mesh.aabb.min.z);
 		glm::vec3 minMarchedCube = glm::vec3(marchedCube.min.x, marchedCube.min.y, marchedCube.min.z);
 		glm::vec3 maxMarchedCube = glm::vec3(marchedCube.max.x, marchedCube.max.y, marchedCube.max.z);
 
-		float minRelativeDistance = glm::distance(aabbMinPoint, minMarchedCube);
-		float maxRelativeDistance = glm::distance(aabbMinPoint, maxMarchedCube);
+		float minRelativeDistance = fabs(glm::distance(aabbMinPoint, minMarchedCube));
+		float maxRelativeDistance = fabs(glm::distance(aabbMinPoint, maxMarchedCube));
 
 		
 		std::vector<TexturePatch> marchedCubePatches;
-
-		{
-			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, minRelativeDistance);
-			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, minRelativeDistance);
-
-			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.nearTopRight.u, maxRelativeDistance);
-			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.nearTopRight.v, maxRelativeDistance);
-
-			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
-
-
-			TexturePatch patch;
-			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "frontFace_" + objectName, patch)) {
-				//aabb.doPatch(patch, CubeMap::POSITIVE_Z);
-				patch.cubeMapFace = CubeMap::NEGATIVE_Z;
-				//AABBPatches[&aabb].push_back(patch);
-				marchedCubePatches.push_back(patch);
-			}
+		CubeMap::Face patchClosestTo = pointIsNearestTo(aabbMinPoint);
+		
+		std::string patchName;
+		switch (patchClosestTo) {
+		case CubeMap::Face::NEGATIVE_X:
+			patchName = "leftWall";
+			break;
+		case CubeMap::Face::POSITIVE_X:
+			patchName = "rightWall";
+			break;
+		case CubeMap::Face::NEGATIVE_Z:
+			patchName = "frontWall";
+			break;
+		case CubeMap::Face::POSITIVE_Z:
+			patchName = "backWall";
+			break;
+		case CubeMap::Face::NEGATIVE_Y:
+			patchName = "floor";
+			break;
+		case CubeMap::Face::POSITIVE_Y:
+			patchName = "ceiling";
+			break;
 		}
 
-		{
-			float uMin = std::lerp(aabb.farBottomLeft.u, aabb.farTopRight.u, minRelativeDistance);
-			float vMin = std::lerp(aabb.farBottomLeft.v, aabb.farTopRight.v, minRelativeDistance);
+		TexturePatch patch;
+		
+		if (mesh.texture->generatePatch({ mesh.aabb.UVmin.x + minRelativeDistance, mesh.aabb.UVmin.y + minRelativeDistance },
+										{ mesh.aabb.UVmin.x + maxRelativeDistance, mesh.aabb.UVmin.y + maxRelativeDistance },
+										mesh.name + '_' + std::to_string(uniqueId++) + '_' + patchName,
+										patch, false, false)) {
+			marchedCubePatches.push_back(patch);
+			patch.cubeMapFace = patchClosestTo;
 
-			float uMax = std::lerp(aabb.farBottomLeft.u, aabb.farTopRight.u, maxRelativeDistance);
-			float vMax = std::lerp(aabb.farBottomLeft.v, aabb.farTopRight.v, maxRelativeDistance);
-
-			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
-
-			TexturePatch patch;
-			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "backFace_" + objectName, patch)) {
-				//aabb.doPatch(patch, CubeMap::NEGATIVE_Z);
-				patch.cubeMapFace = CubeMap::POSITIVE_Z;
-				//AABBPatches[&aabb].push_back(patch);
-				marchedCubePatches.push_back(patch);
-			}
+			MarchingCubesPatches.push_back(std::make_pair(marchedCube, marchedCubePatches));
 		}
-
-		{
-			float uMin = std::lerp(aabb.nearTopLeft.u, aabb.farTopRight.u, minRelativeDistance);
-			float vMin = std::lerp(aabb.nearTopLeft.v, aabb.farTopRight.v, minRelativeDistance);
-
-			float uMax = std::lerp(aabb.nearTopLeft.u, aabb.farTopRight.u, maxRelativeDistance);
-			float vMax = std::lerp(aabb.nearTopLeft.v, aabb.farTopRight.v, maxRelativeDistance);
-
-			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
-
-
-			TexturePatch patch;
-			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "topFace_" + objectName, patch)) {
-				//aabb.doPatch(patch, CubeMap::POSITIVE_Y);
-				patch.cubeMapFace = CubeMap::POSITIVE_Y;
-				//AABBPatches[&aabb].push_back(patch);
-				marchedCubePatches.push_back(patch);
-
-			}
-		}
-
-		{
-			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.farBottomRight.u, minRelativeDistance);
-			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.farBottomRight.v, minRelativeDistance);
-
-			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.farBottomRight.u, maxRelativeDistance);
-			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.farBottomRight.v, maxRelativeDistance);
-
-			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
-
-			TexturePatch patch;
-			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "bottomFace_" + objectName, patch)) {
-				//aabb.doPatch(patch, CubeMap::NEGATIVE_Y);
-				patch.cubeMapFace = CubeMap::Face::NEGATIVE_Y;
-				//AABBPatches[&aabb].push_back(patch);
-				marchedCubePatches.push_back(patch);
-
-			}
-		}
-
-		{
-			float uMin = std::lerp(aabb.nearBottomLeft.u, aabb.farTopLeft.u, minRelativeDistance);
-			float vMin = std::lerp(aabb.nearBottomLeft.v, aabb.farTopLeft.v, minRelativeDistance);
-
-			float uMax = std::lerp(aabb.nearBottomLeft.u, aabb.farTopLeft.u, maxRelativeDistance);
-			float vMax = std::lerp(aabb.nearBottomLeft.v, aabb.farTopLeft.v, maxRelativeDistance);
-
-			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
-
-			TexturePatch patch;
-			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "leftFace_" + objectName, patch)) {
-				//aabb.doPatch(patch, CubeMap::NEGATIVE_X);
-				patch.cubeMapFace = CubeMap::Face::NEGATIVE_X;
-				//AABBPatches[&aabb].push_back(patch);
-				marchedCubePatches.push_back(patch);
-
-			}
-		}
-
-		{
-			float uMin = std::lerp(aabb.nearBottomRight.u, aabb.farTopRight.u, minRelativeDistance);
-			float vMin = std::lerp(aabb.nearBottomRight.v, aabb.farTopRight.v, minRelativeDistance);
-
-			float uMax = std::lerp(aabb.nearBottomRight.u, aabb.farTopRight.u, maxRelativeDistance);
-			float vMax = std::lerp(aabb.nearBottomRight.v, aabb.farTopRight.v, maxRelativeDistance);
-
-			float uvDistance = glm::distance(glm::vec2(uMin, vMin), glm::vec2(uMax, vMax));
-
-			TexturePatch patch;
-			if (objectTexture->generatePatch({ uMin, vMin }, { uMin + uvDistance, vMin + uvDistance }, "rightFace_" + objectName, patch)) {
-				//aabb.doPatch(patch, CubeMap::POSITIVE_X);
-				patch.cubeMapFace = CubeMap::Face::POSITIVE_X;
-				//AABBPatches[&aabb].push_back(patch);
-				marchedCubePatches.push_back(patch);
-
-			}
-		}
-		MarchingCubesPatches.push_back(std::make_pair(marchedCube, marchedCubePatches));
-
 	}
 
 	void MarchingCubes::scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd)
@@ -461,7 +374,7 @@ namespace unda {
 
 		std::shared_ptr<Model> model_ptr = model.lock();
 
-		const std::vector<Mesh>& meshes = model_ptr->getMeshes();
+		std::vector<Mesh>& meshes = model_ptr->getMeshes();
 		nMeshes = meshes.size();
 
 		std::vector<std::unique_ptr<IBoundingBox>>& boundingBoxes = IBoundingBoxRenderer::getBoundingBoxes();
@@ -472,11 +385,11 @@ namespace unda {
 		model_ptr.reset();
 
 
-		for (size_t x = 0; x < resolution; x++)
+		for (size_t x = 0; x < scalarField.sizeX; x++)
 		{
 			for (size_t y = indexStart; y < indexEnd; y++)
 			{
-				for (size_t z = 0; z < resolution; z++)
+				for (size_t z = 0; z < scalarField.sizeZ; z++)
 				{
 					Vertex samplePoint = Vertex(
 						(float(x) / (float)scalarField.sizeX) * 2.0f - 1.0f,
@@ -495,15 +408,14 @@ namespace unda {
 					AABB sampleCube = AABB(samplePoint, nextSamplePoint);
 					float fieldValue = 0.0f;
 					int i = 0;
-					for (const Mesh& mesh : meshes) {
+					for (Mesh& mesh : meshes) {
 						if (CheckCollision(sampleCube, mesh.aabb)) {
 							fieldValue = 1.0f;
 							// TODO: Generate 6 patches
 							// TODO: one per cube face
 							if (generatePatches) {
 								modelMutex.lock();
-
-								generateMarchedCubesPatches(mesh.aabb, mesh.texture, sampleCube, mesh.name);
+								generateMarchedCubesPatches(sampleCube, mesh);
 								modelMutex.unlock();
 							}
 							break;

@@ -6,7 +6,7 @@ import soundfile as sf
 
 
 A = 'drums.wav'
-IRs = ['Room_GT.wav', 'ir.wav']
+IRs = ['ir.wav', 'pyroomacoustics_rir.wav']
 OUT_SAMPLERATE = 48000
 
 

@@ -10,10 +10,13 @@
 #include <sstream>
 #include <fstream>
 #include <chrono>
+#include <assert.h>
 
 
 #define DISABLE_COPY_ASSIGN(Class) Class(const Class&) = delete; void operator=(const Class&) = delete; 
 #define UNDA_LOG_MESSAGE(Message) std::cout << Message << std::endl
+#define UNDA_ASSERT(condition) assert(condition)
+
 
 #if UNDA_DEBUG == 1
 	#define UNDA_ERROR(Message) std::cerr << Message << std::endl; __debugbreak()  

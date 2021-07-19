@@ -10,6 +10,10 @@ import cold_wax
 import cv2
 
 
+physical_devices = tf.config.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], True) 
+
+
 def preprocess(x):
     return x * 2 - 1
 
@@ -35,7 +39,8 @@ patches = glob(path.join(PATCHES_DIR, '*.png'))
 predictions = list()
 for image_file in patches:
     path = Path(image_file)
-    print('Working on {}'.format(str(path)), end='\r')
+    face = str(Path(str(path).split('_')[-1]).stem)
+    print('Working on {:>80}'.format(str(path)), end='\r')
     image = cold_wax.image.read_image(str(path.resolve()), None, False)
     
     if image.shape[0] * image.shape[1] < INPUT_SHAPE[0] * INPUT_SHAPE[1]:
@@ -52,16 +57,28 @@ for image_file in patches:
     acoustic_label = mapping[label_name]
     mean_coeffs = acoustic_materials.loc[(acoustic_materials.Category == acoustic_label)].iloc[:, -6:]
     mean_coeffs = mean_coeffs.to_numpy(np.float32).mean(axis=0)
-    # row: patch name | class  |  confidence | absorprtion [float x 6]
-    row = [path.stem, label_name, np.max(y)]
+    # row: patch name | Face | class  |  confidence | absorprtion [float x 6]
+    row = [path.stem, face, label_name, np.max(y)]
     row.extend(list(mean_coeffs))
     predictions.append(row)
 
+try:
+    with open('results.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        header = ['PatchName', 'Face', 'Label', 'Confidence']
+        header.extend(['125', '250', '500', '1000', '2000', '4000'])
+        writer.writerow(header)
 
-with open('results.csv', 'w', newline='') as f:
-    writer = csv.writer(f)
-    header = ['PatchName', 'Label', 'Confidence']
-    header.extend(['125', '250', '500', '1000', '2000', '4000'])
-    writer.writerow(header)
+        writer.writerows(predictions)
+except OSError as e:
+    print('Could not open results file! Writing to a temp file! Error: \
+           OS Error {}'.format(e.errno))
+    with open('results_temp.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        header = ['PatchName', 'Face', 'Label', 'Confidence']
+        header.extend(['125', '250', '500', '1000', '2000', '4000'])
+        writer.writerow(header)
 
-    writer.writerows(predictions)
+        writer.writerows(predictions)
+print('Done! :D')
+

@@ -1,4 +1,7 @@
 #include "Scene.h"
+#include <chrono>
+#include <random>
+
 
 namespace unda {
 
@@ -49,6 +52,7 @@ namespace unda {
 		: camera(new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.001f, 900.0f))
 		, boundingBoxRenderer(*camera)
 	{
+
 		json configuration = json::parse(utils::ReadTextFile("conf.json"));
 
 		auto [vertices, indices] = unda::primitives::createSphere(16, 0.2f);
@@ -87,7 +91,12 @@ namespace unda {
 				BoundingBox* aabb = new BoundingBox(aabbCube.first);
 				for (TexturePatch patch : aabbCube.second) {
 					if (patch.pixels.size() == 0) continue;
-					aabb->doPatch(patch, static_cast<CubeMap::Face>(patch.cubeMapFace));
+					aabb->doPatch(patch, CubeMap::Face::NEGATIVE_X);
+					aabb->doPatch(patch, CubeMap::Face::NEGATIVE_Y);
+					aabb->doPatch(patch, CubeMap::Face::NEGATIVE_Z);
+					aabb->doPatch(patch, CubeMap::Face::POSITIVE_X);
+					aabb->doPatch(patch, CubeMap::Face::POSITIVE_Y);
+					aabb->doPatch(patch, CubeMap::Face::POSITIVE_Z);
 				}
 				boundingBoxRenderer.getBoundingBoxes().push_back(std::unique_ptr<BoundingBox>(aabb));
 			}
@@ -108,9 +117,13 @@ namespace unda {
 		UNDA_LOG_MESSAGE("width: " + std::to_string(inputScene->getVolume().x) + "height: " + std::to_string(inputScene->getVolume().y) + "depth: " + std::to_string(inputScene->getVolume().z));
 
 
-
-
-		std::vector<acoustics::SurfacePatch> patches;
+		configuration["Scene"]["Dimensions"] = { inputScene->getVolume().x, inputScene->getVolume().y, inputScene->getVolume().z };
+		{
+			std::ofstream o("conf.json");
+			o << std::setw(4) << configuration << std::endl;
+		}
+		if (!configuration["IR"]["GenerateIR"].get<int>()) return;
+		//std::vector<acoustics::SurfacePatch> patches;
 		//if (acoustics::loadPredictions("classifier/results.csv", patches) < 0) { UNDA_ERROR("Could not load patches"); return; }
 		////std::array<std::array<double, 6>, 6> betaCoefficients = {
 		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
@@ -121,13 +134,13 @@ namespace unda {
 		////	acoustics::Materials::wallTreatments.getBetaCoefficients()
 		////};
 
-		std::array<std::array<double, 6>, 6> betaCoefficients{};
-		betaCoefficients[2] = acoustics::Materials::ceramic.getBetaCoefficients();
-		betaCoefficients[3] = acoustics::Materials::ceramic.getBetaCoefficients();
-		betaCoefficients[0] = acoustics::Materials::ceramic.getBetaCoefficients();
-		betaCoefficients[1] = acoustics::Materials::ceramic.getBetaCoefficients();
-		betaCoefficients[4] = acoustics::Materials::ceramic.getBetaCoefficients();
-		betaCoefficients[5] = acoustics::Materials::ceramic.getBetaCoefficients();
+		std::array<std::array<double, 6>, 6> betaCoefficients, alphaCoeffiecients;
+		alphaCoeffiecients = configuration["IR"]["SurfaceAbsorption"].get<std::array<std::array<double, 6>, 6>>();
+		for (int row = 0; row < 6; row++) {
+			for (int bin = 0; bin < 6; bin++) {
+				betaCoefficients[row][bin] = sqrt(1 - alphaCoeffiecients[row][bin]);
+			}
+		}
 
 			//betaCoefficients.fill(acoustics::Materials::defaultMaterial.getBetaCoefficients());
 		//betaCoefficients.fill({ 0.0 , 0.0 , 0.0 , 0.0, 0.0, 0.0 });
@@ -140,16 +153,16 @@ namespace unda {
 
 		int nThreads = 30, ISM_sampleRate = (int)unda::sampleRate, nTaps = 2048; //11025
 		int nSamples = (int)std::round((double)ISM_sampleRate * configuration["IR"]["TailLength"].get<double>());
-		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(nThreads, spaceDimensions, source, listener, betaCoefficients);
+		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(nThreads, spaceDimensions, source, listener, betaCoefficients, 0, configuration["IR"]["Order"].get<unsigned int>());
 		ism->setSamplingFrequency(ISM_sampleRate);
-		ism->setNSamples(nSamples);
+		if (nSamples) ism->setNSamples(nSamples);
 		//ism->doPatches(patches, cellsPerDimension);
 		if (configuration["IR"]["GenerateIR"].get<int>())
 			ism->generateIR();
 
 		delete ism;	
-
 	}
+
 
 	Scene::~Scene()
 	{

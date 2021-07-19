@@ -6,7 +6,7 @@ Texture::Texture(const std::string& f)
 {
 	stbi_set_flip_vertically_on_load(0);
 	textureData = stbi_load(file.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-
+	channels = STBI_rgb_alpha;
 	if (!textureData) {
 		UNDA_ERROR("Could not Read texture! File: " + f);
 		return;
@@ -62,15 +62,12 @@ bool Texture::generatePatch(std::pair<double, double> minUV, std::pair<double, d
 			
 			for (int patchChannel = 0; patchChannel < patchChannels; patchChannel++) {
 				unsigned char pixelValue = *imageIndex++;
-				
 				if (opaque && patchChannel == 3) {
 					alphaMean = (alphaMean + static_cast<int>(pixelValue)) / 2;
 				}
-
 				if (nonBlack && patchChannel != 3) {
 					colourMean = (colourMean + static_cast<int>(pixelValue)) / 2;
 				}
-
 				patchPixels[(row * patchWidth + column) * patchChannels + patchChannel] = pixelValue;
 			}
 		}
@@ -80,18 +77,19 @@ bool Texture::generatePatch(std::pair<double, double> minUV, std::pair<double, d
 	if (nonBlack && colourMean == 0) return false;
 
 	auto imagePath = std::filesystem::path(file);
-	std::string fileName = outputPatchesPrefix + imagePath.stem().string() + "_" + filename + "_" + std::to_string(patchesGenerated++) + "_.png";
-	//stbi_write_png_compression_level = 0;
-	//int written;
-	//written = stbi_write_png(
-	//	fileName.c_str(),
-	//	(int)(patchWidth),
-	//	(int)(patchHeight),
-	//	(int)(patchChannels),
-	//	(void*)&patchPixels[0],
-	//	(int)(patchChannels * patchWidth * sizeof(unsigned char)));
-	//if (written == 0) return false;
+	std::string fileName = outputPatchesPrefix + filename + ".png";
+	stbi_write_png_compression_level = 0;
+	int written;
+	written = stbi_write_png(
+		fileName.c_str(),
+		(int)(patchWidth),
+		(int)(patchHeight),
+		(int)(patchChannels),
+		(void*)&patchPixels[0],
+		(int)(patchChannels * patchWidth * sizeof(unsigned char)));
+	if (written == 0) return false;
 	
+	outPatch.cubeMapFace = 
 	outPatch.height = patchHeight;
 	outPatch.width = patchWidth;
 	outPatch.channels = patchChannels;

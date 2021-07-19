@@ -84,13 +84,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\FFTConvolver;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(ProjectDir)externals\pffft;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\FFTConvolver;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(ProjectDir)externals\pffft;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\libsndfile\build\install\lib;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -160,10 +160,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="externals\pffft\fftpack.c" />
+    <ClCompile Include="externals\pffft\pffft.c" />
     <ClCompile Include="src\rendering\Renderer.cpp" />
-    <ClCompile Include="externals\FFTConvolver\AudioFFT.cpp" />
-    <ClCompile Include="externals\FFTConvolver\FFTConvolver.cpp" />
-    <ClCompile Include="externals\FFTConvolver\Utilities.cpp" />
     <ClCompile Include="externals\glad\src\glad.c" />
     <ClCompile Include="externals\glob\glob.cpp" />
     <ClCompile Include="externals\stb_image\stb_image.cpp" />
@@ -188,10 +187,9 @@
     <ClCompile Include="src\utils\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="externals\pffft\fftpack.h" />
+    <ClInclude Include="externals\pffft\pffft.h" />
     <ClInclude Include="src\rendering\Renderer.h" />
-    <ClInclude Include="externals\FFTConvolver\AudioFFT.h" />
-    <ClInclude Include="externals\FFTConvolver\FFTConvolver.h" />
-    <ClInclude Include="externals\FFTConvolver\Utilities.h" />
     <ClInclude Include="externals\glob\glob.h" />
     <ClInclude Include="externals\happly\happly.h" />
     <ClInclude Include="externals\stb_image\stb_image.h" />
