@@ -4,7 +4,7 @@
 namespace unda {
 	using maths::pi;
 
-	void unda::NormaliseSignal(Signal& audioSamples)
+	void unda::NormaliseSignal(Signal& audioSamples, Sample scaling)
 	{
 		Sample value = 0.0, tempValue;
 		for (Sample& sample : audioSamples) {
@@ -12,11 +12,11 @@ namespace unda {
 			if (tempValue > value) value = tempValue;
 		}
 		for (Sample& sample : audioSamples) {
-			sample = (sample / value);
+			sample = sample / value * scaling;
 		}
 	}
 
-	Signal unda::NormaliseSignal(const Signal& audioSamples)
+	Signal unda::NormaliseSignal(const Signal& audioSamples, Sample scaling)
 	{
 		Signal output;
 		Sample value = 0.0, tempValue;
@@ -25,7 +25,7 @@ namespace unda {
 			if (tempValue > value) value = tempValue;
 		}
 		for (Sample sample : audioSamples)
-			output.push_back(sample / value);
+			output.push_back(sample / value * scaling);
 		return output;
 	}
 
@@ -114,15 +114,11 @@ namespace unda {
 		pffft_transform(fftSetup, paddedSignal, paddedSignal, workSpace, pffft_direction_t::PFFFT_FORWARD);
 		pffft_transform(fftSetup, paddedKernel, paddedKernel, workSpace, pffft_direction_t::PFFFT_FORWARD);
 		// Always use zconvolve_accumulate to multiply spectrums together as PFFFT uses some satanic frequency ordering.
-		// Unless you use transform_ordered(). Good luck figuring that out.
-		// pffft stands for "pffft, you don't even know how to fft, bro".
 		pffft_zconvolve_accumulate(fftSetup, paddedSignal, paddedKernel, convolution, 1.0);
 		pffft_transform(fftSetup, convolution, convolution, workSpace, pffft_direction_t::PFFFT_BACKWARD);
 		Signal out = Signal(nConv, 0);
-		for (size_t i = 0; i < nConv; i++) {
-						         // Removing initial time shift
-			out[i] = convolution[i + kernel.size() / 2] / (float)N; // Rescaling as PFFFT_BACKWARD(PFFFT_FORWARD(x)) = N*x
-		}
+		for (size_t i = 0; i < nConv; i++)
+			out[i] = (Sample)((float)convolution[i] / (float)N); // Rescaling as PFFFT_BACKWARD(PFFFT_FORWARD(x)) = N*x
 		delete[] paddedSignal;
 		delete[] paddedKernel;
 		delete[] workSpace;
@@ -199,5 +195,13 @@ namespace unda {
 		UNDA_ASSERT(fs > 0);
 		UNDA_ASSERT(filt_t == filterType::BPF);
 		h = designBPF(M, lower_fc, upper_fc);
+	}
+	void Filter::convolveToSignal(Signal& signal)
+	{
+		Signal convolution = FFTConvolution(signal, h);
+		convolution.erase(convolution.begin(), convolution.begin() + h.size() / 2);
+		convolution.erase(convolution.begin() + signal.size() - 1, convolution.end());
+		ZeroCrossingFadeInOut(convolution);
+		signal.swap(convolution);
 	}
 }

@@ -13,8 +13,8 @@ namespace unda {
 	typedef float Sample;
 	typedef std::vector<Sample> Signal;
 
-	void NormaliseSignal(Signal& audioSamples);
-	Signal NormaliseSignal(const Signal& audioSamples);
+	void NormaliseSignal(Signal& audioSamples, Sample scaling = 0.9);
+	Signal NormaliseSignal(const Signal& audioSamples, Sample scaling = 0.9);
 	int WriteAudioFile(const std::vector<Signal>& audioChannels, const std::string& filePath, double samplingFrequency = unda::sampleRate);
 	Signal ReadAudioFileIntoMono(const std::string& filePath);
 	void ZeroCrossingFadeInOut(Signal& signal);
@@ -45,7 +45,7 @@ namespace unda {
 		Filter(filterType filt_t, float lower_cutoff_hz, float upper_cutoff_hz);
 		~Filter() = default;
 
-		inline void writeFilterToFile(std::string filename) { Signal out = Signal(h.begin(), h.end()); WriteAudioFile({ out }, filename, (double)fs); }
+		void convolveToSignal(Signal& signal);
 		const Signal& getKernel() { return h; }
 
 	private:

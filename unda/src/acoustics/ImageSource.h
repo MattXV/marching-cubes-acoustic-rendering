@@ -4,6 +4,9 @@
 #include "DSP.h"
 #include "../utils/Maths.h"
 #include "../utils/Settings.h"
+#include "../utils/Utils.h"
+#include <queue>
+#include <mutex>
 
 #include <string>
 #include <thread>
@@ -12,19 +15,13 @@
 #include <array>
 #include <stdexcept>
 #include <functional>
-#include <math.h>
-#include <iostream>
-#include <unordered_map>
-#include <fstream>
-
-
 #define _USE_MATH_DEFINES
+#include <math.h>
+#include <unordered_map>
+
 
 #define ROUND(x) ((x) >= 0 ? (long)((x) + 0.5) : (long)((x) - 0.5))
 
-#ifndef M_PI 
-	#define M_PI 3.14159265358979323846 
-#endif
 
 
 namespace unda {
@@ -33,40 +30,25 @@ namespace unda {
 			return (x == 0) ? 1 : sin(x) / x;
 			0 ? true : false;
 		}
-		struct SurfacePatch {
-			std::string name, label;
-			float confidence;
-			std::array<float, 6> coefficients;
-		};
 
 		class ImageSourceModel {
 		public:
-			ImageSourceModel(int _nThreads, const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition,
+			ImageSourceModel(const std::array<double, 3>& _spaceDimensions, const std::array<double, 3>& _sourcePosition,
 							 const std::array<double, 3>& _receiverPosition, std::array<std::array<double, 6>, 6>& _surfaceReflection, int _nSamples = 0, unsigned int order=2);
-			~ImageSourceModel();
+			~ImageSourceModel() = default;
 
 			std::array<Signal, 6> getIRs() { return irs; }
 
-			void setSourcePosition(const std::array<double, 3>& position) { sourcePosition = position; }
-			void setReceiverPosition(const std::array<double, 3>& position) { receiverPosition = position; }
-			void setSamplingFrequency(double newFs) { samplingFrequency = newFs; }
-			void setNSamples(int newNSamples) { nSamples = newNSamples; }
+			void dispatchCPUThreads();
+			void updateParameters();
 
-			void generateIR();
-			void doPatches(const std::vector<SurfacePatch>& patches, int cellsPerDimesion);
 
 		private:
-
 			// Variables
-			unsigned int order = 2;
-			double samplingFrequency;
-			double speedOfSound;
-			int nSamples = 0;
-			int DSP_nTaps = 8192;
 
-			// Acoustic parameter estimates
-			double meanFreePathEstimate;
-			double t_60;
+			// Acoustic parameters
+			double meanFreePathEstimate = 0;
+			double t_60 = 0;
 
 			// X, Y and Z space imensions in metres
 			long double totalSurface = 0.0;
@@ -75,24 +57,38 @@ namespace unda {
 			std::array<double, 3> sourcePosition;
 			std::array<double, 3> receiverPosition;
 			std::array<double, 2> microphoneAngle{ 0, 0 };
-			std::mutex variablesMutex;
 
-			// Data
+			// Impulse Response Data
 			// Frequency-dependent RIRs - [125 - 250, 250 - 500, 500 - 1000, 1000 - 2000, 2000 - 4000, 6000 - 12000]
 			std::array<Signal, 6> irs;
 			Signal output;
 
+			// Acoustic Volume variables
+			unsigned int order = 2;
+			double samplingFrequency = unda::sampleRate;
+			const double timeStep = unda::maths::c / unda::sampleRate;
+			int nSamples = 0;
+			double source[3] { 0 };
+			double listener[3] { 0 };
+			double room[3] { 0 };
+
+			void computeReflections(int x, int y, int z);
+
 			// Thread workers
 			std::vector<std::thread> workers;
-			int nThreads;
-			void computeIRs(int threadId);
 			void computeTail();
 
-			ImageSourceModel(const ImageSourceModel&) = delete;
-			ImageSourceModel& operator=(const ImageSourceModel&) = delete;
+			DISABLE_COPY_ASSIGN(ImageSourceModel)
 		};
 
-		int loadPredictions(const std::string& predictionCsv, std::vector<SurfacePatch>& outPatches);
+
+		class GPUImageSourceModel : public ImageSourceModel {
+		public:
+			GPUImageSourceModel();
+			~GPUImageSourceModel() = default;
+		private:
+			DISABLE_COPY_ASSIGN(GPUImageSourceModel)
+		};
 	}
 }
 

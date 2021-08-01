@@ -198,6 +198,7 @@
     <None Include="cpp.hint" />
     <None Include="resources\shaders\boundingbox_fragment_shader.glsl" />
     <None Include="conf.json" />
+    <None Include="resources\shaders\ImageSource.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="notes.txt" />

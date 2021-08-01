@@ -12,6 +12,9 @@
 #include <limits>
 #include <algorithm>
 
+
+
+
 class Texture;
 
 struct TexturePatch {

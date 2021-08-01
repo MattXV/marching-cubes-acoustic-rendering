@@ -14,19 +14,17 @@
 
 
 #define DISABLE_COPY_ASSIGN(Class) Class(const Class&) = delete; void operator=(const Class&) = delete; 
-#define UNDA_LOG_MESSAGE(Message) std::cout << Message << std::endl
 #define UNDA_ASSERT(condition) assert(condition)
 
 
 #if UNDA_DEBUG == 1
-	#define UNDA_ERROR(Message) std::cerr << Message << std::endl; __debugbreak()  
-	#define GLCALL(call) unda::utils::clearGLError();\
-		call;\
-		if (!unda::utils::printGLError(#call, __FILE__, __LINE__))\
-			__debugbreak()
+	#define UNDA_ERROR(Message)       do { std::cerr << Message << std::endl; __debugbreak(); } while (0)
+	#define UNDA_LOG_MESSAGE(Message) do { std::cout << Message << std::endl; } while (0) 
+	#define GLCALL(call)              do { unda::utils::clearGLError(); call; if (!unda::utils::printGLError(#call, __FILE__, __LINE__)) __debugbreak(); } while (0)
 #else
 	#define UNDA_ERROR(Message)
 	#define GLCALL(call) call;
+	#define UNDA_LOG_MESSAGE(Message)
 #endif
 
 
@@ -116,6 +114,8 @@ namespace unda {
 			std::string info = "";
 			DISABLE_COPY_ASSIGN(Timer)
 		};
+
+
 
 	}
 }

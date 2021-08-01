@@ -52,6 +52,7 @@ namespace unda {
 		: camera(new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.001f, 900.0f))
 		, boundingBoxRenderer(*camera)
 	{
+		
 
 		json configuration = json::parse(utils::ReadTextFile("conf.json"));
 
@@ -67,7 +68,7 @@ namespace unda {
 		inputScene.reset(loadSceneGraph(configuration["Scene"]["SceneGraphFile"].get<std::string>()));
 		//inputScene->normaliseMeshes();
 		inputScene->calculateAABB();
-		for (Mesh& mesh : inputScene->getMeshes()) 
+		for (Mesh& mesh : inputScene->getMeshes())
 			boundingBoxRenderer.getBoundingBoxes().push_back(std::make_unique<BoundingBox>(mesh.aabb));
 
 
@@ -76,11 +77,8 @@ namespace unda {
 		MarchingCubes* marchingCubes = new MarchingCubes(cellsPerDimension, 1, (float)inputScene->getModelScale() / cellsPerDimension, Point3D(0, 0, 0));
 		marchingCubes->setGeneratePatches(generatePatches);
 
-		utils::Timer timer{ "Computing Scalar Field + patches" };
 
-		timer.start();
 		marchingCubes->computeScalarField(inputScene);
-		timer.stop();
 		
 		// TODO: FIX PATCH GENERATION IN MARCHING CUBES IMPLEMENTATION
 		// UV CROPPING IS WRONG
@@ -101,11 +99,9 @@ namespace unda {
 				boundingBoxRenderer.getBoundingBoxes().push_back(std::unique_ptr<BoundingBox>(aabb));
 			}
 		}
-			 
-		timer.reset("Computing Marching Cubes");
-		timer.start();
-		marchingCubes->computeMarchingCubes(1.0);
-		timer.stop();
+
+
+		marchingCubes->computeMarchingCubes(0.0);
 
 		marchingCubesModel.reset(marchingCubes->createModel());
 		for (auto& mesh : marchingCubesModel->getMeshes()) {
@@ -114,25 +110,12 @@ namespace unda {
 		}
 		glm::vec3 boundingVolume = marchingCubesModel->calculateBoundingVolume();
 		
-		UNDA_LOG_MESSAGE("width: " + std::to_string(inputScene->getVolume().x) + "height: " + std::to_string(inputScene->getVolume().y) + "depth: " + std::to_string(inputScene->getVolume().z));
-
-
 		configuration["Scene"]["Dimensions"] = { inputScene->getVolume().x, inputScene->getVolume().y, inputScene->getVolume().z };
 		{
 			std::ofstream o("conf.json");
 			o << std::setw(4) << configuration << std::endl;
 		}
 		if (!configuration["IR"]["GenerateIR"].get<int>()) return;
-		//std::vector<acoustics::SurfacePatch> patches;
-		//if (acoustics::loadPredictions("classifier/results.csv", patches) < 0) { UNDA_ERROR("Could not load patches"); return; }
-		////std::array<std::array<double, 6>, 6> betaCoefficients = {
-		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
-		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
-		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
-		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
-		////	acoustics::Materials::wallTreatments.getBetaCoefficients(),
-		////	acoustics::Materials::wallTreatments.getBetaCoefficients()
-		////};
 
 		std::array<std::array<double, 6>, 6> betaCoefficients, alphaCoeffiecients;
 		alphaCoeffiecients = configuration["IR"]["SurfaceAbsorption"].get<std::array<std::array<double, 6>, 6>>();
@@ -142,10 +125,6 @@ namespace unda {
 			}
 		}
 
-			//betaCoefficients.fill(acoustics::Materials::defaultMaterial.getBetaCoefficients());
-		//betaCoefficients.fill({ 0.0 , 0.0 , 0.0 , 0.0, 0.0, 0.0 });
-
-
 		glm::vec3 sceneVolume = inputScene->getVolume();
 		std::array<double, 3> spaceDimensions = { (double)sceneVolume.x, (double)sceneVolume.y, (double)sceneVolume.z };
 		std::array<double, 3> source = configuration["IR"]["SourcePosition"].get<std::array<double, 3>>();
@@ -153,14 +132,19 @@ namespace unda {
 
 		int nThreads = 30, ISM_sampleRate = (int)unda::sampleRate, nTaps = 2048; //11025
 		int nSamples = (int)std::round((double)ISM_sampleRate * configuration["IR"]["TailLength"].get<double>());
-		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(nThreads, spaceDimensions, source, listener, betaCoefficients, 0, configuration["IR"]["Order"].get<unsigned int>());
-		ism->setSamplingFrequency(ISM_sampleRate);
-		if (nSamples) ism->setNSamples(nSamples);
-		//ism->doPatches(patches, cellsPerDimension);
+		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(spaceDimensions, source, listener, betaCoefficients, 0, configuration["IR"]["Order"].get<unsigned int>());
 		if (configuration["IR"]["GenerateIR"].get<int>())
-			ism->generateIR();
+			ism->dispatchCPUThreads();
 
 		delete ism;	
+		{
+			//Filter filter = Filter(Filter::filterType::BPF, 300, 3000);
+			Signal ir = ReadAudioFileIntoMono("ir.wav");
+			Signal audio = ReadAudioFileIntoMono("drums.wav");
+			Signal out = FFTConvolution(audio, ir);
+			NormaliseSignal(out);
+			WriteAudioFile({ out }, "test_reverb.wav");
+		}
 	}
 
 

@@ -1,4 +1,3 @@
-
 [submodule "unda/externals/glfw"]
 	path = unda/externals/glfw
 	url = https://github.com/glfw/glfw
@@ -8,9 +7,6 @@
 [submodule "unda/externals/libsndfile"]
 	path = unda/externals/libsndfile
 	url = https://github.com/libsndfile/libsndfile
-[submodule "unda/externals/stk"]
-	path = unda/externals/stk
-	url = https://github.com/thestk/stk.git
 [submodule "unda/externals/pffft"]
 	path = unda/externals/pffft
 	url = https://bitbucket.org/jpommier/pffft
