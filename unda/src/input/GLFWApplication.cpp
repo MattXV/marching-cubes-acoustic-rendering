@@ -63,7 +63,7 @@ void unda::GLFWInput::lockCursorImplementation(bool locked)
 
 void unda::GLFWInput::keyCallBackImplementation(int keyCode)
 {
-	std::lock_guard<std::mutex> guard(callbacksMutex);
+	//std::lock_guard<std::mutex> guard(callbacksMutex);
 	if (callbacks.find(keyCode) != callbacks.end()) {
 		callbacks[keyCode]();
 	}

@@ -81,6 +81,8 @@ namespace unda {
 		std::vector<Mesh>& getMeshes() { return meshes; }
 		const std::vector<Mesh>& getMeshes() const { return meshes; }
 
+		void setPosition(const glm::vec3& newPos) { Transform::setPosition(newPos); for (Mesh& mesh : meshes) mesh.transform = glm::translate(mesh.transform, newPos); }
+
 		double getModelScale() { return normalisationScale; }
 		glm::vec3 getVolume() { return volume; }
 

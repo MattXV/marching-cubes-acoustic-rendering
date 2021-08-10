@@ -48,11 +48,15 @@ namespace unda {
 
 	// ---------------------------------------------------------------------------
 
-	Scene::Scene()
-		: camera(new unda::FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.001f, 900.0f))
-		, boundingBoxRenderer(*camera)
+	Scene::Scene() :
+		boundingBoxRenderer(nullptr)
 	{
-		
+		init();
+	}
+	void Scene::init() {
+		camera = new FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.001f, 900.0f);
+
+		boundingBoxRenderer.setCamera(camera);
 
 		json configuration = json::parse(utils::ReadTextFile("conf.json"));
 
@@ -84,21 +88,21 @@ namespace unda {
 		// UV CROPPING IS WRONG
 		// DEBUG VISUALLY
 		// INFER FROM IMAGE PATCHES.
-		if (generatePatches) {
-			for (std::pair<AABB, std::vector<TexturePatch>>& aabbCube : MarchingCubesPatches) {
-				BoundingBox* aabb = new BoundingBox(aabbCube.first);
-				for (TexturePatch patch : aabbCube.second) {
-					if (patch.pixels.size() == 0) continue;
-					aabb->doPatch(patch, CubeMap::Face::NEGATIVE_X);
-					aabb->doPatch(patch, CubeMap::Face::NEGATIVE_Y);
-					aabb->doPatch(patch, CubeMap::Face::NEGATIVE_Z);
-					aabb->doPatch(patch, CubeMap::Face::POSITIVE_X);
-					aabb->doPatch(patch, CubeMap::Face::POSITIVE_Y);
-					aabb->doPatch(patch, CubeMap::Face::POSITIVE_Z);
-				}
-				boundingBoxRenderer.getBoundingBoxes().push_back(std::unique_ptr<BoundingBox>(aabb));
-			}
-		}
+		//if (generatePatches) {
+		//	for (std::pair<AABB, std::vector<TexturePatch>>& aabbCube : MarchingCubesPatches) {
+		//		BoundingBox* aabb = new BoundingBox(aabbCube.first);
+		//		for (TexturePatch patch : aabbCube.second) {
+		//			if (patch.pixels.size() == 0) continue;
+		//			aabb->doPatch(patch, CubeMap::Face::NEGATIVE_X);
+		//			aabb->doPatch(patch, CubeMap::Face::NEGATIVE_Y);
+		//			aabb->doPatch(patch, CubeMap::Face::NEGATIVE_Z);
+		//			aabb->doPatch(patch, CubeMap::Face::POSITIVE_X);
+		//			aabb->doPatch(patch, CubeMap::Face::POSITIVE_Y);
+		//			aabb->doPatch(patch, CubeMap::Face::POSITIVE_Z);
+		//		}
+		//		boundingBoxRenderer.getBoundingBoxes().push_back(std::unique_ptr<BoundingBox>(aabb));
+		//	}
+		//}
 
 
 		marchingCubes->computeMarchingCubes(0.0);
@@ -145,6 +149,7 @@ namespace unda {
 			NormaliseSignal(out);
 			WriteAudioFile({ out }, "test_reverb.wav");
 		}
+	
 	}
 
 

@@ -41,18 +41,55 @@ namespace unda {
 
 	class BoundingBoxRenderer : public IBoundingBoxRenderer {
 	public:
-		BoundingBoxRenderer(unda::Camera& cam);
+		BoundingBoxRenderer(unda::Camera* _camera);
 		~BoundingBoxRenderer();
 
 		void render();
 		void cleanUp();
+		inline void setCamera(unda::Camera* _camera) { camera = _camera; }
 
 	private:
 		glm::vec3 position = glm::vec3(20.0f, 20.0f, 20.0f);
 		Shader shaderProgram;
 		unsigned int VAO, VBO, UVBO;
-		Camera& camera;
+		Camera* camera = nullptr;
 		DISABLE_COPY_ASSIGN(BoundingBoxRenderer)
 	};
+
+
+	class FrameBuffer {
+	public:
+		FrameBuffer(int _width, int _height);
+		~FrameBuffer();
+
+		unsigned int getTextureLocation() { return textureLocation; }
+		inline void bind() { GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, location)); GLCALL(glViewport(0, 0, width, height));	}
+		inline void unbind() { GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, NULL)); GLCALL(glViewport(0, 0, windowWidth, windowHeight)); }
+
+		unsigned char* getImage();
+		int getWidth() { return width; }
+		int getHeight() { return height; }
+
+	private:
+		unsigned int location = 0, textureLocation = 0, depthRenderBuffer = 0;
+		unsigned int VAO = 0, IBO = 0, VBO = 0;
+		int width, height;
+		DISABLE_COPY_ASSIGN(FrameBuffer)
+	};
+
+	class GUIImage {
+	public:
+		GUIImage(float _width, float _height);
+		~GUIImage();
+		void render();
+		void setTexture(unsigned int newTexture) { textureLocation = newTexture; }
+	private:
+		glm::mat4 projection = glm::ortho<float>(0.0f, windowWidth, windowHeight, 0.0f);
+		Shader shaderProgram;
+		float width, height;
+		unsigned int VBO = 0, VAO = 0, textureLocation = 0;
+		DISABLE_COPY_ASSIGN(GUIImage)
+	};
+
 
 }

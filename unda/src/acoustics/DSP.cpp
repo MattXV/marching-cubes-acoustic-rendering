@@ -80,7 +80,7 @@ namespace unda {
 			size_t nRead = (size_t)sf_read_float(sndFile, data, info.frames * info.channels);
 			out.resize(nRead);
 			float* iterator = data;
-			for (size_t i = 0; i < nRead; i++) {
+			for (size_t i = 0; i < (size_t)(nRead / info.channels); i++) {
 				float sample = 0;
 				for (size_t channel = 0; channel < (size_t)info.channels; channel++) {
 					sample += float(*(iterator + channel));

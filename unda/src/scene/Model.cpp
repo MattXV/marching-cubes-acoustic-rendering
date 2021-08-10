@@ -222,7 +222,10 @@ namespace unda {
         };
 
         std::function<void(Vertex&)> normalise = [&maxValue, &transform](Vertex& vertex) { 
-            glm::vec4 position = glm::vec4(vertex.x / float(*maxValue), vertex.y / float(*maxValue), vertex.z / float(*maxValue), 1.0f);
+            glm::vec3 position = glm::vec3(
+                vertex.x / float(*maxValue) * 2.0f - 1.0f,
+                vertex.y / float(*maxValue) * 2.0f - 1.0f,
+                vertex.z / float(*maxValue) * 2.0f - 1.0f);
             vertex.x = position.x;
             vertex.y = position.y;
             vertex.z = position.z;

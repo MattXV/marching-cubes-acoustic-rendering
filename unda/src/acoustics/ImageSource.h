@@ -15,7 +15,6 @@
 #include <array>
 #include <stdexcept>
 #include <functional>
-#define _USE_MATH_DEFINES
 #include <math.h>
 #include <unordered_map>
 

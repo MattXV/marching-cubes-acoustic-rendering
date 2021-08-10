@@ -3,8 +3,8 @@
 
 namespace unda {
 
-	std::unordered_map<IBoundingBox*, std::vector<TexturePatch>> AABBPatches = std::unordered_map<IBoundingBox*, std::vector<TexturePatch>>();
-	std::vector<std::pair<AABB, std::vector<TexturePatch>>> MarchingCubesPatches = std::vector<std::pair<AABB, std::vector<TexturePatch>>>();
+	//std::unordered_map<IBoundingBox*, std::vector<TexturePatch>> AABBPatches = std::unordered_map<IBoundingBox*, std::vector<TexturePatch>>();
+	//std::vector<std::pair<AABB, std::vector<TexturePatch>>> MarchingCubesPatches = std::vector<std::pair<AABB, std::vector<TexturePatch>>>();
 
 	CubeMap::Face unda::pointIsNearestTo(glm::vec3 point)
 	{
@@ -19,7 +19,6 @@ namespace unda {
 
 		return distances.begin()->second;
 	}
-	 
 
 
 
@@ -57,6 +56,7 @@ namespace unda {
 		, nThreads(_nThreads)
 		, resolution(_resolution)
 		, cubeLattice(_gridSpacing, _centre, (size_t)resolution, (size_t)resolution, (size_t)resolution)
+		, cellRenderer(nullptr)
 	{
 		if (_nThreads > resolution) _nThreads = resolution;
 
@@ -75,32 +75,35 @@ namespace unda {
 	/// </param>
 	void MarchingCubes::computeScalarField(std::weak_ptr<Model> model)
 	{
+		std::shared_ptr<Model> lockedModel = model.lock();
+		cellRenderer.setModel((Model*)lockedModel.get());
+		scalarFieldFromMeshWorker(model, 0, resolution);
+		//std::vector<std::thread> threads;
+		//for (int i = 0; i < nThreads; i++) {
+		//	size_t stride = (size_t)floor((long double)resolution / (long double)nThreads);
+		//	size_t startIndex = i * stride;
+		//	size_t endIndex = (i == nThreads - 1) ? resolution : startIndex + stride;
+		//	//scalarFieldFromMeshWorker(model, startIndex, endIndex);
+		//	threads.push_back(std::thread([this, model, startIndex, endIndex]() { scalarFieldFromMeshWorker(model, startIndex, endIndex); }));
 
-		std::vector<std::thread> threads;
-		for (int i = 0; i < nThreads; i++) {
-			size_t stride = (size_t)floor((long double)resolution / (long double)nThreads);
-			size_t startIndex = i * stride;
-			size_t endIndex = (i == nThreads - 1) ? resolution : startIndex + stride;
-			//scalarFieldFromMeshWorker(model, startIndex, endIndex);
-			threads.push_back(std::thread([this, model, startIndex, endIndex]() { scalarFieldFromMeshWorker(model, startIndex, endIndex); }));
-
-		}
-		for (auto& thread : threads) thread.join();
+		//}
+		//for (auto& thread : threads) thread.join();
 		// Resynchronised to main. Can use OpenGL now.
 	}
 
 	void MarchingCubes::computeMarchingCubes(double isoLevel)
 	{
-		std::vector<std::thread> threads;
+		//std::vector<std::thread> threads;
 
-		for (int i = 0; i < nThreads; i++) {
-			size_t stride = (size_t)floor((long double)resolution / (long double)nThreads);
-			size_t indexStart = i * stride;
-			size_t indexEnd = (i == nThreads - 1) ? resolution - (size_t)1 : indexStart + stride;
+		//for (int i = 0; i < nThreads; i++) {
+		//	size_t stride = (size_t)floor((long double)resolution / (long double)nThreads);
+		//	size_t indexStart = i * stride;
+		//	size_t indexEnd = (i == nThreads - 1) ? resolution - (size_t)1 : indexStart + stride;
 
-			threads.push_back(std::thread([this, isoLevel, indexStart, indexEnd]() { marchingCubesWorker(isoLevel, indexStart, indexEnd); }));
-		}
-		for (std::thread& thread : threads) thread.join();
+		//	threads.push_back(std::thread([this, isoLevel, indexStart, indexEnd]() { marchingCubesWorker(isoLevel, indexStart, indexEnd); }));
+		//}
+		//for (std::thread& thread : threads) thread.join();
+		marchingCubesWorker(isoLevel, 0, resolution - 1);
 	}
 
 	Model* MarchingCubes::createModel()
@@ -114,69 +117,7 @@ namespace unda {
 	}
 
 
-	void MarchingCubes::generateMarchedCubesPatches(const AABB& marchedCube, Mesh& mesh)
-	{
-		// Here we take the current 'Marched Cube', and generate 6 square patches having their sides the size
-		// of a grid cell.
-		// Each of the 6 patches corresponds to a wall (or rather, a face) of the resulting volume generated from
-		// the marching cube poligonisation.
-		// It's an approximation, and will introduce noise in the resulting computation of the absorption volume
-		// but it enables the mapping between each marching cube and acoustic materials.
-
-		// Find the mean orientation of the surface to generate patches for the face that contributes more
-		
-		// 1) get distance between max and min: d1
-		// 2) calculate distance between current point and min: d2
-		// 3) Forget this. Well, just get the current position and add and subtract the size of a cell
-		//		to get a square patch.
-
-
-		glm::vec3 aabbMinPoint   = glm::vec3(mesh.aabb.min.x, mesh.aabb.min.y, mesh.aabb.min.z);
-		glm::vec3 minMarchedCube = glm::vec3(marchedCube.min.x, marchedCube.min.y, marchedCube.min.z);
-		glm::vec3 maxMarchedCube = glm::vec3(marchedCube.max.x, marchedCube.max.y, marchedCube.max.z);
-
-		float minRelativeDistance = fabs(glm::distance(aabbMinPoint, minMarchedCube));
-		float maxRelativeDistance = fabs(glm::distance(aabbMinPoint, maxMarchedCube));
-
-		
-		std::vector<TexturePatch> marchedCubePatches;
-		CubeMap::Face patchClosestTo = pointIsNearestTo(aabbMinPoint);
-		
-		std::string patchName;
-		switch (patchClosestTo) {
-		case CubeMap::Face::NEGATIVE_X:
-			patchName = "leftWall";
-			break;
-		case CubeMap::Face::POSITIVE_X:
-			patchName = "rightWall";
-			break;
-		case CubeMap::Face::NEGATIVE_Z:
-			patchName = "frontWall";
-			break;
-		case CubeMap::Face::POSITIVE_Z:
-			patchName = "backWall";
-			break;
-		case CubeMap::Face::NEGATIVE_Y:
-			patchName = "floor";
-			break;
-		case CubeMap::Face::POSITIVE_Y:
-			patchName = "ceiling";
-			break;
-		}
-
-		TexturePatch patch;
-		
-		if (mesh.texture->generatePatch({ mesh.aabb.UVmin.x + minRelativeDistance, mesh.aabb.UVmin.y + minRelativeDistance },
-										{ mesh.aabb.UVmin.x + maxRelativeDistance, mesh.aabb.UVmin.y + maxRelativeDistance },
-										mesh.name + '_' + std::to_string(uniqueId++) + '_' + patchName,
-										patch, false, false)) {
-			marchedCubePatches.push_back(patch);
-			patch.cubeMapFace = patchClosestTo;
-
-			MarchingCubesPatches.push_back(std::make_pair(marchedCube, marchedCubePatches));
-		}
-	}
-
+	
 	void MarchingCubes::scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd)
 	{
 
@@ -193,7 +134,7 @@ namespace unda {
 		std::vector<std::unique_ptr<IBoundingBox>>& boundingBoxes = IBoundingBoxRenderer::getBoundingBoxes();
 		//AABBPatches.insert(std::make_pair())
 
-		for (std::unique_ptr<IBoundingBox>& aabb : boundingBoxes) AABBPatches.insert(std::make_pair(aabb.get(), std::vector<TexturePatch>()));
+		//for (std::unique_ptr<IBoundingBox>& aabb : boundingBoxes) AABBPatches.insert(std::make_pair(aabb.get(), std::vector<TexturePatch>()));
 
 		model_ptr.reset();
 
@@ -301,7 +242,7 @@ namespace unda {
 	{
 		int cubeindex = 0, floor = 0;
 		std::array<Point3D, 12> vertlist{};
-																				         // This can be a 3 bit int
+																				         // This could be a 3 bit int
 		if (scalarField[cellCornerIndexToIJKIndex(0, x, y, z)].value > isoLevel) { cubeindex |= nearBottomLeft;  }   // 0 - bottom left   , near face
 		if (scalarField[cellCornerIndexToIJKIndex(1, x, y, z)].value > isoLevel) { cubeindex |= nearBottomRight; }   // 1 - bottom right	, near face
 		if (scalarField[cellCornerIndexToIJKIndex(2, x, y, z)].value > isoLevel) { cubeindex |= nearTopRight;    }   // 2 - top right   	, near face
@@ -315,25 +256,13 @@ namespace unda {
 			return(0);
 
 		if (generatePatches) {
-			if (cubeindex == (nearBottomLeft + nearBottomRight + farBottomLeft + farBottomRight)) {    // floor
-				UNDA_LOG_MESSAGE("floor");
-				cellImagePatch();
-			}
-			if (cubeindex == (nearTopRight + nearTopLeft + farTopRight + farTopLeft)) {   // ceiling
-				UNDA_LOG_MESSAGE("ceiling");
-			}
-			if (cubeindex == (nearBottomLeft + nearTopLeft + farBottomLeft + farTopLeft)) {   // left
-				UNDA_LOG_MESSAGE("left");
-			}
-			if (cubeindex == (nearBottomRight + nearTopRight + farBottomRight + farTopRight)) {    // right
-				UNDA_LOG_MESSAGE("right");
-			}
-			if (cubeindex == (nearBottomLeft + nearBottomRight + nearTopRight + nearTopLeft)) {      // front
-				UNDA_LOG_MESSAGE("front");
-			}
-			if (cubeindex == (farBottomLeft + farBottomRight + farTopRight + farTopLeft)) { // back
-				UNDA_LOG_MESSAGE("back");
-			}
+			if (cubeindex == (nearBottomLeft + nearBottomRight + farBottomLeft + farBottomRight)) cellImagePatch(x, y, z, CubeMap::Face::NEGATIVE_Y); // Floor
+			if (cubeindex == (nearTopRight + nearTopLeft + farTopRight + farTopLeft))			  cellImagePatch(x, y, z, CubeMap::Face::POSITIVE_Y); // Ceiling
+			if (cubeindex == (nearBottomLeft + nearTopLeft + farBottomLeft + farTopLeft))		  cellImagePatch(x, y, z, CubeMap::Face::NEGATIVE_X); // Left
+			if (cubeindex == (nearBottomRight + nearTopRight + farBottomRight + farTopRight))     cellImagePatch(x, y, z, CubeMap::Face::POSITIVE_X); // Right
+			if (cubeindex == (nearBottomLeft + nearBottomRight + nearTopRight + nearTopLeft))     cellImagePatch(x, y, z, CubeMap::Face::POSITIVE_Z); // Front
+			if (cubeindex == (farBottomLeft + farBottomRight + farTopRight + farTopLeft))         cellImagePatch(x, y, z, CubeMap::Face::NEGATIVE_Z); // Back
+				
 		}
 
 
@@ -375,24 +304,58 @@ namespace unda {
 	}
 
 	
-	void MarchingCubes::cellImagePatch(size_t x, size_t y, size_t z)
+	void MarchingCubes::cellImagePatch(size_t x, size_t y, size_t z, CubeMap::Face face)
 	{
-		const size_t width = 64, height = 64;
-		float aspectRatio = (float)width / (float)height;
-		Cell& min = scalarField[cellCornerIndexToIJKIndex(0, x, y, z)];
-		Cell& max = scalarField[cellCornerIndexToIJKIndex(6, x, y, z)];
+		std::string filename = "output/patches/";
+		glm::vec3 direction;
+		glm::vec3 samplePoint = glm::vec3(
+			(float(x) / (float)scalarField.sizeX),
+			(float(y) / (float)scalarField.sizeY),
+			(float(z) / (float)scalarField.sizeZ));
 
+		glm::vec3 nextSamplePoint = glm::vec3(
+			(float(x + 1) / (float)scalarField.sizeX),
+			(float(y + 1) / (float)scalarField.sizeY),
+			(float(z + 1) / (float)scalarField.sizeZ));
 
-		glm::mat4 orthoProj = glm::ortho<float>(0.0f, (float)width, 0.0f, (float)height);
-
-		std::vector<unsigned char> patch = std::vector<unsigned char>(width * height, 0);
-		
-		for (size_t row = 0; row < height; row++) {
-			for (size_t column = 0; column < width; column++) {
-
-			}
+		switch (face)
+		{
+		case CubeMap::POSITIVE_X:
+			direction = glm::vec3(1.0f, 0.0f, 0.0f);
+			filename += "rightWall_" + std::to_string(nPatches++) + "_.png";
+			break;
+		case CubeMap::NEGATIVE_X:
+			direction = glm::vec3(-1.0f, 0.0f, 0.0f);
+			filename += "leftWall_" + std::to_string(nPatches++) + "_.png";
+			break;
+		case CubeMap::POSITIVE_Y:
+			direction = glm::vec3(0.0f, 1.0f, 0.0f);
+			filename += "ceiling_" + std::to_string(nPatches++) + "_.png";
+			break;
+		case CubeMap::NEGATIVE_Y:
+			direction = glm::vec3(0.0f, -1.0f, 0.0f);
+			filename += "floor_" + std::to_string(nPatches++) + "_.png";
+			break;
+		case CubeMap::POSITIVE_Z:
+			direction = glm::vec3(0.0f, 0.0f, 1.0f);
+			filename += "frontWall_" + std::to_string(nPatches++) + "_.png";
+			break;
+		case CubeMap::NEGATIVE_Z:
+			direction = glm::vec3(0.0f, 0.0f, -1.0f);
+			filename += "backWall_" + std::to_string(nPatches++) + "_.png";
+			break;
+		default:
+			assert(false);
+			break;
 		}
 
+		//glm::vec3 pos = (samplePoint + nextSamplePoint) / 2.0f;
+		cellRenderer.setCameraPosition(samplePoint);
+		cellRenderer.setCameraTarget(direction);
+		cellRenderer.setOrthoVolume(samplePoint.x, nextSamplePoint.x, samplePoint.y, nextSamplePoint.y, 0.0000000001f, 200.0f);
+		cellRenderer.update();
+		cellRenderer.render();
+		cellRenderer.writeImage(filename);
 	}
 
 
@@ -461,5 +424,57 @@ namespace unda {
 		p.z = float(p1.z + (float)mu * (p2.z - p1.z));
 
 		return(p);
+	}
+
+	CellRenderer::CellRenderer(Model* _model) :
+		orthoCamera(OrthoCamera(-1.0f, 1.0f, 0.0f, 100.0f)),
+		shaderProgram("resources/shaders/ortho_vertex_shader.glsl", "resources/shaders/ortho_fragment_shader.glsl"),
+		frameBuffer(64, 64),
+		model(_model)
+	{
+	}
+
+	void CellRenderer::render()
+	{
+		frameBuffer.bind();
+		shaderProgram.attach();
+		GLCALL(glDisable(GL_CULL_FACE));
+
+		unda::render::prepare(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
+		GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("view"), 1, GL_FALSE, glm::value_ptr(view)));
+		GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+		for (const Mesh& mesh : model->getMeshes()) {
+			GLCALL(glBindVertexArray(mesh.vao));
+				glm::mat4 transform = mesh.transform;
+				//transform = glm::scale(transform, glm::vec3(1.0f / model->getModelScale()));
+				//transform = glm::scale(transform, glm::vec3(2.0f));
+				//transform = glm::translate(transform, glm::vec3(-0.5f));
+
+				GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("model"), 1, GL_FALSE, glm::value_ptr(transform)));
+				GLCALL(glActiveTexture(GL_TEXTURE0));
+				GLCALL(glUniform1i(shaderProgram.getUniformLocation("textureSampler"), 0));
+				GLCALL(glBindTexture(GL_TEXTURE_2D, mesh.texture->getTextureId()));
+				if (mesh.indices->size() > 0)
+				{
+					GLCALL(glDrawElements(GL_TRIANGLES, mesh.indices->size(), GL_UNSIGNED_INT, nullptr));
+				}
+				else {
+					GLCALL(glDrawArrays(GL_TRIANGLES, 0, mesh.vertices->size()));
+				}
+		}
+				GLCALL(glBindTexture(GL_TEXTURE_2D, NULL));
+			GLCALL(glBindVertexArray(NULL));
+		GLCALL(glEnable(GL_CULL_FACE));
+		shaderProgram.detach();
+		frameBuffer.unbind();
+	}
+
+	void CellRenderer::writeImage(const std::string& fileName)
+	{
+		unsigned char* image = frameBuffer.getImage();
+		stbi_flip_vertically_on_write(1);
+		int written = stbi_write_png(fileName.c_str(), frameBuffer.getWidth(), frameBuffer.getHeight(), STBI_rgb, (void*)image, frameBuffer.getWidth() * STBI_rgb * sizeof(unsigned char));
+		delete[] image;
+		if (!written) UNDA_ERROR("Image write failure!");
 	}
 }

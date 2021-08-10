@@ -46,8 +46,8 @@ namespace unda {
 		Scene();
 		virtual ~Scene();
 
-		void update();
-		void render();
+		virtual void update();
+		virtual void render();
 		// All temporary stuff. Sufficient for now.
 		void addModel(unda::Model* newModel);
 		void addModel(std::shared_ptr<Model>& newModel);
@@ -58,7 +58,8 @@ namespace unda {
 		Camera* getCamera() { return camera; };
 		const std::unordered_map<std::string, Model*>& getBoundingBoxes() const { return boundingBoxes; }
 
-	private:
+	protected:
+		virtual void init();
 		std::shared_ptr<Model> inputScene, marchingCubesModel;
 
 		std::unordered_map<std::string, Model*> boundingBoxes;
@@ -67,8 +68,7 @@ namespace unda {
 
 		std::vector<std::shared_ptr<Model>> models;
 		std::vector<Light*> lights;
-		FPSCamera* camera;
-		
+		Camera* camera;
 		BoundingBoxRenderer boundingBoxRenderer;
 		ModelRenderer modelRenderer;
 	};

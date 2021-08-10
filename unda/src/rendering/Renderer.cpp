@@ -164,9 +164,9 @@ namespace unda {
 		cubeMap.applyPatch(patch, face);
 	}
 
-	BoundingBoxRenderer::BoundingBoxRenderer(unda::Camera& cam)
+	BoundingBoxRenderer::BoundingBoxRenderer(unda::Camera* _camera)
 		: shaderProgram("resources/shaders/boundingbox_vertex_shader.glsl", "resources/shaders/boundingbox_fragment_shader.glsl")
-		, camera(cam)
+		, camera(_camera)
 	{
 		shaderProgram.attach();
 		
@@ -219,8 +219,8 @@ namespace unda {
 			model = glm::translate(model, glm::vec3(3.0f, 3.0f, 3.0f));
 			model = glm::translate(model, glm::vec3(boundingBox->min.x, boundingBox->min.y, boundingBox->min.z));
 			model = glm::translate(model, position);
-			GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("view"), 1, GL_FALSE, glm::value_ptr(camera.getViewMatrix())));
-			GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(camera.getProjectionMatrix())));
+			GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("view"), 1, GL_FALSE, glm::value_ptr(camera->getViewMatrix())));
+			GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(camera->getProjectionMatrix())));
 			GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("model"), 1, GL_FALSE, glm::value_ptr(model)));
 
 			//glm::vec3 cubeSize = glm::vec3(
@@ -258,4 +258,100 @@ namespace unda {
 	{
 	}
 
+
+	FrameBuffer::FrameBuffer(int _width, int _height)
+		: width(_width),
+		  height(_height)
+	{
+		GLCALL(glGenFramebuffers(1, &location));
+		GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, location));
+
+		GLCALL(glGenTextures(1, &textureLocation));
+		GLCALL(glBindTexture(GL_TEXTURE_2D, textureLocation));
+		GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL));
+		GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+		GLCALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+
+		GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+		glDrawBuffers(1, DrawBuffers);
+
+		GLCALL(glGenRenderbuffers(1, &depthRenderBuffer));
+		GLCALL(glBindRenderbuffer(GL_RENDERBUFFER, depthRenderBuffer));
+		GLCALL(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height));
+		GLCALL(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderBuffer));
+		GLCALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureLocation, 0));
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			UNDA_ERROR("Could not create a new framebuffer!");
+
+		GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, location));
+		GLCALL(glViewport(0, 0, width, height));
+
+		GLCALL(glBindRenderbuffer(GL_RENDERBUFFER, NULL));
+		GLCALL(glBindTexture(GL_TEXTURE_2D, NULL));
+		GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, NULL));
+		GLCALL(glViewport(0, 0, windowWidth, windowHeight));
+	}
+
+	FrameBuffer::~FrameBuffer() {
+		GLCALL(glDeleteFramebuffers(1, &location));
+	}
+
+	unsigned char* FrameBuffer::getImage()
+	{
+		unsigned char* image = new unsigned char[(size_t)width * (size_t)height * 3];
+		GLCALL(glBindTexture(GL_TEXTURE_2D, textureLocation));
+			GLCALL(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, (void*)image));
+		GLCALL(glBindTexture(GL_TEXTURE_2D, NULL));
+		return image;
+	}
+
+
+
+	GUIImage::GUIImage(float _width, float _height)
+		: shaderProgram("resources/shaders/gui_vertex_shader.glsl", "resources/shaders/gui_fragment_shader.glsl"),
+		width(_width),
+		height(_height)
+	{
+		float quad[] = {
+			0.0f,  0.0f,   0.0f, 0.0f,
+			0.0f,  height, 0.0f, 1.0f,
+			width, height, 1.0f, 1.0f,
+			width, height, 1.0f, 1.0f,
+			width, 0.0f,   1.0f, 0.0f,
+			0.0f,  0.0f,   0.0f, 0.0f
+		};
+
+		GLCALL(glGenVertexArrays(1, &VAO));
+		GLCALL(glBindVertexArray(VAO));
+			GLCALL(glGenBuffers(1, &VBO));
+			GLCALL(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+				GLCALL(glBufferData(GL_ARRAY_BUFFER, sizeof(quad), &quad, GL_STATIC_DRAW));
+				GLCALL(glEnableVertexAttribArray(0));
+				GLCALL(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr));
+				GLCALL(glEnableVertexAttribArray(1));
+				GLCALL(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(sizeof(float) * 2)));
+		GLCALL(glBindVertexArray(NULL));
+			GLCALL(glBindBuffer(GL_ARRAY_BUFFER, NULL));
+	}
+
+	GUIImage::~GUIImage()
+	{
+		GLCALL(glDeleteBuffers(1, &VBO));
+		GLCALL(glDeleteVertexArrays(1, &VAO));
+	}
+
+	void GUIImage::render() {
+		shaderProgram.attach();
+		GLCALL(glBindVertexArray(VAO));
+
+		GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+		GLCALL(glUniform1i(shaderProgram.getUniformLocation("imageTexture"), 0));
+		GLCALL(glActiveTexture(GL_TEXTURE0));
+		GLCALL(glBindTexture(GL_TEXTURE_2D, textureLocation));
+		GLCALL(glDrawArrays(GL_TRIANGLES, 0, 2 * 3));
+
+		GLCALL(glBindVertexArray(NULL));
+		shaderProgram.detach();
+	}
 }

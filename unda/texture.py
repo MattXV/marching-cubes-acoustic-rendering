@@ -1,35 +1,19 @@
-import pywavefront
-import matplotlib.pyplot as plt
-from scipy import linalg
+import numpy as np
+import glm
 
+WIDTH = 64
+HEIGHT = 64
 
-ortho = linalg.orth([[0, 64], [64, 0]])
+vertex_0 = glm.vec4((0.1, 0.1, 0.0, 1))
+vertex_1 = glm.vec4((0.8, 0.5, 0.0, 1))
+vertex_2 = glm.vec4((0.2, 0.8, 0.0, 1))
 
-print(ortho)
-quit()
+triangle = [vertex_0, vertex_1, vertex_2]
 
-EXAMPLE_OBJECT = 'resources/models/Church/Scene/building1.obj'
-scene = pywavefront.Wavefront(EXAMPLE_OBJECT)
-scene.parse()
+model_matrix = glm.mat4(1.0)
+# model_matrix = glm.scale(model_matrix, glm.vec3(0.9))
+ortho = glm.ortho(0, 1, 0, 1)
 
-vertices = list()
-vertices_x = list()
-vertices_y = list()
-vertices_z = list()
-for name, material in scene.materials.items():
-    
-    i = 0;
-    for i in range(len(material.vertices) // 3):
-        for j in range(3):
-            vertices.append(material.vertices[i * j + j])
-            vertices_x.append(material.vertices[i * j])
-            vertices_y.append(material.vertices[i * j + 1])
-            vertices_z.append(material.vertices[i * j + 2])
-        
+print(ortho * model_matrix * vertex_0)
+raster = np.zeros((WIDTH * HEIGHT), np.float32)
 
-
-
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.scatter(vertices_x, vertices_y, vertices_z)
-plt.show()

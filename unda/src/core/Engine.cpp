@@ -4,8 +4,11 @@
 unda::Engine::Engine() 
 	: application(new unda::GLFWApplication())
 {
+#if UNDA_TEST_SCENE == 1
+	scene = new unda::TestScene();
+#else
 	scene = new unda::Scene();
-
+#endif
 	lightRenderer = new LightRenderer();
 }
 
@@ -15,7 +18,12 @@ unda::Engine::Engine(int width, int height)
 	unda::windowWidth = width;
 	unda::windowHeight = height;
 
+#if UNDA_TEST_SCENE == 1
+	scene = new unda::TestScene();
+#else
 	scene = new unda::Scene();
+#endif
+
 
 	lightRenderer = new LightRenderer();
 }
@@ -49,9 +57,7 @@ void unda::Engine::render()
 
 void unda::Engine::cleanUp()
 {
-
 	delete scene;
-
 	delete lightRenderer;
 	delete application;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../scene/Model.h"
-#include "../scene/SceneRenderer.h"
+#include "../rendering/Renderer.h"
 #include "MarchingCubesTables.h"
 #include <glm/glm.hpp>
 #include <cmath>
@@ -16,10 +16,10 @@
 
 
 namespace unda {
-	// --------------------------------Global Texture Patches---------------------
-	extern std::unordered_map<IBoundingBox*, std::vector<TexturePatch>> AABBPatches;
-	extern std::vector<std::pair<AABB, std::vector<TexturePatch>>> MarchingCubesPatches;
-	// ---------------------------------------------------------------------------
+	//// --------------------------------Global Texture Patches---------------------
+	//extern std::unordered_map<IBoundingBox*, std::vector<TexturePatch>> AABBPatches;
+	//extern std::vector<std::pair<AABB, std::vector<TexturePatch>>> MarchingCubesPatches;
+	//// ---------------------------------------------------------------------------
 
 	struct Cell : public Point3D {
 		Cell() : Point3D() {}
@@ -28,6 +28,37 @@ namespace unda {
 		Mesh* mesh;
 	};
 
+	class CellRenderer {
+	public:
+		CellRenderer(Model* _model);
+		~CellRenderer() = default;
+		
+		inline void setOrthoVolume(float _left, float _right, float _bottom, float _top, float _zNear, float _zFar) {
+			left = _left; right = _right; bottom = _bottom; top = _top; zNear = _zNear; _zFar;
+		};
+		inline void setCameraTarget(const glm::vec3 newTarget) { target = newTarget; }
+		inline void setCameraPosition(const glm::vec3& newPosition) { position = newPosition; }
+		inline void update() {
+			view = glm::lookAt<float>(position, position + target, up);
+			//projection = glm::ortho<float>(-1.0f, 1.0f, -1.0f, 1.0f);
+			//projection = glm::ortho<float>(left, right, bottom, top);
+			projection = glm::perspective<float>(glm::radians(90.0f), 1.0f, 0.0000001f, 10.2f);
+		}
+		void setModel(Model* newModel) { model = newModel; }
+		void render();
+		void writeImage(const std::string& fileName);
+	private:
+		float left = 0.0f, right = 0.0f, bottom = 0.0f, top = 0.0f, zNear = 0.0f, zFar = 0.0f;
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 projection = glm::mat4(1.0f);
+		glm::vec3 position = glm::vec3(0.0f), target = glm::vec3(1.0f), up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		Model* model;
+		Camera orthoCamera;
+		Shader shaderProgram;
+		FrameBuffer frameBuffer;
+		DISABLE_COPY_ASSIGN(CellRenderer)
+	};
 
 	class LatticeVector3D {
 	public:
@@ -119,11 +150,12 @@ namespace unda {
 		std::vector<Vertex> vertices;
 
 		// Image Patch Generation
-		void generateMarchedCubesPatches(const AABB& marchedCube, Mesh& mesh);
 		bool generatePatches = true;
+		size_t nPatches = 0;
+		CellRenderer cellRenderer;
 
 		// Workers
-		void cellImagePatch(size_t x, size_t y, size_t z);
+		void cellImagePatch(size_t x, size_t y, size_t z, CubeMap::Face face);
 		void scalarFieldFromMeshWorker(std::weak_ptr<Model> model, size_t indexStart, size_t indexEnd);
 		void marchingCubesWorker(double isoLevel, size_t indexStart, size_t indexEnd);
 
