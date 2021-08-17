@@ -13,6 +13,7 @@ import cv2
 physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True) 
 
+FACES = ['ceiling', 'floor', 'leftWall', 'rightWall', 'backWall', 'frontWall']
 
 def preprocess(x):
     return x * 2 - 1
@@ -34,10 +35,10 @@ classifier.summary()
 
 mapping = json.load(open(ONE_TO_MANY))
 acoustic_materials = pd.read_excel(ABSORPTION_DATA)
-patches = glob(path.join(PATCHES_DIR, '*.png'))
+
 
 predictions = list()
-for image_file in patches:
+for image_file in Path(PATCHES_DIR).glob('*.png'):
     path = Path(image_file)
     face = str(Path(str(path).split('_')[-1]).stem)
     print('Working on {:>80}'.format(str(path)), end='\r')
@@ -57,8 +58,12 @@ for image_file in patches:
     acoustic_label = mapping[label_name]
     mean_coeffs = acoustic_materials.loc[(acoustic_materials.Category == acoustic_label)].iloc[:, -6:]
     mean_coeffs = mean_coeffs.to_numpy(np.float32).mean(axis=0)
+
+    patch_info = path.stem.split('_')
+    assert patch_info[0] in FACES
+    
     # row: patch name | Face | class  |  confidence | absorprtion [float x 6]
-    row = [path.stem, face, label_name, np.max(y)]
+    row = [patch_info[1], patch_info[0], label_name, np.max(y)]
     row.extend(list(mean_coeffs))
     predictions.append(row)
 

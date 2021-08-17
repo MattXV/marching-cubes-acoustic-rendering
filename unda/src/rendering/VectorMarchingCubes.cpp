@@ -57,6 +57,7 @@ namespace unda {
 		, resolution(_resolution)
 		, cubeLattice(_gridSpacing, _centre, (size_t)resolution, (size_t)resolution, (size_t)resolution)
 		, cellRenderer(nullptr)
+		, scale(0.0)
 	{
 		if (_nThreads > resolution) _nThreads = resolution;
 
@@ -76,6 +77,7 @@ namespace unda {
 	void MarchingCubes::computeScalarField(std::weak_ptr<Model> model)
 	{
 		std::shared_ptr<Model> lockedModel = model.lock();
+		scale = lockedModel->getModelScale();
 		cellRenderer.setModel((Model*)lockedModel.get());
 		scalarFieldFromMeshWorker(model, 0, resolution);
 		//std::vector<std::thread> threads;
@@ -209,9 +211,7 @@ namespace unda {
 					{
 						normal = trianglesAfterPolygonisation[c].computeNormalVector();
 						std::array<Vertex, 3> vertexArray;
-						//dodgy version here: using the triangle normal instead of a smoothed normal at the vertices
 
-						//this is a little inefficient, but ok enough for this
 						x = trianglesAfterPolygonisation[c].a.x;
 						y = trianglesAfterPolygonisation[c].a.y;
 						z = trianglesAfterPolygonisation[c].a.z;
@@ -266,7 +266,7 @@ namespace unda {
 		}
 
 
-		// Find the vertices where the surface intersects the cube 
+		// Work out the vertex values interpolating across edges of the cube. 
 		if (edgeTable[cubeindex] & 1)
 			vertlist[0] = interpolateVertex(isoLevel, cellCornerIndexToIJKIndex(0, x, y, z), cellCornerIndexToIJKIndex(1, x, y, z));
 		if (edgeTable[cubeindex] & 2)
@@ -307,52 +307,69 @@ namespace unda {
 	void MarchingCubes::cellImagePatch(size_t x, size_t y, size_t z, CubeMap::Face face)
 	{
 		std::string filename = "output/patches/";
-		glm::vec3 direction;
+		glm::vec3 direction(0.0f), position(0.0f);
 		glm::vec3 samplePoint = glm::vec3(
-			(float(x) / (float)scalarField.sizeX),
-			(float(y) / (float)scalarField.sizeY),
-			(float(z) / (float)scalarField.sizeZ));
+			((float(x) / (float)(scalarField.sizeX))) * 2.0f - 1.0f,
+			((float(y) / (float)(scalarField.sizeY))) * 2.0f - 1.0f,
+			((float(z) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f);
 
 		glm::vec3 nextSamplePoint = glm::vec3(
-			(float(x + 1) / (float)scalarField.sizeX),
-			(float(y + 1) / (float)scalarField.sizeY),
-			(float(z + 1) / (float)scalarField.sizeZ));
+			((float(x + 1) / (float)(scalarField.sizeX))) * 2.0f - 1.0f, 
+			((float(y + 1) / (float)(scalarField.sizeY))) * 2.0f - 1.0f,
+			((float(z + 1) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f);
+
+		glm::vec3 previousSamplePoint = glm::vec3(
+			((float(x - 1) / (float)(scalarField.sizeX))) * 2.0f - 1.0f,
+			((float(y - 1) / (float)(scalarField.sizeY))) * 2.0f - 1.0f,
+			((float(z - 1) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f);
 
 		switch (face)
 		{
 		case CubeMap::POSITIVE_X:
 			direction = glm::vec3(1.0f, 0.0f, 0.0f);
+			position = glm::vec3(previousSamplePoint.x, samplePoint.y, samplePoint.z);
 			filename += "rightWall_" + std::to_string(nPatches++) + "_.png";
 			break;
+
 		case CubeMap::NEGATIVE_X:
 			direction = glm::vec3(-1.0f, 0.0f, 0.0f);
 			filename += "leftWall_" + std::to_string(nPatches++) + "_.png";
+			position = glm::vec3(nextSamplePoint.x, samplePoint.y, samplePoint.z);
 			break;
+
 		case CubeMap::POSITIVE_Y:
 			direction = glm::vec3(0.0f, 1.0f, 0.0f);
 			filename += "ceiling_" + std::to_string(nPatches++) + "_.png";
+			position = glm::vec3(samplePoint.x, previousSamplePoint.y, samplePoint.z);
 			break;
+
 		case CubeMap::NEGATIVE_Y:
 			direction = glm::vec3(0.0f, -1.0f, 0.0f);
 			filename += "floor_" + std::to_string(nPatches++) + "_.png";
+			position = glm::vec3(samplePoint.x, nextSamplePoint.y, samplePoint.z);
 			break;
+		
 		case CubeMap::POSITIVE_Z:
 			direction = glm::vec3(0.0f, 0.0f, 1.0f);
 			filename += "frontWall_" + std::to_string(nPatches++) + "_.png";
+			position = glm::vec3(samplePoint.x, samplePoint.y, previousSamplePoint.z);
 			break;
+
 		case CubeMap::NEGATIVE_Z:
 			direction = glm::vec3(0.0f, 0.0f, -1.0f);
 			filename += "backWall_" + std::to_string(nPatches++) + "_.png";
+			position = glm::vec3(samplePoint.x, samplePoint.y, nextSamplePoint.z);
 			break;
+
 		default:
 			assert(false);
 			break;
 		}
 
 		//glm::vec3 pos = (samplePoint + nextSamplePoint) / 2.0f;
-		cellRenderer.setCameraPosition(samplePoint);
+		cellRenderer.setCameraPosition(position);
 		cellRenderer.setCameraTarget(direction);
-		cellRenderer.setOrthoVolume(samplePoint.x, nextSamplePoint.x, samplePoint.y, nextSamplePoint.y, 0.0000000001f, 200.0f);
+		cellRenderer.setOrthoVolume(previousSamplePoint.x, nextSamplePoint.x, previousSamplePoint.y, nextSamplePoint.y, 0.00000001, 100.0f);
 		cellRenderer.update();
 		cellRenderer.render();
 		cellRenderer.writeImage(filename);
@@ -410,7 +427,6 @@ namespace unda {
 			//__debugbreak();
 		}
 
-
 		if (abs(isoLevel - valp1) < 0.00001)
 			return(p1);
 		if (abs(isoLevel - valp2) < 0.00001)
@@ -427,9 +443,8 @@ namespace unda {
 	}
 
 	CellRenderer::CellRenderer(Model* _model) :
-		orthoCamera(OrthoCamera(-1.0f, 1.0f, 0.0f, 100.0f)),
 		shaderProgram("resources/shaders/ortho_vertex_shader.glsl", "resources/shaders/ortho_fragment_shader.glsl"),
-		frameBuffer(64, 64),
+		frameBuffer(128, 128),
 		model(_model)
 	{
 	}
@@ -447,8 +462,8 @@ namespace unda {
 			GLCALL(glBindVertexArray(mesh.vao));
 				glm::mat4 transform = mesh.transform;
 				//transform = glm::scale(transform, glm::vec3(1.0f / model->getModelScale()));
-				//transform = glm::scale(transform, glm::vec3(2.0f));
-				//transform = glm::translate(transform, glm::vec3(-0.5f));
+				transform = glm::scale(transform, glm::vec3(2.0f));
+				transform = glm::translate(transform, glm::vec3(-1.0f));
 
 				GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("model"), 1, GL_FALSE, glm::value_ptr(transform)));
 				GLCALL(glActiveTexture(GL_TEXTURE0));

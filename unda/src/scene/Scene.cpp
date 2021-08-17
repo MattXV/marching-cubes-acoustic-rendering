@@ -64,7 +64,7 @@ namespace unda {
 		Light* light = new Light(vertices, indices);
 		light->setPosition(glm::vec3(2.0f, 9.5f, 7.0f));
 		addLight(light);
-		camera->setPosition(glm::vec3(1.0f, 0.0f, 1.0f));
+		camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 		modelRenderer.setCamera(camera);
 		modelRenderer.setLightPosition(light->getPosition());
 		modelRenderer.setLightColour(light->getColour());
@@ -108,10 +108,10 @@ namespace unda {
 		marchingCubes->computeMarchingCubes(0.0);
 
 		marchingCubesModel.reset(marchingCubes->createModel());
-		for (auto& mesh : marchingCubesModel->getMeshes()) {
-			mesh.transform = glm::translate(glm::mat4(1.0f), glm::vec3(-10, 0, -10));
-			//mesh.transform = glm::scale(mesh.transform, glm::vec3(10, 10, 10));
-		}
+		//for (auto& mesh : marchingCubesModel->getMeshes()) {
+		//	//mesh.transform = glm::translate(glm::mat4(1.0f), glm::vec3(-10, 0, -10));
+		//	//mesh.transform = glm::scale(mesh.transform, glm::vec3(10, 10, 10));
+		//}
 		glm::vec3 boundingVolume = marchingCubesModel->calculateBoundingVolume();
 		
 		configuration["Scene"]["Dimensions"] = { inputScene->getVolume().x, inputScene->getVolume().y, inputScene->getVolume().z };
@@ -172,7 +172,7 @@ namespace unda {
 		modelRenderer.setModel(inputScene.get());
 		modelRenderer.render();
 		modelRenderer.setModel(marchingCubesModel.get());
-		modelRenderer.render();
+		modelRenderer.render(true);
 		boundingBoxRenderer.render();
 	}
 

@@ -3,6 +3,7 @@
 #include "../scene/Model.h"
 #include "../rendering/Renderer.h"
 #include "MarchingCubesTables.h"
+#include "../utils/Utils.h"
 #include <glm/glm.hpp>
 #include <cmath>
 #include <vector>
@@ -40,9 +41,9 @@ namespace unda {
 		inline void setCameraPosition(const glm::vec3& newPosition) { position = newPosition; }
 		inline void update() {
 			view = glm::lookAt<float>(position, position + target, up);
-			//projection = glm::ortho<float>(-1.0f, 1.0f, -1.0f, 1.0f);
-			//projection = glm::ortho<float>(left, right, bottom, top);
-			projection = glm::perspective<float>(glm::radians(90.0f), 1.0f, 0.0000001f, 10.2f);
+			//projection = glm::ortho<float>(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+			projection = glm::ortho<float>(left, right, bottom, top, zNear, zFar);
+			//projection = glm::perspective<float>(glm::radians(40.0f), 1.0f, 0.0000001f, 100.2f);
 		}
 		void setModel(Model* newModel) { model = newModel; }
 		void render();
@@ -54,7 +55,7 @@ namespace unda {
 		glm::vec3 position = glm::vec3(0.0f), target = glm::vec3(1.0f), up = glm::vec3(0.0f, 1.0f, 0.0f);
 
 		Model* model;
-		Camera orthoCamera;
+		//Camera orthoCamera;
 		Shader shaderProgram;
 		FrameBuffer frameBuffer;
 		DISABLE_COPY_ASSIGN(CellRenderer)
@@ -151,6 +152,7 @@ namespace unda {
 
 		// Image Patch Generation
 		bool generatePatches = true;
+		double scale = 0.0;
 		size_t nPatches = 0;
 		CellRenderer cellRenderer;
 

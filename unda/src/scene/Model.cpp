@@ -212,33 +212,36 @@ namespace unda {
         glm::mat4 transform = glm::mat4(1.0f);
 
         std::function<void(Vertex&)> getAbsMax = [&maxValue, &transform](Vertex& vertex) { 
-            glm::vec4 position = glm::vec4(vertex.x, vertex.y, vertex.z, 1.0f);
-            float x = fabs(position.x);
-            float y = fabs(position.y);
-            float z = fabs(position.z);
-            if (x > *maxValue) memcpy(maxValue, &x, sizeof(float));
-            if (y > *maxValue) memcpy(maxValue, &y, sizeof(float));
-            if (z > *maxValue) memcpy(maxValue, &z, sizeof(float));
+            //glm::vec4 position = glm::vec4(vertex.x, vertex.y, vertex.z, 1.0f);
+            float x = fabs(vertex.x);
+            float y = fabs(vertex.y);
+            float z = fabs(vertex.z);
+            if (x > *maxValue) *maxValue = x;
+            if (y > *maxValue) *maxValue = y;
+            if (z > *maxValue) *maxValue = z;
         };
 
         std::function<void(Vertex&)> normalise = [&maxValue, &transform](Vertex& vertex) { 
-            glm::vec3 position = glm::vec3(
-                vertex.x / float(*maxValue) * 2.0f - 1.0f,
-                vertex.y / float(*maxValue) * 2.0f - 1.0f,
-                vertex.z / float(*maxValue) * 2.0f - 1.0f);
-            vertex.x = position.x;
-            vertex.y = position.y;
-            vertex.z = position.z;
+            vertex.x = (vertex.x / *maxValue ) * 2.0f - 1.0f;
+            vertex.y = (vertex.y / *maxValue ) * 2.0f - 1.0f;
+            vertex.z = (vertex.z / *maxValue ) * 2.0f - 1.0f;
         };
 
         for (std::pair<const std::string, std::vector<LoadedMesh>>& loaded : loadedMeshes) {
             for (LoadedMesh& submesh : loaded.second) {
-                std::for_each(submesh.vertices->begin(), submesh.vertices->end(), getAbsMax);
+                std::vector<Vertex>* vertices = submesh.vertices.get();
+                for (std::vector<Vertex>::iterator vertex = vertices->begin(); vertex < vertices->end(); vertex++) {
+                    getAbsMax(*vertex);
+                }
             }
         }
+
         for (std::pair<const std::string, std::vector<LoadedMesh>>& loaded : loadedMeshes) {
             for (LoadedMesh& submesh : loaded.second) {
-                std::for_each(submesh.vertices->begin(), submesh.vertices->end(), normalise);
+                std::vector<Vertex>* vertices = submesh.vertices.get();
+                for (std::vector<Vertex>::iterator vertex = vertices->begin(); vertex < vertices->end(); vertex++) {
+                    normalise(*vertex);
+                }
             }
         }
 

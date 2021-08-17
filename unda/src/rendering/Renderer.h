@@ -49,7 +49,7 @@ namespace unda {
 		inline void setCamera(unda::Camera* _camera) { camera = _camera; }
 
 	private:
-		glm::vec3 position = glm::vec3(20.0f, 20.0f, 20.0f);
+		glm::vec3 position = glm::vec3(0.0f, 20.0f, 0.0f);
 		Shader shaderProgram;
 		unsigned int VAO, VBO, UVBO;
 		Camera* camera = nullptr;

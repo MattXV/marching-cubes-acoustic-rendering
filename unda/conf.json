@@ -73,9 +73,9 @@
     },
     "Scene": {
         "Dimensions": [
-            17.12102508544922,
-            9.475486755371094,
-            24.997310638427734
+            19.621862411499023,
+            10.162071228027344,
+            27.133060455322266
         ],
         "SceneGraphFile": "resources/models/Church/Scene/SceneGraph.json"
     },

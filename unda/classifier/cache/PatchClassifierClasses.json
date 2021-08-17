@@ -1,0 +1,10 @@
+{
+	"ModelName": "PatchClassifier",
+	"Classes": ["Wood", "Fur", "Metal", "Foliage", "Fabric_cloth", "Painted",
+           "Food", "Stone", "Glass", "Granite_marble", "Carpet_rug", "Tile",
+           "Ceramic", "Hair", "Paper_tissue", "Laminate", "Cardboard", "Skin",
+           "Plastic_opaque", "Wallpaper", "Leather", "Brick", "Plastic_clear",
+           "Wicker", "Concrete", "Rubber_latex", "Linoleum", "Water", "Mirror",
+           "Fire", "Sky", "Chalkboard_blackboard", "Wax", "Sponge", 
+           "Cork_corkboard", "Styrofoam"]
+}

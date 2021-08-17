@@ -12,7 +12,7 @@ public:
 	ModelRenderer();
 	~ModelRenderer() = default;
 
-	void render();
+	void render(bool wireframe = false);
 	void setModel(unda::Model* newModel) { model = newModel; }
 	void setCamera(unda::Camera* newCamera) { camera = newCamera; }
 	void setLightPosition(const glm::vec3& newPosition) { lightPosition = newPosition; }
