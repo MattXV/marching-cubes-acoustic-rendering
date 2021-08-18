@@ -34,7 +34,7 @@ classifier.load_weights(WEIGHTS_PATH)
 classifier.summary()
 
 mapping = json.load(open(ONE_TO_MANY))
-acoustic_materials = pd.read_excel(ABSORPTION_DATA)
+acoustic_materials = pd.read_excel(ABSORPTION_DATA, engine='openpyxl')
 
 
 predictions = list()
@@ -57,7 +57,12 @@ for image_file in Path(PATCHES_DIR).glob('*.png'):
     label_name = classes[label]
     acoustic_label = mapping[label_name]
     mean_coeffs = acoustic_materials.loc[(acoustic_materials.Category == acoustic_label)].iloc[:, -6:]
-    mean_coeffs = mean_coeffs.to_numpy(np.float32).mean(axis=0)
+
+    if len(mean_coeffs) == 0:
+        print(acoustic_label)
+        mean_coeffs = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5], np.float32)
+    else:
+        mean_coeffs = mean_coeffs.to_numpy(np.float32)[0]
 
     patch_info = path.stem.split('_')
     assert patch_info[0] in FACES

@@ -42,8 +42,8 @@ namespace unda {
 		inline void update() {
 			view = glm::lookAt<float>(position, position + target, up);
 			//projection = glm::ortho<float>(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-			projection = glm::ortho<float>(left, right, bottom, top, zNear, zFar);
-			//projection = glm::perspective<float>(glm::radians(40.0f), 1.0f, 0.0000001f, 100.2f);
+			//projection = glm::ortho<float>(left, right, bottom, top, zNear, zFar);
+			projection = glm::perspective<float>(glm::radians(40.0f), 1.0f, 0.0000001f, 100.2f);
 		}
 		void setModel(Model* newModel) { model = newModel; }
 		void render();

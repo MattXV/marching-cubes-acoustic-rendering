@@ -24,7 +24,7 @@ void ModelRenderer::render(bool wireframe)
 		GLCALL(glBindVertexArray(mesh.vao));
 			glm::mat4 transform = mesh.transform;
 			//transform = glm::scale(transform, glm::vec3(1.0f / model->getModelScale()));
-			//transform = glm::scale(transform, glm::vec3(20.0f));
+			transform = glm::scale(transform, glm::vec3(12.0f));
 			//transform = glm::translate(transform, glm::vec3(-model->getModelScale()));
 			GLCALL(glUniformMatrix4fv(shaders.getUniformLocation("modelMatrix"), 1, GL_FALSE, glm::value_ptr(transform)));
 			GLCALL(glActiveTexture(GL_TEXTURE0));
