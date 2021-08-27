@@ -52,6 +52,7 @@ namespace unda {
 			, receiverPosition(_receiverPosition)
 			, surfaceReflection(_surfaceReflection)
 			, order(_order)
+			, nSamples(_nSamples)
 		{
 			updateParameters();
 		}
@@ -201,7 +202,7 @@ namespace unda {
 			for (int i = 0; i < 6; i++)
 				WriteAudioFile({ irs[i] }, "frequency_bin_" + std::to_string(i) + ".wav");
 			{
-				Filter filter = Filter(Filter::filterType::BPF, 20, 125);
+				Filter filter = Filter(Filter::filterType::BPF, 50, 125);
 				filter.convolveToSignal(irs[0]);
 			}
 			{
@@ -230,7 +231,7 @@ namespace unda {
 			for (int value = 0; value < output.size(); value++)
 				output[value] = irs[0][value] + irs[1][value] + irs[2][value] + irs[3][value] + irs[4][value] + irs[5][value];
 
-			NormaliseSignal(output);
+			NormaliseSignal(output, -0.9f);
 			WriteAudioFile({ output }, "ir.wav", samplingFrequency);
 		}
 	}

@@ -33,7 +33,7 @@ for i, key in enumerate(material_keys):
     materials[key] = pra.Material(energy_absorption=energy_absorption)
 
 
-max_order = 16
+max_order = 64
 
 # Create the room
 room = pra.ShoeBox(

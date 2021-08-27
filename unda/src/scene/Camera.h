@@ -74,7 +74,7 @@ namespace unda {
 			Transform::setPosition(glm::vec3(0));
 			front = glm::vec3(0.0f, 0.0f, -1.0f);
 			up = glm::vec3(0.0f, 1.0f, 0.0f);
-			Input::registerKeyCallBack(Key::F, [this]() {  if (!Input::isKeyDown(Key::Tab)) movementEnabled = !movementEnabled; Input::lockCursor(movementEnabled); });
+			Input::registerKeyCallBack(Key::Tab, [this]() {  if (!Input::isKeyDown(Key::Tab)) movementEnabled = !movementEnabled; Input::lockCursor(movementEnabled); });
 
 		}
 		~OrthoCamera() = default;

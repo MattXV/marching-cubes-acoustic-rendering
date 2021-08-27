@@ -41,7 +41,7 @@ namespace unda {
 		inline void setCameraPosition(const glm::vec3& newPosition) { position = newPosition; }
 		inline void update() {
 			view = glm::lookAt<float>(position, position + target, up);
-			//projection = glm::ortho<float>(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+			//projection = glm::ortho<float>(-1.0f, 1.0f, -1.0f, 1.0f, -0.000001f, 10000.0f);
 			//projection = glm::ortho<float>(left, right, bottom, top, zNear, zFar);
 			projection = glm::perspective<float>(glm::radians(40.0f), 1.0f, 0.0000001f, 100.2f);
 		}
@@ -144,6 +144,7 @@ namespace unda {
 		// Multithreading 
 		const int nThreads, resolution;
 		unsigned int uniqueId;
+		float gridSpacing;
 
 		std::mutex scalarFieldMutex, modelMutex, verticesMutex;
 		LatticeVector3D scalarField;

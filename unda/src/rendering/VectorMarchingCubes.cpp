@@ -58,6 +58,7 @@ namespace unda {
 		, cubeLattice(_gridSpacing, _centre, (size_t)resolution, (size_t)resolution, (size_t)resolution)
 		, cellRenderer(nullptr)
 		, scale(0.0)
+		, gridSpacing(_gridSpacing)
 	{
 		if (_nThreads > resolution) _nThreads = resolution;
 
@@ -114,7 +115,10 @@ namespace unda {
 			UNDA_ERROR("Marching Cubes: No vertices generated!");
 			return nullptr;
 		}
-		Model* model = fromVertexData(std::move(vertices), {}, "MarchingCubes");
+		if (loadedTextures.find("Black") == loadedTextures.end())
+			loadedTextures["Black"] = std::make_unique<Texture>(1, 1, Colour<unsigned char>(0, 0, 0, 255));
+		Texture* texture = loadedTextures["Black"].get();
+		Model* model = fromVertexData(std::move(vertices), {}, "MarchingCubes", texture);
 		return model;
 	}
 
@@ -256,8 +260,8 @@ namespace unda {
 			return(0);
 
 		if (generatePatches) {
-			if (cubeindex == (nearBottomLeft + nearBottomRight + farBottomLeft + farBottomRight)) cellImagePatch(x, y, z, CubeMap::Face::NEGATIVE_Y); // Floor
-			if (cubeindex == (nearTopRight + nearTopLeft + farTopRight + farTopLeft))			  cellImagePatch(x, y, z, CubeMap::Face::POSITIVE_Y); // Ceiling
+			if (cubeindex == (nearBottomLeft + nearBottomRight + farBottomLeft + farBottomRight)) cellImagePatch(x, y, z, CubeMap::Face::POSITIVE_Y); // Floor
+			if (cubeindex == (nearTopRight + nearTopLeft + farTopRight + farTopLeft))			  cellImagePatch(x, y, z, CubeMap::Face::NEGATIVE_Y); // Ceiling
 			if (cubeindex == (nearBottomLeft + nearTopLeft + farBottomLeft + farTopLeft))		  cellImagePatch(x, y, z, CubeMap::Face::NEGATIVE_X); // Left
 			if (cubeindex == (nearBottomRight + nearTopRight + farBottomRight + farTopRight))     cellImagePatch(x, y, z, CubeMap::Face::POSITIVE_X); // Right
 			if (cubeindex == (nearBottomLeft + nearBottomRight + nearTopRight + nearTopLeft))     cellImagePatch(x, y, z, CubeMap::Face::POSITIVE_Z); // Front
@@ -309,19 +313,19 @@ namespace unda {
 		std::string filename = "output/patches/";
 		glm::vec3 direction(0.0f), position(0.0f);
 		glm::vec3 samplePoint = glm::vec3(
-			(((float(x) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * scale,
-			(((float(y) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * scale,
-			(((float(z) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * scale);
+			(((float(x) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * gridSpacing,
+			(((float(y) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * gridSpacing,
+			(((float(z) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * gridSpacing);
 
 		glm::vec3 nextSamplePoint = glm::vec3(
-			(((float(x + 1) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * scale, 
-			(((float(y + 1) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * scale,
-			(((float(z + 1) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * scale);
+			(((float(x + 1) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * gridSpacing,
+			(((float(y + 1) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * gridSpacing,
+			(((float(z + 1) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * gridSpacing);
 
 		glm::vec3 previousSamplePoint = glm::vec3(
-			(((float(x - 1) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * scale,
-			(((float(y - 1) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * scale,
-			(((float(z - 1) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * scale);
+			(((float(x - 1) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * gridSpacing,
+			(((float(y - 1) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * gridSpacing,
+			(((float(z - 1) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * gridSpacing);
 
 		switch (face)
 		{
@@ -369,7 +373,7 @@ namespace unda {
 		//glm::vec3 pos = (samplePoint + nextSamplePoint) / 2.0f;
 		cellRenderer.setCameraPosition(position);
 		cellRenderer.setCameraTarget(direction);
-		cellRenderer.setOrthoVolume(previousSamplePoint.x, nextSamplePoint.x, previousSamplePoint.y, nextSamplePoint.y, 0.00000001, 100.0f);
+		cellRenderer.setOrthoVolume(previousSamplePoint.x, nextSamplePoint.x, previousSamplePoint.y, nextSamplePoint.y, -1.0f, 100.0f);
 		cellRenderer.update();
 		cellRenderer.render();
 		cellRenderer.writeImage(filename);
@@ -455,15 +459,15 @@ namespace unda {
 		shaderProgram.attach();
 		GLCALL(glDisable(GL_CULL_FACE));
 
-		unda::render::prepare(glm::vec4(0.2f, 0.2f, 0.2f, 1.0f));
+		unda::render::prepare(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 		GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("view"), 1, GL_FALSE, glm::value_ptr(view)));
 		GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection)));
 		for (const Mesh& mesh : model->getMeshes()) {
 			GLCALL(glBindVertexArray(mesh.vao));
 				glm::mat4 transform = mesh.transform;
 				//transform = glm::scale(transform, glm::vec3(1.0f / model->getModelScale()));
-				transform = glm::scale(transform, glm::vec3(2.0f));
-				transform = glm::translate(transform, glm::vec3(-1.0f));
+				//transform = glm::scale(transform, glm::vec3(2.0f));
+				//transform = glm::translate(transform, glm::vec3(- (float)model->getModelScale() / 2.0f));
 
 				GLCALL(glUniformMatrix4fv(shaderProgram.getUniformLocation("model"), 1, GL_FALSE, glm::value_ptr(transform)));
 				GLCALL(glActiveTexture(GL_TEXTURE0));

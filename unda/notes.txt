@@ -380,3 +380,6 @@ CHURCH_PATCHES
     },
     "Threads": 30
 }
+
+
+VILLAGE_PATCHES:

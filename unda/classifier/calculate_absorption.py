@@ -11,7 +11,7 @@ total_tiles = surface_subdivision**2
 
 
 results = pd.read_csv('results.csv')
-patches = results.loc[(results['Confidence'] > 0.80)]
+patches = results.loc[(results['Confidence'] > 0.70)]
 
 
 tiles_per_wall = surface_subdivision

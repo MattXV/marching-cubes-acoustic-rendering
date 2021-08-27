@@ -21,7 +21,7 @@ namespace unda {
 
 	template<typename T>
 	std::vector<T> TimeDomainConvolution(std::vector<T> const& f, std::vector<T> const& g) {
-		// For plebs and 'slow' people like me.
+		// For plebs
 		int const nf = (int)f.size();
 		int const ng = (int)g.size();
 		int const n = nf + ng - 1;

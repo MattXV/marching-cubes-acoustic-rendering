@@ -56,13 +56,14 @@ namespace unda {
 	void Scene::init() {
 		camera = new FPSCamera(90.0f, (float)unda::windowWidth / (float)windowHeight, 0.001f, 900.0f);
 
+
 		boundingBoxRenderer.setCamera(camera);
 
 		json configuration = json::parse(utils::ReadTextFile("conf.json"));
 
 		auto [vertices, indices] = unda::primitives::createSphere(16, 0.2f);
 		Light* light = new Light(vertices, indices);
-		light->setPosition(glm::vec3(2.0f, 9.5f, 7.0f));
+		light->setPosition(glm::vec3(2.0f, -19.5f, 7.0f));
 		addLight(light);
 		camera->setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 		modelRenderer.setCamera(camera);
@@ -78,7 +79,9 @@ namespace unda {
 
 		int cellsPerDimension = configuration["GeometryReduction"]["MarchingCubesResolution"].get<int>();
 		bool generatePatches = (bool)configuration["GeometryReduction"]["GeneratePatches"].get<int>();
-		MarchingCubes* marchingCubes = new MarchingCubes(cellsPerDimension, 1, (float)inputScene->getModelScale() / cellsPerDimension, Point3D(0, 0, 0));
+		glm::vec3 sceneVolume = inputScene->getVolume();
+
+		MarchingCubes* marchingCubes = new MarchingCubes(cellsPerDimension, 1, ((1.0f / (float)cellsPerDimension) * (float)glm::length(sceneVolume)) * 0.8f, Point3D(0, 0, 0));
 		marchingCubes->setGeneratePatches(generatePatches);
 
 
@@ -108,10 +111,10 @@ namespace unda {
 		marchingCubes->computeMarchingCubes(0.0);
 
 		marchingCubesModel.reset(marchingCubes->createModel());
-		//for (auto& mesh : marchingCubesModel->getMeshes()) {
-		//	//mesh.transform = glm::translate(glm::mat4(1.0f), glm::vec3(-10, 0, -10));
-		//	//mesh.transform = glm::scale(mesh.transform, glm::vec3(10, 10, 10));
-		//}
+		for (auto& mesh : marchingCubesModel->getMeshes()) {
+			//mesh.transform = glm::translate(mesh.transform, glm::vec3(-glm::length(sceneVolume)));
+			//mesh.transform = glm::scale(mesh.transform, glm::vec3(10, 10, 10));
+		}
 		glm::vec3 boundingVolume = marchingCubesModel->calculateBoundingVolume();
 		
 		configuration["Scene"]["Dimensions"] = { inputScene->getVolume().x, inputScene->getVolume().y, inputScene->getVolume().z };
@@ -129,14 +132,14 @@ namespace unda {
 			}
 		}
 
-		glm::vec3 sceneVolume = inputScene->getVolume();
+		//glm::vec3 sceneVolume = inputScene->getVolume();
 		std::array<double, 3> spaceDimensions = { (double)sceneVolume.x, (double)sceneVolume.y, (double)sceneVolume.z };
 		std::array<double, 3> source = configuration["IR"]["SourcePosition"].get<std::array<double, 3>>();
 		std::array<double, 3> listener = configuration["IR"]["ListenerPosition"].get<std::array<double, 3>>();
 
 		int nThreads = 30, ISM_sampleRate = (int)unda::sampleRate, nTaps = 2048; //11025
 		int nSamples = (int)std::round((double)ISM_sampleRate * configuration["IR"]["TailLength"].get<double>());
-		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(spaceDimensions, source, listener, betaCoefficients, 0, configuration["IR"]["Order"].get<unsigned int>());
+		acoustics::ImageSourceModel* ism = new acoustics::ImageSourceModel(spaceDimensions, source, listener, betaCoefficients, nSamples, configuration["IR"]["Order"].get<unsigned int>());
 		if (configuration["IR"]["GenerateIR"].get<int>())
 			ism->dispatchCPUThreads();
 

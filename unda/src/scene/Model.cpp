@@ -203,7 +203,7 @@ namespace unda {
         }
 
         volume = absMax - absMin;
-        normaliseMeshes();
+        //normaliseMeshes();
     }
 
     double Model::normaliseMeshes()

@@ -48,7 +48,7 @@ void unda::Engine::update(double deltaTime)
 
 void unda::Engine::render()
 {
-	unda::render::prepare(glm::vec4(0.7f));
+	unda::render::prepare(glm::vec4(1.0f));
 	scene->render();
 	lightRenderer->drawLights(scene);
 
