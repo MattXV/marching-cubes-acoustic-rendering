@@ -313,19 +313,19 @@ namespace unda {
 		std::string filename = "output/patches/";
 		glm::vec3 direction(0.0f), position(0.0f);
 		glm::vec3 samplePoint = glm::vec3(
-			(((float(x) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * gridSpacing,
-			(((float(y) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * gridSpacing,
-			(((float(z) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * gridSpacing);
+			(((float(x) / (float)(scalarField.sizeX))) ) * gridSpacing,
+			(((float(y) / (float)(scalarField.sizeY))) ) * gridSpacing,
+			(((float(z) / (float)(scalarField.sizeZ))) ) * gridSpacing);
 
 		glm::vec3 nextSamplePoint = glm::vec3(
-			(((float(x + 1) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * gridSpacing,
-			(((float(y + 1) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * gridSpacing,
-			(((float(z + 1) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * gridSpacing);
+			(((float(x + 1) / (float)(scalarField.sizeX)))) * gridSpacing,
+			(((float(y + 1) / (float)(scalarField.sizeY)))) * gridSpacing,
+			(((float(z + 1) / (float)(scalarField.sizeZ)))) * gridSpacing);
 
 		glm::vec3 previousSamplePoint = glm::vec3(
-			(((float(x - 1) / (float)(scalarField.sizeX))) * 2.0f - 1.0f) * gridSpacing,
-			(((float(y - 1) / (float)(scalarField.sizeY))) * 2.0f - 1.0f) * gridSpacing,
-			(((float(z - 1) / (float)(scalarField.sizeZ))) * 2.0f - 1.0f) * gridSpacing);
+			(((float(x - 1) / (float)(scalarField.sizeX)))) * gridSpacing,
+			(((float(y - 1) / (float)(scalarField.sizeY)))) * gridSpacing,
+			(((float(z - 1) / (float)(scalarField.sizeZ)))) * gridSpacing);
 
 		switch (face)
 		{
@@ -377,6 +377,7 @@ namespace unda {
 		cellRenderer.update();
 		cellRenderer.render();
 		cellRenderer.writeImage(filename);
+		
 	}
 
 

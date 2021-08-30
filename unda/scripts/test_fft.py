@@ -44,8 +44,8 @@ def convolve(signal, kernel, window=None):
     out = ifft(convolution, n_conv)
     out = out[kernel.shape[0] // 2:]
     out = out[:signal.shape[0]]
-    out[:100] *= np.linspace(0, 1, 100)
-    out[-100:] *= np.linspace(1, 0, 100)
+    # out[:100] *= np.linspace(0, 1, 100)
+    # out[-100:] *= np.linspace(1, 0, 100)
     return np.array(out.real, np.float32)
 
 # PLOTS

@@ -81,7 +81,7 @@ namespace unda {
 		bool generatePatches = (bool)configuration["GeometryReduction"]["GeneratePatches"].get<int>();
 		glm::vec3 sceneVolume = inputScene->getVolume();
 
-		MarchingCubes* marchingCubes = new MarchingCubes(cellsPerDimension, 1, ((1.0f / (float)cellsPerDimension) * (float)glm::length(sceneVolume)) * 0.8f, Point3D(0, 0, 0));
+		MarchingCubes* marchingCubes = new MarchingCubes(cellsPerDimension, 1, ((1.0f / (float)cellsPerDimension) * (float)glm::length(sceneVolume)) * 1.0f, Point3D(0, 0, 0));
 		marchingCubes->setGeneratePatches(generatePatches);
 
 

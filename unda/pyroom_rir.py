@@ -33,7 +33,7 @@ for i, key in enumerate(material_keys):
     materials[key] = pra.Material(energy_absorption=energy_absorption)
 
 
-max_order = 64
+max_order = 9
 
 # Create the room
 room = pra.ShoeBox(
@@ -64,11 +64,16 @@ for m in range(room.n_mics):
         )
 # measure the reverberation time
 # plt.plot(room.rir[1][0])
-sf.write('pyroomacoustics_rir.wav', room.rir[1][0], fs)
+
+
+rir = room.rir[0][0] + room.rir[1][0]
+# rir = rir / np.max(np.abs(rir))
+
+sf.write('pyroomacoustics_rir.wav', room.rir[0][0], fs)
 # plt.show()
 
 # plot one of the RIR. both can also be plotted using room.plot_rir()
-fig = plt.figure()
-room.plot(image_order=3, aspect='equal')
+# fig = plt.figure()
+# room.plot(image_order=3, aspect='equal')
 # room.plot_rir()
-plt.show()
+# plt.show()

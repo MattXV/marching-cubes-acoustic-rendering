@@ -15,7 +15,7 @@ OUT = 'dbscale/'
 SAMPLERATE = 44100
 # SPECTROGRAM_NSEGS = 2**9
 # SPECTROGRAM_NFFT = 2**18
-SPECTROGRAM_NSEGS = 2**16
+SPECTROGRAM_NSEGS = 2**10
 SPECTROGRAM_NFFT = 1024
 
 
@@ -58,19 +58,15 @@ def get_rir_segments(rir, fs):
     return x, td, ed, er, peaks
 
 
-def get_rt60(signal, samplerate):
-    db_level = db_to_mag(-60)
-    _, td, _, _, _ = get_rir_segments(signal, samplerate)
-    decay = np.squeeze(mag_to_db(signal[td:]))
-
-    rt_60 = list()
-    for value in decay:
-        if abs(value) > -60:
-            rt_60.append(value)
-        else:
+def get_t60(ir, samplerate):
+    h = np.abs(normalise(ir.copy()))
+    h_db = mag_to_db(h)
+    t = np.linspace(0, h.shape[0] / samplerate, h.shape[0])
+    for i in range(ir.shape[0] - 1, 0, -1):
+        if h_db[i] >= -61:
+            idx = i
             break
-    return len(rt_60) / samplerate
-
+    return t[idx]
 
 def get_c50(signal, samplerate):
     x = np.squeeze(np.copy(signal))
@@ -94,10 +90,10 @@ def read_audio(file, out_samplerate):
     x, fs = sf.read(file, always_2d=True)
     if (x.shape[1] == 2):
         x = x[:, 0] + x[:, 1]
-    x = normalise(x)
     t = np.max(x.shape) / fs
-    x = resample(x, int(np.floor(t * fs)))
+    x = resample(x, int(np.floor(t * SAMPLERATE)))
     x = normalise(x)
+    x = np.squeeze(x)
     return x
 
 def trim_from_to(signal, time_a, time_b, fs=None):
@@ -159,30 +155,23 @@ def plot_spectrogram(signal, samplerate, axes, label=None, scale=1000):
     f, t, Sxx = spectrogram(np.squeeze(y), samplerate, window=blackman(2048),
                             nfft=2**16, mode='magnitude')
     norm = Normalize(clip=True)
-    axes.pcolormesh(t, f, Sxx, cmap='gist_heat', norm=norm)
+    axes.pcolormesh(t, f, Sxx, cmap='gist_heat', norm=norm, shading='auto')
     if label:
         axes.set_title(label, fontsize=18)
-    axes.set_ylabel('Frequency (Hz)', fontsize=12)
-    axes.set_xlabel('Time (s)', fontsize=12)
+    # axes.set_ylabel('Frequency (Hz)', fontsize=12)
+    # axes.set_xlabel('Time (s)', fontsize=12)
     axes.set_yscale('log')
     axes.set_ylim(20, 20000)
 
 
-def plot_db_scale(signal, samplerate, axes, label='Signal'):
-    fig, ax = plt.subplots()
-    db_scale = mag_to_db(signal)
-    # db_scale = normalise(db_scale)
-    db_scale = np.abs(db_scale)
-    db_scale = np.squeeze(np.array(np.where(db_scale > -60)))
-    t = np.max(db_scale.shape) / samplerate
-    # axes.plot(np.linspace(0, t, np.max(db_scale.shape)), db_scale)
-    axes.plot(signal)
-    axes.set_yticks([])
-    axes.set_xticks([])
+def plot_db_scale(signal, samplerate, axes, label=None):
+    db_scale = mag_to_db(normalise(signal))
 
-    # fig.savefig(str(Path(OUT) / '{}.png'.format(label)))
-    plt.close(fig)
-    del fig
+    t = np.linspace(0, db_scale.shape[0] / samplerate, db_scale.shape[0])
+    axes.plot(t, db_scale)
+    if label:
+        axes.set_title(label, fontsize=18)
+
 
 
 
@@ -204,8 +193,8 @@ def plot_waveform(signal, samplerate, axes, label=None, td=None):
     # axes.plot(t_db, db_scale)
     if label:
         axes.set_title(label, fontsize=18)
-    axes.set_xlabel('Time (s)', fontsize=12)
-    axes.set_ylabel('Magnitude', fontsize=12)
+    # axes.set_xlabel('Time (s)', fontsize=12)
+    # axes.set_ylabel('Magnitude', fontsize=12)
 
 
 def plot_image(image, axes, label=None, title=None):
