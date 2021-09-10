@@ -23,7 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{9c0ae553-72fe-4661-aeeb-8eb3ee089d88}</ProjectGuid>
     <RootNamespace>unda</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -72,27 +72,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\include;$(ProjectDir)externals\libsndfile\build\build\include;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)externals\glfw\install\install\lib;$(ProjectDir)externals\assimp\build\lib\Release;externals\libsndfile\build\build\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\include;$(ProjectDir)externals\libsndfile\build\build\include;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)externals\glfw\install\install\lib;$(ProjectDir)externals\assimp\build\lib\Release;externals\libsndfile\build\build\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(ProjectDir)externals\pffft;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\include;$(ProjectDir)externals\libsndfile\build\build\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(ProjectDir)externals\pffft;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)externals\glfw\install\install\lib;$(ProjectDir)externals\assimp\build\lib\Release;externals\libsndfile\build\build\lib;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(ProjectDir)externals\pffft;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)externals\glm;$(ProjectDir)externals\glad\include;$(ProjectDir)externals\assimp\include;$(ProjectDir)externals\glfw\install\install\include;$(ProjectDir)externals\libsndfile\build\build\include;$(ProjectDir)externals\glfw\install\install\GLFW\include;$(ProjectDir)externals\libsndfile\build\install\include;$(ProjectDir)externals\stb_image;$(ProjectDir)externals\glob;$(ProjectDir)externals\json;$(ProjectDir)externals\pffft;$(IncludePath)</IncludePath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <LibraryPath>$(ProjectDir)externals\glfw\install\install\GLFW\lib;$(ProjectDir)externals\assimp\build\lib\Release;$(ProjectDir)externals\libsndfile\build\install\lib;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(ProjectDir)externals\glfw\install\install\lib;$(ProjectDir)externals\assimp\build\lib\Release;externals\libsndfile\build\build\lib;$(ProjectDir)externals\libsndfile\build\install\lib;$(ProjectDir)externals\libsndfile\build\install\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

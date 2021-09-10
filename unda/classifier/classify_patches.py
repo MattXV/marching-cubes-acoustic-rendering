@@ -31,7 +31,7 @@ classifier(tf.zeros((64,) + INPUT_SHAPE))
 classifier.load_weights(WEIGHTS_PATH)
 
 classifier.summary()
-
+quit()
 mapping = json.load(open(ONE_TO_MANY))
 acoustic_materials = pd.read_excel(ABSORPTION_DATA)
 patches = glob(path.join(PATCHES_DIR, '*.png'))

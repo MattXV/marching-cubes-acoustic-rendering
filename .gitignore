@@ -370,3 +370,4 @@ FodyWeavers.xsd
 unda/output/*.png
 /unda/output
 /unda/scripts/plots
+/unda/results
