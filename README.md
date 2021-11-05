@@ -12,6 +12,8 @@ The pipeline is executed as an offline procedure for a given scene specified in 
 * Predict acoustic materials using the classifier via `classifier/classify_patches.py` and `classifier/calculate_absorption.py`
 * Generate Room Impulse Responses re-running `unda.exe`
 
+## Model Architecture and Weights
+The model weights and architecture for acoustic material classification is stored as a Keras model `.h5`, available at this [link](https://drive.google.com/file/d/1e2A-KeJeMctVwWE79GKfqWYyH6x1RhGR/view?usp=sharing).
 
 <!-- LICENSE -->
 ## License
